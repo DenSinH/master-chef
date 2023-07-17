@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Website</title>
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <h1>Recipe Website</h1>
+
+    <div class="search-bar-container">
+        <input type="text" id="searchBar" placeholder="Search recipes">
+    </div>
+
+    <div class="recipe-list">
+        <a href="recipe1.html" class="recipe-item" data-tags="vegetarian quick-easy">
+            <img src="thumbnail1.jpg" alt="Recipe 1">
+            <h2>Recipe 1</h2>
+            <div class="tags">
+                <span class="tag">Vegetarian</span>
+                <span class="tag">Quick & Easy</span>
+            </div>
+            <div class="recipe-info">
+                <p><i class="fas fa-clock"></i> <span class="info-item">30 minutes</span></p>
+                <p><i class="fas fa-users"></i> <span class="info-item">Serves 4</span></p>
+            </div>
+        </a>
+
+        <a href="recipe2.html" class="recipe-item" data-tags="gluten-free dessert">
+            <img src="thumbnail2.jpg" alt="Recipe 2">
+            <h2>Recipe 2</h2>
+            <div class="tags">
+                <span class="tag">Gluten-Free</span>
+                <span class="tag">Dessert</span>
+            </div>
+            <div class="recipe-info">
+                <p><i class="fas fa-clock"></i> <span class="info-item">45 minutes</span></p>
+                <p><i class="fas fa-users"></i> <span class="info-item">Serves 6</span></p>
+            </div>
+        </a>
+
+        <!-- Add more recipe items as needed -->
+
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            const searchBar = $('#searchBar');
+            const recipeItems = $('.recipe-item');
+
+            searchBar.on('input', function () {
+                const searchTerm = $(this).val().toLowerCase();
+
+                recipeItems.each(function () {
+                    const item = $(this);
+                    const itemTags = item.attr('data-tags').toLowerCase();
+                    const itemTitle = item.find('h2').text().toLowerCase();
+
+                    if (itemTags.includes(searchTerm) || itemTitle.includes(searchTerm)) {
+                        item.show();
+                    } else {
+                        item.hide();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,34 @@
+.form-field {
+    display: grid;
+    grid-template-columns: auto;
+    grid-gap: 10px;
+    align-items: center;
+}
+
+input[type="number"],
+input[type="text"],
+textarea {
+    font-family: Arial, sans-serif;
+}
+
+input[type="number"],
+input[type="text"] {
+    height: 20px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+
+textarea {
+    font-family: Arial, sans-serif;
+    height: 100px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
