@@ -55,6 +55,7 @@ def translate_page(url):
         {"role": "user", "content": PROMPT.format(url=url, text=text)}
     ]
     for i in range(1 + MAX_RETRIES):
+        # todo: acreate
         chat_completion = openai.ChatCompletion.create(
             model=MODEL, messages=messages, temperature=0.2
         )

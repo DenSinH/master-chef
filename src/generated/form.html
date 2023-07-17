@@ -36,15 +36,19 @@
                 <div class="ingredient-row">
                     <input type="text" class="amount" placeholder="Amount">
                     <input type="text" class="ingredient" placeholder="Ingredient">
-                    <button type="button" class="round-button remove-row"><i class="fas fa-minus"></i></button>
+                    <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
                 </div>
             </div>
-            <button type="button" id="addIngredient" class="round-button"><i class="fas fa-plus"></i></button>
+            <span class="round-button" id="addIngredient"><i class="fas fa-plus"></i></span>
 
             <div id="preparationContainer" class="form-field">
                 <label>Preparation:</label>
+                <div class="preparation-row">
+                    <textarea class="step" placeholder="Step"></textarea>
+                    <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
+                </div>
             </div>
-            <button type="button" id="addStep" class="round-button"><i class="fas fa-plus"></i></button>
+            <span class="round-button" id="addStep"><i class="fas fa-plus"></i></span>
 
             <div class="form-field">
                 <label for="tagsInput">Tags:</label>
@@ -73,7 +77,7 @@
                 const row = $('<div class="ingredient-row">' +
                     '<input type="text" class="amount" placeholder="Amount">' +
                     '<input type="text" class="ingredient" placeholder="Ingredient">' +
-                    '<button type="button" class="round-button remove-row"><i class="fas fa-minus"></i></button>' +
+                    '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
                     '</div>');
                 $('#ingredientsContainer').append(row);
             });
@@ -81,7 +85,7 @@
             $('#addStep').click(function () {
                 const row = $('<div class="preparation-row">' +
                     '<textarea class="step" placeholder="Step"></textarea>' +
-                    '<button type="button" class="round-button remove-row"><i class="fas fa-minus"></i></button>' +
+                    '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
                     '</div>');
                 $('#preparationContainer').append(row);
             });

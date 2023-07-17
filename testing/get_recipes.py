@@ -11,7 +11,7 @@ res = requests.get(
     "https://api.github.com/repos/DenSinH/master-chef-recipes/contents/recipes.json",
     headers={
         "accept": "application/vnd.github.v3.raw",
-        "authorization": f"token {os.environ['GITHUB_RECIPES_PAT_TOKEN']}"
+        "authorization": f"token {os.environ['GITHUB_RECIPES_READ_PAT_TOKEN']}"
     }
 )
 
