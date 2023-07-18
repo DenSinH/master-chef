@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe 1 - Recipe Website</title>
+    <link rel="stylesheet" href="/static/base.css">
+    <link rel="stylesheet" href="/static/recipe.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+
+<body>
+    <div class="recipe-details">
+        <header>
+            <h1>{{ recipe["name"] }}</h1>
+            <div class="buttons">
+                <a href="#" class="round-button"><i class="fas fa-edit"></i></a>
+                <a href="#" class="round-button"><i class="fas fa-trash"></i></a>
+            </div>
+        </header>
+        <img src="recipe1.jpg" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Preview">
+
+        <div class="recipe-info">
+            {%- if recipe["time"] is not none -%}
+            <div>
+                <i class="fas fa-clock"></i> <span class="info-item">{{ recipe["time"] }} minutes</span>
+            </div>
+            {%- endif -%}
+            {%- if recipe["people"] is not none -%}
+            <div>
+                <i class="fas fa-users"></i> <span class="info-item">Serves {{ recipe["people"] }}</span>
+            </div>
+            {%- endif -%}
+        </div>
+
+        <h2>Ingredients</h2>
+        <ul>
+            {%- for ingredient in recipe["ingredients"] -%}
+            <li>{{ ingredient["amount"] or "" }} {{ ingredient["ingredient"] }}</li>
+            {%- endfor -%}
+        </ul>
+
+        <h2>Instructions</h2>
+        <ol>
+            {%- for step in recipe["preparation"] -%}
+            <li>{{ step }}</li>
+            {%- endfor -%}
+        </ol>
+
+        {%- if recipe["nutrition"] is not none -%}
+        <h2>Nutrition</h2>
+        <table>
+            {%- for group in recipe["nutrition"] -%}
+            <tr><td>{{ group["group"] }}</td><td>{{ group["amount"] }}</td></tr>
+            {%- endfor -%}
+        </table>
+        {%- endif -%}
+    </div>
+</body>
+
+</html>

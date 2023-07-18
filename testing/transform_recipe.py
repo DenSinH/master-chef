@@ -27,9 +27,11 @@ of nutrional information, and "amount": with the amount of this group that is co
 "url:": the literal string "{url}"
 "people": the amount of people that can be fed from this meal as an integer, in case this information is present, otherwise null
 "time": the time that this recipe takes to make in minutes as an integer, in case this information is present, otherwise null
-"tags": generate a list of about 3-5 English strings that can be seen as the most important keywords for the recipe.
+"tags": interpret the recipe, and generate a list of at most 5 English strings that describe this recipe. For example, what the main ingredient is,
+        if it takes long or short to make, whether it is especially high or low in certain nutritional groups, tags like that. Make
+        sure the strings are in English.
 
-Keep the language the same, and preferably do not change anything about the text in the recipe at all.
+Keep the language the same, except in the tags, and preferably do not change anything about the text in the recipe at all.
 Only output the JSON object, and nothing else.
 Here comes the text:
 
