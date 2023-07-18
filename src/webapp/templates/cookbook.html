@@ -13,11 +13,11 @@
 
 <body>
     <header>
-        <h1>Recipe Website</h1>
+        <h1>Merel's Kitchen</h1>
         <div class="buttons">
-            <a href="#" class="round-button"><i class="fas fa-plus"></i></a>
-            <a href="#" class="round-button"><i class="fas fa-plus"></i></a>
-            <a href="#" class="round-button"><i class="fas fa-plus"></i></a>
+            <a href="{{ url_for('add_recipe_url_form') }}" class="round-button"><i class="fas fa-code"></i></a>
+            <a href="{{ url_for('add_recipe_text_form') }}" class="round-button"><i class="fas fa-clipboard-list"></i></a>
+            <a href="#" class="round-button"><i class="fas fa-edit"></i></a>
         </div>
     </header>
 

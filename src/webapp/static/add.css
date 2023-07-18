@@ -1,0 +1,54 @@
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+.add-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-box {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+}
+
+.add-box input[type="url"],
+.add-box textarea,
+.add-box button {
+    display: block;
+    width: 200px;
+    height: 40px;
+    margin: 10px auto;
+    padding: 5px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+}
+
+.add-box textarea {
+    width: 80vw !important;
+    height: 60vh !important;
+}
+
+.add-box button {
+    background-color: #3357FF;
+    color: #fff;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.add-box button:hover {
+    background-color: #2c4dbd;
+}
+
+.add-box h1 {
+    margin: 0;
+}

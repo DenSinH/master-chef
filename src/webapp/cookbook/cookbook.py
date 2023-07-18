@@ -9,54 +9,18 @@ load_dotenv()
 
 import os
 
-
-class CookbookError(Exception):
-    pass
+from .utils import *
 
 
 RECIPES = None
-
-
-def fix_recipe(_recipe):
-    def _get_or_none(obj, key, typ):
-        return typ(obj[key]) if key in obj else None
-
-    recipe = {}
-    if "name" not in _recipe:
-        raise CookbookError("Recipe has no name")
-    recipe["name"] = str(_recipe["name"])
-
-    for (key, typ) in [("time", int), ("people", int), ("url", str)]:
-        recipe[key] = _get_or_none(_recipe, key, typ)
-
-    recipe["ingredients"] = []
-    for ingredient in _recipe.get("ingredients", []):
-        recipe["ingredients"].append({
-            "amount": _get_or_none(ingredient, "amount", str),
-            "ingredient": str(ingredient["ingredient"])
-        })
-
-    recipe["preparation"] = []
-    for step in _recipe.get("preparation", []):
-        recipe["preparation"].append(str(step))
-
-    if "nutrition" in _recipe and _recipe["nutrition"] is not None:
-        recipe["nutrition"] = []
-        for group in _recipe.get("nutrition", []):
-            recipe["nutrition"].append({
-                "amount": _get_or_none(group, "amount", str),
-                "group": str(group["group"])
-            })
-    else:
-        recipe["nutrition"] = None
-    return recipe
+FILE = None
 
 
 async def _get_recipes():
-    global RECIPES
+    global RECIPES, FILE
 
     if RECIPES is not None:
-        return RECIPES
+        return RECIPES, FILE
 
     async with aiohttp.ClientSession() as session:
         res = await session.get(
@@ -70,9 +34,9 @@ async def _get_recipes():
         if not res.ok:
             raise CookbookError(f"Error getting recipes: {res.status} ({res.text})")
 
-        file = await res.json()
-        RECIPES = json.loads(base64.b64decode(file["content"]).decode("utf-8"))
-        return RECIPES, file
+        FILE = await res.json()
+        RECIPES = json.loads(base64.b64decode(FILE["content"]).decode("utf-8"))
+        return RECIPES, FILE
 
 
 async def get_recipes():
@@ -86,7 +50,7 @@ def _generate_key(recipes):
             return key
 
 
-def _push_recipes(recipes, file, message):
+async def _push_recipes(recipes, file, message):
 
     async with aiohttp.ClientSession() as session:
         res = await session.put(
@@ -115,11 +79,11 @@ async def add_recipe(recipe):
     recipes, file = _get_recipes()
     key = _generate_key(recipes)
     recipes[key] = recipe
-    _push_recipes(recipes, file, f"Add recipe {recipe['name']}")
+    await _push_recipes(recipes, file, f"Add recipe {recipe['name']}")
     return key
 
 
-def update_recipe(key, recipe):
+async def update_recipe(key, recipe):
     recipe = fix_recipe(recipe)
     recipes, file = _get_recipes()
     if key not in recipes:
@@ -130,5 +94,5 @@ def update_recipe(key, recipe):
         return
 
     recipes[key] = recipe
-    _push_recipes(recipes, file, f"Update recipe {recipe['name']}")
+    await _push_recipes(recipes, file, f"Update recipe {recipe['name']}")
     return key
