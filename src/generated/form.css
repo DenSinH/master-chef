@@ -13,10 +13,17 @@
 }
 
 .ingredient-row,
-.preparation-row {
+.preparation-row,
+.ingredient-header,
+.preparation-header {
     display: flex;
     align-items: center;
     margin-bottom: 10px;
+}
+
+.ingredient-header,
+.preparation-header {
+    justify-content: space-between;
 }
 
 .ingredient-row input,
@@ -26,22 +33,6 @@
 
 .preparation-row textarea {
     resize: none;
-}
-
-.round-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background-color: #3357FF;
-    color: #FFFFFF;
-    cursor: pointer;
-}
-
-.round-button i {
-    font-size: 16px;
 }
 
 form button[type="submit"] {

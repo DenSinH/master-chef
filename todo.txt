@@ -1,0 +1,3 @@
+check out:
+https://github.com/mauricesvay/ImageResolver/blob/gh-pages/ImageResolver.0.5.2.js
+for image resolver techniques
