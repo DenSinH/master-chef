@@ -28,7 +28,7 @@
 
             <div class="form-field">
                 <label>URL:</label>
-                <input type="text" name="name" placeholder="Enter recipe URL" value="{{ recipe.get('url', '') }}">
+                <input type="text" name="url" placeholder="Enter recipe URL" value="{{ recipe.get('url', '') }}">
             </div>
 
             <div class="form-field">
@@ -105,6 +105,16 @@
                 <input type="text" name="tag" placeholder="Tag 5" value="{{ recipe.get('tags', [])[4] }}">
             </div>
 
+            <div class="form-field">
+                <label>Thumbnail:</label>
+                <input type="text" id="thumbnailField" name="thumbnail" placeholder="Enter thumbnail url" value="{{ recipe.get('thumbnail', '') }}">
+                <div class="thumbnail-container">
+                    <img style="display: none" id="thumbnailPreview" src="{{ recipe.get('thumbnail', '') }}" alt="" onerror="$('#thumbnailError').show();">
+                    <p style="display: none" id="thumbnailLoading">Loading thumbnail...</p>
+                    <p style="display: none" id="thumbnailError" class="warning">Failed to load thumbnail, please check URL</p>
+                </div>
+            </div>
+
             <button type="submit">Submit</button>
         </form>
     </div>
@@ -165,6 +175,25 @@
                     }
                 });
             });
+
+            var thumbnailTimer;
+            $("#thumbnailField").on('keyup', function () {
+                clearTimeout(thumbnailTimer);
+                thumbnailTimer = setTimeout(doneTyping, 1000);
+                $("#thumbnailLoading").show();
+                $("#thumbnailError").hide();
+                $("#thumbnailPreview").hide();
+            });
+
+            $("#thumbnailField").on('keydown', function () {
+                clearTimeout(thumbnailTimer);
+            });
+
+            function doneTyping () {
+                $("#thumbnailLoading").hide();
+                $("#thumbnailPreview").show();
+                $("#thumbnailPreview").attr('src', $("#thumbnailField").val());
+            }
         });
     </script>
 </body>

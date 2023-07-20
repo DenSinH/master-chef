@@ -74,3 +74,14 @@ textarea {
     margin: 0 auto;
     padding: 20px;
 }
+
+.thumbnail-container {
+    display: flex;
+    justify-content: center;
+}
+
+#thumbnailPreview {
+    width: 250px;
+    max-width: 100%;
+    height: auto;
+}

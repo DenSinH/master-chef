@@ -41,4 +41,6 @@ def fix_recipe(_recipe):
     for tag in _recipe.get("tags", []):
         recipe["tags"].append(str(tag))
 
+    recipe["thumbnail"] = _recipe.get("thumbnail")
+
     return recipe

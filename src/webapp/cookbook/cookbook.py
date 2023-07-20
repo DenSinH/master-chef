@@ -79,7 +79,7 @@ async def _push_recipes(recipes, file, message):
 
 async def add_recipe(recipe):
     recipe = fix_recipe(recipe)
-    recipes, file = _get_recipes()
+    recipes, file = await _get_recipes()
     key = _generate_key(recipes)
     recipes[key] = recipe
     await _push_recipes(recipes, file, f"Add recipe {recipe['name']}")
@@ -88,7 +88,7 @@ async def add_recipe(recipe):
 
 async def update_recipe(key, recipe):
     recipe = fix_recipe(recipe)
-    recipes, file = _get_recipes()
+    recipes, file = await _get_recipes()
     if key not in recipes:
         raise CookbookError(f"Cannot update recipe with id {key}, as it does not exist")
 

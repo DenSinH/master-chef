@@ -9,9 +9,9 @@ app = Sanic(__name__)
 app.static("/static", "./static")
 
 
-def _parse_recipe_form(form):
+def _parse_recipe_form(form: sanic.request.RequestParameters):
     ingredients = []
-    for amount, ingredient in zip(form.get("ingredient-amount", []), form.get("ingredient-type", [])):
+    for amount, ingredient in zip(form.getlist("ingredient-amount", []), form.getlist("ingredient-type", [])):
         if ingredient == "null":
             continue
         if amount == "-1":
@@ -23,7 +23,7 @@ def _parse_recipe_form(form):
         })
 
     nutrition = []
-    for amount, group in zip(form.get("nutrition-amount", []), form.get("nutrition-group", [])):
+    for amount, group in zip(form.getlist("nutrition-amount", []), form.getlist("nutrition-group", [])):
         if group == "null":
             continue
         if amount == "-1":
@@ -43,7 +43,8 @@ def _parse_recipe_form(form):
         "time": int(form["time"][0]) if "time" in form else None,
         "ingredients": ingredients,
         "nutrition": nutrition,
-        "preparation": form.get("preparation", [])
+        "preparation": form.getlist("preparation", []),
+        "thumbnail": str(form["thumbnail"][0]) if "thumbnail" in form else None
     }
     return recipe
 
@@ -85,10 +86,7 @@ async def update_recipe_form(request: Request, id: str):
 @app.post("/recipe/<id>/update")
 async def update_recipe(request: Request, id: str):
     recipe = _parse_recipe_form(request.form)
-
-    # await cookbook.update_recipe(id, recipe)
-    from pprint import pprint
-    pprint(recipe)
+    await cookbook.update_recipe(id, recipe)
 
     return sanic.redirect(app.url_for("recipe", id=id))
 

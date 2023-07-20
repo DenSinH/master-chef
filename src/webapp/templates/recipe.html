@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recipe 1 - Recipe Website</title>
+    <title>{{ recipe["name"] }}</title>
     <link rel="stylesheet" href="/static/base.css">
     <link rel="stylesheet" href="/static/recipe.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
@@ -19,7 +19,7 @@
                 <a onclick="console.log('clicked')" class="round-button"><i class="fas fa-trash"></i></a>
             </div>
         </header>
-        <img src="recipe1.jpg" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Preview">
+        <img src="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Preview">
 
         <div class="recipe-info">
             {%- if recipe["time"] is not none -%}
