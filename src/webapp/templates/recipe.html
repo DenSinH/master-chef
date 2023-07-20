@@ -15,8 +15,8 @@
         <header>
             <h1>{{ recipe["name"] }}</h1>
             <div class="buttons">
-                <a href="#" class="round-button"><i class="fas fa-edit"></i></a>
-                <a href="#" class="round-button"><i class="fas fa-trash"></i></a>
+                <a href="{{ url_for('update_recipe_form', id=recipe_id) }}" class="round-button"><i class="fas fa-edit"></i></a>
+                <a onclick="console.log('clicked')" class="round-button"><i class="fas fa-trash"></i></a>
             </div>
         </header>
         <img src="recipe1.jpg" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Preview">

@@ -14,7 +14,7 @@
     <div class="add-container">
         <div class="add-box">
             <h1>Add via URL</h1>
-            <form action="/add/url" method="post">
+            <form action="{{ url_for('add_recipe_url') }}" method="post">
                 <input type="url" name="url" placeholder="URL" required>
                 <button type="submit">Add</button>
             </form>

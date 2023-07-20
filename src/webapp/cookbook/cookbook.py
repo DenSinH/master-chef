@@ -23,13 +23,16 @@ async def _get_recipes():
         return RECIPES, FILE
 
     async with aiohttp.ClientSession() as session:
-        res = await session.get(
-            "https://api.github.com/repos/DenSinH/master-chef-recipes/contents/recipes.json",
-            headers={
-                "accept": "application/vnd.github+json",
-                "authorization": f"token {os.environ['GITHUB_RECIPES_READ_PAT_TOKEN']}"
-            }
-        )
+        try:
+            res = await session.get(
+                "https://api.github.com/repos/DenSinH/master-chef-recipes/contents/recipes.json",
+                headers={
+                    "accept": "application/vnd.github+json",
+                    "authorization": f"token {os.environ['GITHUB_RECIPES_READ_PAT_TOKEN']}"
+                }
+            )
+        except aiohttp.ClientConnectionError:
+            raise CookbookError(f"Error getting recipes: failed to connect")
 
         if not res.ok:
             raise CookbookError(f"Error getting recipes: {res.status} ({res.text})")

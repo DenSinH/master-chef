@@ -40,8 +40,13 @@ Here comes the text:
 {text}
 """
 
+URL_CACHE = {}
+
 
 async def translate_url(url):
+    if url in URL_CACHE:
+        return URL_CACHE[url]
+
     print(f"Retrieving url {url}")
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
         res = await session.get(url)
@@ -49,7 +54,9 @@ async def translate_url(url):
             raise CookbookError(f"Could not get the specified url, status code {res.status}")
         soup = BeautifulSoup(await res.text(), features="html.parser")
         text = re.sub(r"(\n\s*)+", "\n", soup.text)
-        return await translate_page(text, url=url)
+        recipe = await translate_page(text, url=url)
+        URL_CACHE[url] = recipe
+        return recipe
 
 
 async def translate_page(text, url=None):
@@ -59,7 +66,7 @@ async def translate_page(text, url=None):
         {"role": "user", "content": PROMPT.format(url=url, text=text)}
     ]
     for i in range(1 + MAX_RETRIES):
-        # todo: acreate
+        # todo: openai.error.ServiceUnavailableError: The server is overloaded or not ready yet.
         chat_completion = await openai.ChatCompletion.acreate(
             model=MODEL, messages=messages, temperature=0.2
         )

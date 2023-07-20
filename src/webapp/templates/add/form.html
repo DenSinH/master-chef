@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Recipe - Recipe Website</title>
-    <link rel="stylesheet" href="static/base.css">
-    <link rel="stylesheet" href="static/form.css">
+    <link rel="stylesheet" href="/static/base.css">
+    <link rel="stylesheet" href="/static/form.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
@@ -15,64 +15,94 @@
     <div class="container">
         <h1>Add Recipe</h1>
 
-        <form>
+        <form id="recipe-form" action="{{ action }}" method="post">
+
+            {%- if refresh_warning -%}
+            <p class="warning">Refreshing the page will regenerate the ChatGPT response. This might take a while...</p>
+            {%- endif -%}
+
             <div class="form-field">
-                <label for="nameInput">Name:</label>
-                <input type="text" id="nameInput" placeholder="Enter recipe name" required>
+                <label>Name:</label>
+                <input type="text" name="name" placeholder="Enter recipe name" value="{{ recipe.get('name', '') }}" required>
             </div>
 
             <div class="form-field">
-                <label for="timeInput">Time (minutes):</label>
-                <input type="number" id="timeInput" placeholder="Enter time in minutes" required>
+                <label>URL:</label>
+                <input type="text" name="name" placeholder="Enter recipe URL" value="{{ recipe.get('url', '') }}">
             </div>
 
             <div class="form-field">
-                <label for="peopleInput">People:</label>
-                <input type="number" id="peopleInput" placeholder="Enter number of people" required>
+                <label>Time (minutes):</label>
+                <input type="number" name="time" placeholder="Enter time in minutes" value="{{ recipe.get('time', '') or '' }}">
+            </div>
+
+            <div class="form-field">
+                <label>People:</label>
+                <input type="number" name="people" placeholder="Enter number of people" value="{{ recipe.get('people', '') or '' }}">
             </div>
 
             <div id="ingredientsContainer" class="form-field">
                 <div class="ingredient-header">
                     <label>Ingredients:</label>
-                    <span type="button" id="addIngredient" class="round-button"><i class="fas fa-plus"></i></span>
+                    <span id="addIngredient" class="round-button"><i class="fas fa-plus"></i></span>
                 </div>
                 <div id="ingredientRows">
+                    {%- for ingredient in recipe.get('ingredients', []) + [{}] -%}
                     <div class="ingredient-row">
-                        <input type="text" class="amount" placeholder="Amount">
-                        <input type="text" class="ingredient" placeholder="Ingredient">
+                        <input type="text" class="amount" name="ingredient-amount" placeholder="Amount" value="{{ ingredient.get('amount', '') or '' }}">
+                        <input type="text" class="ingredient" name="ingredient-type" placeholder="Ingredient" value="{{ ingredient.get('ingredient', '') }}">
                         <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
                     </div>
+                    {%- endfor -%}
                 </div>
             </div>
 
             <div id="preparationContainer" class="form-field">
                 <div class="preparation-header">
                     <label>Preparation:</label>
-                    <span type="button" id="addStep" class="round-button"><i class="fas fa-plus"></i></span>
+                    <span id="addStep" class="round-button"><i class="fas fa-plus"></i></span>
                 </div>
                 <div id="preparationRows">
+                    {%- for step in recipe.get('preparation', []) + [''] -%}
                     <div class="preparation-row">
-                        <textarea class="step" placeholder="Step"></textarea>
+                        <textarea class="step" name="preparation" placeholder="Step">{{ step }}</textarea>
                         <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
                     </div>
+                    {%- endfor -%}
+                </div>
+            </div>
+
+            <div id="nutritionContainer" class="form-field">
+                <div class="nutrition-header">
+                    <label>Nutrition:</label>
+                    <span id="addGroup" class="round-button"><i class="fas fa-plus"></i></span>
+                </div>
+                <div id="nutritionRows">
+                    {%- for group in recipe.get('nutrition', []) + [{}] -%}
+                    <div class="nutrition-row">
+                        <input type="text" class="amount" name="nutrition-amount" placeholder="Amount" value="{{ group.get('amount', '') or '' }}">
+                        <input type="text" class="group" name="nutrition-group" placeholder="Group" value="{{ group.get('group', '') }}">
+                        <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
+                    </div>
+                    {%- endfor -%}
                 </div>
             </div>
 
             <div class="form-field">
-                <label for="tagsInput">Tags:</label>
-                <input type="text" id="tagsInput1" placeholder="Tag 1">
+                <label>Tags:</label>
+                <input type="text" name="tag" placeholder="Tag 1" value="{{ recipe.get('tags', [])[0] }}">
             </div>
             <div class="form-field">
-                <input type="text" id="tagsInput2" placeholder="Tag 2">
+                <input type="text" name="tag" placeholder="Tag 2" value="{{ recipe.get('tags', [])[1] }}">
             </div>
             <div class="form-field">
-                <input type="text" id="tagsInput3" placeholder="Tag 3">
+                <input type="text" name="tag" placeholder="Tag 3" value="{{ recipe.get('tags', [])[2] }}">
             </div>
             <div class="form-field">
-                <input type="text" id="tagsInput4" placeholder="Tag 4">
+                <input type="text" name="tag" placeholder="Tag 4" value="{{ recipe.get('tags', [])[3] }}">
             </div>
             <div class="form-field">
-                <input type="text" id="tagsInput5" placeholder="Tag 5">
+                <input type="text" name="tag" placeholder="Tag 5" value="{{ recipe.get('tags', [])[4] }}">
             </div>
 
             <button type="submit">Submit</button>
@@ -83,8 +113,8 @@
         $(document).ready(function () {
             $('#addIngredient').click(function () {
                 const row = $('<div class="ingredient-row">' +
-                    '<input type="text" class="amount" placeholder="Amount">' +
-                    '<input type="text" class="ingredient" placeholder="Ingredient">' +
+                    '<input type="text" class="amount" name="ingredient-amount" placeholder="Amount">' +
+                    '<input type="text" class="ingredient" name="ingredient-type" placeholder="Ingredient">' +
                     '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
                     '</div>');
                 $('#ingredientRows').append(row);
@@ -92,14 +122,48 @@
 
             $('#addStep').click(function () {
                 const row = $('<div class="preparation-row">' +
-                    '<textarea class="step" placeholder="Step"></textarea>' +
+                    '<textarea class="step" name="preparation" placeholder="Step"></textarea>' +
                     '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
                     '</div>');
                 $('#preparationRows').append(row);
             });
 
+            $('#addGroup').click(function () {
+                const row = $('<div class="ingredient-row">' +
+                    '<input type="text" class="amount" name="nutrition-amount" placeholder="Amount">' +
+                    '<input type="text" class="ingredient" name="nutrition-group" placeholder="Group">' +
+                    '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
+                    '</div>');
+                $('#nutritionRows').append(row);
+            });
+
             $(document).on('click', '.remove-row', function () {
                 $(this).parent().remove();
+            });
+
+            $('#recipe-form').on('keydown', 'input', function (event) {
+                if (event.which == 13) {
+                    event.preventDefault();
+                }
+            });
+
+            $("#recipe-form").submit(function() {
+                // set empty amounts to -1 (placeholder)
+                $(this).find("input.amount").each(function() {
+                    if ($(this).val() == '') {
+                        $(this).val('-1');
+                    }
+                });
+                $(this).find("input.ingredient").each(function() {
+                    if ($(this).val() == '') {
+                        $(this).val('null');
+                    }
+                });
+                $(this).find("input.group").each(function() {
+                    if ($(this).val() == '') {
+                        $(this).val('null');
+                    }
+                });
             });
         });
     </script>

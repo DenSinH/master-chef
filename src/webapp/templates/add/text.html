@@ -14,7 +14,7 @@
     <div class="add-container">
         <div class="add-box">
             <h1>Add via text</h1>
-            <form action="/add/text" method="post">
+            <form action="{{ url_for('add_recipe_text') }}" method="post">
                 <textarea name="text" placeholder="Text" required></textarea>
                 <button type="submit">Add</button>
             </form>

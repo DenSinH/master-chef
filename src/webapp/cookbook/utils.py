@@ -6,7 +6,7 @@ class CookbookError(Exception):
 
 def fix_recipe(_recipe):
     def _get_or_none(obj, key, typ):
-        return typ(obj[key]) if key in obj else None
+        return typ(obj[key]) if (key in obj and obj[key] is not None) else None
 
     recipe = {}
     if "name" not in _recipe:
@@ -36,4 +36,9 @@ def fix_recipe(_recipe):
             })
     else:
         recipe["nutrition"] = None
+
+    recipe["tags"] = []
+    for tag in _recipe.get("tags", []):
+        recipe["tags"].append(str(tag))
+
     return recipe
