@@ -27,6 +27,15 @@
                 });
             }
         }
+
+        $(document).ready(function() {
+            $(".ingredients li").click(function() {
+                $(this).toggleClass("active");
+            });
+            $(".instructions li").click(function() {
+                $(this).toggleClass("active");
+            });
+        });
     </script>
 </head>
 
@@ -58,14 +67,14 @@
         </div>
 
         <h2>Ingredients</h2>
-        <ul>
+        <ul class="ingredients">
             {%- for ingredient in recipe["ingredients"] -%}
             <li>{{ ingredient["amount"] or "" }} {{ ingredient["ingredient"] }}</li>
             {%- endfor -%}
         </ul>
 
         <h2>Instructions</h2>
-        <ol>
+        <ol class="instructions">
             {%- for step in recipe["preparation"] -%}
             <li>{{ step }}</li>
             {%- endfor -%}

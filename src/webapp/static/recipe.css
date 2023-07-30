@@ -50,12 +50,18 @@
     list-style-type: none;
 }
 
-.recipe-details ul li,
-.recipe-details ol li {
-    margin-bottom: 10px;
-    padding-left: 20px;
+.ingredients li,
+.instructions li {
+    padding: 5px 0 5px 20px;
     position: relative;
 }
+
+
+.ingredients li.active,
+.instructions li.active {
+    background-color: #adbbff;
+}
+
 
 .recipe-details ul li:before {
     content: "\2022";
