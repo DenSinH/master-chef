@@ -13,7 +13,12 @@
 
 <body>
     <div class="container">
-        <h1>Add Recipe</h1>
+        <header>
+            <div class="header">
+                <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
+                <h1>Add Recipe</h1>
+            </div>
+        </header>
 
         <form id="recipe-form" action="{{ action }}" method="post">
 
@@ -23,22 +28,22 @@
 
             <div class="form-field">
                 <label>Name:</label>
-                <input type="text" name="name" placeholder="Enter recipe name" value="{{ recipe.get('name', '') }}" required>
+                <input type="text" name="name" placeholder="Enter recipe name" value="{{ recipe.get('name') or '' }}" required>
             </div>
 
             <div class="form-field">
                 <label>URL:</label>
-                <input type="text" name="url" placeholder="Enter recipe URL" value="{{ recipe.get('url', '') }}">
+                <input type="text" name="url" placeholder="Enter recipe URL" value="{{ recipe.get('url') or '' }}">
             </div>
 
             <div class="form-field">
                 <label>Time (minutes):</label>
-                <input type="number" name="time" placeholder="Enter time in minutes" value="{{ recipe.get('time', '') or '' }}">
+                <input type="number" name="time" placeholder="Enter time in minutes" value="{{ recipe.get('time') or '' }}">
             </div>
 
             <div class="form-field">
                 <label>People:</label>
-                <input type="number" name="people" placeholder="Enter number of people" value="{{ recipe.get('people', '') or '' }}">
+                <input type="number" name="people" placeholder="Enter number of people" value="{{ recipe.get('people') or '' }}">
             </div>
 
             <div id="ingredientsContainer" class="form-field">
@@ -49,8 +54,8 @@
                 <div id="ingredientRows">
                     {%- for ingredient in recipe.get('ingredients', []) + [{}] -%}
                     <div class="ingredient-row">
-                        <input type="text" class="amount" name="ingredient-amount" placeholder="Amount" value="{{ ingredient.get('amount', '') or '' }}">
-                        <input type="text" class="ingredient" name="ingredient-type" placeholder="Ingredient" value="{{ ingredient.get('ingredient', '') }}">
+                        <input type="text" class="amount" name="ingredient-amount" placeholder="Amount" value="{{ ingredient.get('amount') or '' }}">
+                        <input type="text" class="ingredient" name="ingredient-type" placeholder="Ingredient" value="{{ ingredient.get('ingredient') or '' }}">
                         <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
                     </div>
                     {%- endfor -%}
@@ -63,7 +68,7 @@
                     <span id="addStep" class="round-button"><i class="fas fa-plus"></i></span>
                 </div>
                 <div id="preparationRows">
-                    {%- for step in recipe.get('preparation', []) + [''] -%}
+                    {%- for step in (recipe.get('preparation') or []) + [''] -%}
                     <div class="preparation-row">
                         <textarea class="step" name="preparation" placeholder="Step">{{ step }}</textarea>
                         <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
@@ -78,7 +83,7 @@
                     <span id="addGroup" class="round-button"><i class="fas fa-plus"></i></span>
                 </div>
                 <div id="nutritionRows">
-                    {%- for group in recipe.get('nutrition', []) + [{}] -%}
+                    {%- for group in (recipe.get('nutrition') or []) + [{}] -%}
                     <div class="nutrition-row">
                         <input type="text" class="amount" name="nutrition-amount" placeholder="Amount" value="{{ group.get('amount', '') or '' }}">
                         <input type="text" class="group" name="nutrition-group" placeholder="Group" value="{{ group.get('group', '') }}">
@@ -107,9 +112,9 @@
 
             <div class="form-field">
                 <label>Thumbnail:</label>
-                <input type="text" id="thumbnailField" name="thumbnail" placeholder="Enter thumbnail url" value="{{ recipe.get('thumbnail', '') }}">
+                <input type="text" id="thumbnailField" name="thumbnail" placeholder="Enter thumbnail url" value="{{ recipe.get('thumbnail') or '' }}">
                 <div class="thumbnail-container">
-                    <img style="display: none" id="thumbnailPreview" src="{{ recipe.get('thumbnail', '') }}" alt="" onerror="$('#thumbnailError').show();">
+                    <img {% if not recipe.get('thumbnail') %}style="display: none"{% endif %} id="thumbnailPreview" src="{{ recipe.get('thumbnail') or '' }}" alt="" onerror="$('#thumbnailError').show();">
                     <p style="display: none" id="thumbnailLoading">Loading thumbnail...</p>
                     <p style="display: none" id="thumbnailError" class="warning">Failed to load thumbnail, please check URL</p>
                 </div>

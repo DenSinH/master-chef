@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/static/base.css">
     <link rel="stylesheet" href="/static/add.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
@@ -16,10 +17,12 @@
             <h1>Add via text</h1>
             <form action="{{ url_for('add_recipe_text') }}" method="post">
                 <textarea name="text" placeholder="Text" required></textarea>
-                <button type="submit">Add</button>
+                <button id="submit" type="submit">Add</button>
+                <div id="spinner" class="lds-dual-ring"></div>
             </form>
         </div>
     </div>
+    <script src="/static/spinner.js"></script>
 </body>
 
 </html>

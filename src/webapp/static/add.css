@@ -25,10 +25,10 @@ body {
 .add-box textarea,
 .add-box button {
     display: block;
-    width: 200px;
+    width: 400px;
     height: 40px;
     margin: 10px auto;
-    padding: 5px;
+    padding: 5px 10px;
     border-radius: 20px;
     border: 1px solid #ddd;
 }

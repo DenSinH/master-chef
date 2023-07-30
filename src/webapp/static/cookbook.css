@@ -24,9 +24,8 @@
 }
 
 .recipe-item img {
-    width: 250px;
-    max-width: 100%;
-    height: auto;
+    height: 250px;
+    width: auto;
 }
 
 .recipe-item h2 {

@@ -10,6 +10,7 @@ import re
 import json
 
 from .utils import *
+from .thumbnail import get_thumbnail
 
 
 openai.api_key = os.environ["OPENAI_API_KEY"]
@@ -32,6 +33,7 @@ of nutrional information, and "amount": with the amount of this group that is co
 "tags": interpret the recipe, and generate a list of at most 5 English strings that describe this recipe. For example, what the main ingredient is,
         if it takes long or short to make, whether it is especially high or low in certain nutritional groups, tags like that. Make
         sure the strings are in English.
+"thumbnail": the literal string "{thumbnail}"
 
 Keep the language the same, except in the tags, and preferably do not change anything about the text in the recipe at all.
 Only output the JSON object, and nothing else.
@@ -54,16 +56,16 @@ async def translate_url(url):
             raise CookbookError(f"Could not get the specified url, status code {res.status}")
         soup = BeautifulSoup(await res.text(), features="html.parser")
         text = re.sub(r"(\n\s*)+", "\n", soup.text)
-        recipe = await translate_page(text, url=url)
+        recipe = await translate_page(text, url=url, thumbnail=get_thumbnail(soup))
         URL_CACHE[url] = recipe
         return recipe
 
 
-async def translate_page(text, url=None):
+async def translate_page(text, url=None, thumbnail=None):
     print(f"Converting with ChatGPT ({MODEL})")
     messages = [
         {"role": "system", "content": "You are a helpful assistant that converts recipies into JSON format."},
-        {"role": "user", "content": PROMPT.format(url=url, text=text)}
+        {"role": "user", "content": PROMPT.format(url=url or "", thumbnail=thumbnail or "", text=text)}
     ]
     for i in range(1 + MAX_RETRIES):
         # todo: openai.error.ServiceUnavailableError: The server is overloaded or not ready yet.

@@ -13,7 +13,10 @@
 
 <body>
     <header>
-        <h1>Merel's Kitchen</h1>
+        <div class="header">
+            <img id="icon" src="/static/icon.png" alt="icon">
+            <h1>Merel's Kitchen</h1>
+        </div>
         <div class="buttons">
             <a href="{{ url_for('add_recipe_url_form') }}" class="round-button"><i class="fas fa-code"></i></a>
             <a href="{{ url_for('add_recipe_text_form') }}" class="round-button"><i class="fas fa-clipboard-list"></i></a>
@@ -29,7 +32,7 @@
         {%- for recipe_id, recipe in recipes.items() -%}
         <a href="{{ url_for('recipe', id=recipe_id) }}" class="recipe-item" data-tags="vegetarian quick-easy">
             <img src="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Recipe 1">
-            <h2>{{ recipe["name"] }}</h2>
+            <h2>{{ recipe["name"].title() }}</h2>
             {%- if recipe["tags"] is defined and recipe["tags"]|length > 0 -%}
             <div class="tags">
                 {%- for tag in recipe["tags"] -%}

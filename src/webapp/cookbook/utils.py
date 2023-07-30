@@ -13,7 +13,7 @@ def fix_recipe(_recipe):
         raise CookbookError("Recipe has no name")
     recipe["name"] = str(_recipe["name"])
 
-    for (key, typ) in [("time", int), ("people", int), ("url", str)]:
+    for (key, typ) in [("time", int), ("people", int), ("url", str), ("thumbnail", str)]:
         recipe[key] = _get_or_none(_recipe, key, typ)
 
     recipe["ingredients"] = []
@@ -40,7 +40,5 @@ def fix_recipe(_recipe):
     recipe["tags"] = []
     for tag in _recipe.get("tags", []):
         recipe["tags"].append(str(tag))
-
-    recipe["thumbnail"] = _recipe.get("thumbnail")
 
     return recipe

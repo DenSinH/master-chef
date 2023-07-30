@@ -60,7 +60,7 @@ async def _push_recipes(recipes, file, message):
             "https://api.github.com/repos/DenSinH/master-chef-recipes/contents/recipes.json",
             data=json.dumps({
                 "message": message,
-                "content": base64.b64encode(json.dumps(recipes, indent=2).encode("ascii")).decode("ascii"),
+                "content": base64.b64encode(json.dumps(recipes, indent=2, sort_keys=True).encode("ascii")).decode("ascii"),
                 "committer": {
                     "name": "Dennis Hilhorst",
                     "email": "dhilhorst2000@gmail.com"
@@ -99,3 +99,10 @@ async def update_recipe(key, recipe):
     recipes[key] = recipe
     await _push_recipes(recipes, file, f"Update recipe {recipe['name']}")
     return key
+
+
+async def delete_recipe(key):
+    recipes, file = await _get_recipes()
+    recipe = recipes.pop(key)
+
+    await _push_recipes(recipes, file, f"Delete recipe {recipe['name']}")
