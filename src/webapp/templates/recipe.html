@@ -8,6 +8,26 @@
     <link rel="stylesheet" href="/static/base.css">
     <link rel="stylesheet" href="/static/recipe.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        function delete_recipe() {
+            if (confirm("Are you sure you want to delete this recipe?")) {
+                $.post("{{ url_for('delete_recipe', id=recipe_id) }}", function() {
+                  window.location.href = "{{ url_for('index') }}";
+                })
+                .fail(function(resp) {
+                    if (resp.status === 401) {
+                        // unauthorized, redirect to login page
+                        window.location.href = "{{ url_for('login_form') }}";
+                    }
+                    else {
+                        alert("Failed to delete recipe");
+                    }
+                });
+            }
+        }
+    </script>
 </head>
 
 <body>
@@ -19,7 +39,7 @@
             </div>
             <div class="buttons">
                 <a href="{{ url_for('update_recipe_form', id=recipe_id) }}" class="round-button"><i class="fas fa-edit"></i></a>
-                <a onclick="console.log('clicked')" class="round-button"><i class="fas fa-trash"></i></a>
+                <a onclick="delete_recipe()" class="round-button"><i class="fas fa-trash"></i></a>
             </div>
         </header>
         <img src="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Preview">

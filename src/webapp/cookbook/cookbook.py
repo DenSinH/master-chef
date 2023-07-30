@@ -1,3 +1,5 @@
+import datetime
+
 import aiohttp
 import base64
 import json
@@ -14,6 +16,9 @@ from .utils import *
 
 RECIPES = None
 FILE = None
+
+def _now():
+    return datetime.datetime.now().timestamp()
 
 
 async def _get_recipes():
@@ -79,6 +84,9 @@ async def _push_recipes(recipes, file, message):
 
 async def add_recipe(recipe):
     recipe = fix_recipe(recipe)
+    now = _now()
+    recipe["date_created"] = now
+    recipe["date_updated"] = now
     recipes, file = await _get_recipes()
     key = _generate_key(recipes)
     recipes[key] = recipe
@@ -95,6 +103,7 @@ async def update_recipe(key, recipe):
     if recipes[key] == recipe:
         # nothing to update
         return
+    recipe["date_updated"] = _now()
 
     recipes[key] = recipe
     await _push_recipes(recipes, file, f"Update recipe {recipe['name']}")

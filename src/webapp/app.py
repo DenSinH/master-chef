@@ -2,11 +2,31 @@ import sanic
 from sanic import Sanic
 from sanic import Request
 from sanic.exceptions import NotFound
+from sanic_jwt import initialize, protected
+from auth import authenticate, JwtResonses
 
 import cookbook
 
+from dotenv import load_dotenv; load_dotenv()
+import os
+
+
 app = Sanic(__name__)
+app.config.SECRET = os.environ.get("SECRET", os.environ["PASSWORD"])
 app.static("/static", "./static")
+initialize(
+    app,
+    authenticate=authenticate,
+    cookie_set=True,
+    cookie_access_token_name="jwt_access_token",
+    url_prefix="/login",  # post to authenticate function from .auth
+    login_redirect_url="/login",
+    secret=app.config.SECRET,
+    responses_class=JwtResonses,
+)
+
+
+""" UNPROTECTED ACCESS """
 
 
 @app.get("/")
@@ -15,6 +35,12 @@ async def index(request: Request):
     return {
         "recipes": await cookbook.get_recipes()
     }
+
+
+@app.get("/login")
+@app.ext.template("login.html")
+async def login_form(request: Request):
+    return {}
 
 
 @app.get("/recipe/<id>")
@@ -30,8 +56,12 @@ async def recipe(request: Request, id: str):
     }
 
 
+""" PROTECTED ACCESS """
+
+
 @app.get("/recipe/<id>/update")
 @app.ext.template("add/form.html")
+@protected(redirect_on_fail=True)
 async def update_recipe_form(request: Request, id: str):
     recipes = await cookbook.get_recipes()
     if id not in recipes:
@@ -44,6 +74,7 @@ async def update_recipe_form(request: Request, id: str):
 
 
 @app.post("/recipe/<id>/update")
+@protected(redirect_on_fail=True)
 async def update_recipe(request: Request, id: str):
     recipe = _parse_recipe_form(request.form)
     await cookbook.update_recipe(id, recipe)
@@ -52,23 +83,26 @@ async def update_recipe(request: Request, id: str):
 
 
 @app.post("/recipe/<id>/delete")
+@protected()
 async def delete_recipe(request: Request, id: str):
     recipes = await cookbook.get_recipes()
     if id not in recipes:
         raise NotFound("No such recipe exists on this website")
 
     await cookbook.delete_recipe(id)
-    return sanic.redirect("/")
+    return sanic.empty()
 
 
 @app.get("/add/url")
 @app.ext.template("add/url.html")
+@protected(redirect_on_fail=True)
 async def add_recipe_url_form(request: Request):
     return {}
 
 
 @app.post("/add/url")
 @app.ext.template("add/form.html")
+@protected()
 async def add_recipe_url(request: Request):
     url = request.form["url"][0]
     recipe = await cookbook.translate_url(url)
@@ -81,12 +115,14 @@ async def add_recipe_url(request: Request):
 
 @app.get("/add/text")
 @app.ext.template("add/text.html")
+@protected(redirect_on_fail=True)
 async def add_recipe_text_form(request: Request):
     return {}
 
 
 @app.post("/add/text")
 @app.ext.template("add/form.html")
+@protected()
 async def add_recipe_text(request: Request):
     recipe = cookbook.translate_page(request.form["text"][0])
     return {
@@ -98,6 +134,7 @@ async def add_recipe_text(request: Request):
 
 @app.get("/add/form")
 @app.ext.template("add/form.html")
+@protected(redirect_on_fail=True)
 async def add_recipe_form_form(request: Request):
     return {
         "recipe": {},  # empty recipe for template rendering
@@ -147,6 +184,7 @@ def _parse_recipe_form(form: sanic.request.RequestParameters):
 
 
 @app.post("/add/form")
+@protected()
 async def add_recipe_form(request: Request):
     recipe = _parse_recipe_form(request.form)
     id = await cookbook.add_recipe(recipe)
