@@ -23,6 +23,10 @@
     background-color: #eee;
 }
 
+.thumbnail-wrapper {
+    height: 250px;
+}
+
 .recipe-item img {
     height: 250px;
     width: auto;
