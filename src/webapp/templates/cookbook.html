@@ -30,7 +30,7 @@
 
     <div class="recipe-list">
         {%- for recipe_id, recipe in recipes.items() -%}
-        <a href="{{ url_for('recipe', id=recipe_id) }}" class="recipe-item" data-tags="vegetarian quick-easy">
+        <a href="{{ url_for('recipe', id=recipe_id) }}" class="recipe-item" style="display: none" data-tags="vegetarian quick-easy">
             <div class="thumbnail-wrapper">
                 <img src="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Recipe 1">
             </div>
@@ -48,35 +48,73 @@
             </div>
         </a>
         {% endfor %}
-
     </div>
 
     <script>
+        const pageSize = 20;
+        var numPages = 1;
+        var searching = false;
+
+        function showPages(doHide) {
+            if (doHide) {
+                $(".recipe-item").hide();
+            }
+            if (searching) {
+                $(".recipe-item.search-result").slice(0, numPages * pageSize).show();
+            }
+            else {
+                $(".recipe-item").slice(0, numPages * pageSize).show();
+            }
+        }
+
         $(document).ready(function () {
+            // recipe-items are hidden by default
+            showPages(false);
+
             const searchBar = $('#searchBar');
             const recipeItems = $('.recipe-item');
 
             searchBar.on('input', function () {
                 const searchTerm = $(this).val().toLowerCase();
+                numPages = 1;
 
-                recipeItems.each(function () {
-                    const item = $(this);
-                    const itemTags = item.attr('data-tags').toLowerCase();
-                    const itemTitle = item.find('h2').text().toLowerCase();
+                if (searchTerm) {
+                    searching = true;
+                    recipeItems.each(function () {
+                        const item = $(this);
+                        const itemTags = item.attr('data-tags').toLowerCase();
+                        const itemTitle = item.find('h2').text().toLowerCase();
 
-                    if (itemTags.includes(searchTerm) || itemTitle.includes(searchTerm)) {
-                        item.show();
-                    } else {
-                        item.hide();
-                    }
-                });
+                        if (itemTags.includes(searchTerm) || itemTitle.includes(searchTerm)) {
+                            item.addClass("search-result");
+                        } else {
+                            item.removeClass("search-result");
+                        }
+                    });
+                    showPages(true);
+                }
+                else {
+                    searching = false;
+                    recipeItems.removeClass('search-result');
+                    showPages(true);
+                }
             });
+        });
 
-            // searchBar: if empty: hide everything, show first n
-            // on load: only show first n
-            // $(".recipe-item").slice(0, n).show();
-            // on scroll to bottom:
-            // increment n, again do the show like above
+        $(window).scroll(function() {
+            if ($(window).scrollTop() + $(window).height() > $(document).height() - 100) {
+                let recipeItems;
+                if (searching) {
+                    recipeItems = $(".recipe-item.search-result");
+                }
+                else {
+                    recipeItems = $(".recipe-item");
+                }
+                if (numPages * pageSize < recipeItems.length) {
+                    numPages++;
+                    showPages(false);
+                }
+            }
         });
     </script>
 </body>
