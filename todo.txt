@@ -1,3 +1,8 @@
 check out:
 https://github.com/mauricesvay/ImageResolver/blob/gh-pages/ImageResolver.0.5.2.js
 for image resolver techniques
+
+squash commits
+put on chef.dennishilhorst.nl
+
+for i in range(20) de huidige recepten toevoegen en pagination maken

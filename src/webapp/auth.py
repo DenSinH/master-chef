@@ -13,6 +13,7 @@ async def authenticate(request, *args, **kwargs):
     if request.form.get("password") != os.environ.get("PASSWORD"):
         raise exceptions.AuthenticationFailed("Invalid password.")
 
+    # todo: could add user data if we have multiple users
     return {}
 
 
