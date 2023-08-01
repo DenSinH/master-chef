@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import sanic
 from sanic import Sanic
 from sanic import Request
@@ -32,8 +33,17 @@ initialize(
 @app.get("/")
 @app.ext.template("cookbook.html")
 async def index(request: Request):
+    recipes = await cookbook.get_recipes()
+    # todo: multiple ordering methods (date_updated, date_created, name, time)
+    ordered = OrderedDict(
+        sorted(
+            recipes.items(),
+            key=lambda x: x[1].get("date_updated", 0),
+            reverse=True
+        )
+    )
     return {
-        "recipes": await cookbook.get_recipes()
+        "recipes": ordered
     }
 
 
