@@ -34,11 +34,11 @@
             <div class="thumbnail-wrapper">
                 <img src="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Recipe 1" loading="lazy">
             </div>
-            <h2>{{ recipe["name"].title() }}</h2>
+            <h2 class="searchable">{{ recipe["name"].title() }}</h2>
             {%- if recipe["tags"] is defined and recipe["tags"]|length > 0 -%}
             <div class="tags">
                 {%- for tag in recipe["tags"] -%}
-                <span class="tag">{{ tag }}</span>
+                <span class="tag searchable">{{ tag }}</span>
                 {%- endfor -%}
             </div>
             {%- endif -%}
@@ -50,6 +50,14 @@
                 <p><i class="fas fa-users"></i> <span class="info-item">Serves {{ recipe["people"] }}</span></p>
                 {%- endif -%}
             </div>
+
+            {%- if recipe["ingredients"] is defined and recipe["ingredients"]|length > 0 -%}
+            <span class="hidden advanced-searchable">
+                {%- for ingredient in recipe["ingredients"] -%}
+                {{ ingredient["ingredient"] }}
+                {% endfor %}
+            </span>
+            {%- endif -%}
         </a>
         {% endfor %}
     </div>
@@ -79,17 +87,24 @@
             const recipeItems = $('.recipe-item');
 
             searchBar.on('input', function () {
-                const searchTerm = $(this).val().toLowerCase();
+                let searchTerm = $(this).val().toLowerCase().trim();
+                const advanced = searchTerm.startsWith("advanced:");
+                if (advanced) {
+                    searchTerm = searchTerm.replace("advanced:", "").trim();
+                }
                 numPages = 1;
 
                 if (searchTerm) {
                     searching = true;
                     recipeItems.each(function () {
                         const item = $(this);
-                        const itemTags = item.attr('data-tags').toLowerCase();
-                        const itemTitle = item.find('h2').text().toLowerCase();
+                        let searchable = item.find('.searchable').text().toLowerCase();
+                        const advancedSearchable = item.find('.advanced-searchable').text().toLowerCase();
+                        if (advanced) {
+                            searchable += " " + advancedSearchable;
+                        }
 
-                        if (itemTags.includes(searchTerm) || itemTitle.includes(searchTerm)) {
+                        if (searchable.includes(searchTerm)) {
                             item.addClass("search-result");
                         } else {
                             item.removeClass("search-result");
