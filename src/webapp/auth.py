@@ -26,7 +26,9 @@ class JwtResonses(Responses):
         else:
             if isinstance(exception, sanic_jwt.exceptions.Unauthorized):
                 # unauthorized response
-                return sanic.json({}, 401)
+                return sanic.empty(401)
+            if isinstance(exception, sanic_jwt.exceptions.AuthenticationFailed):
+                return sanic.redirect(request.app.url_for("login_form"))
             raise exception
 
     # basically the default, but we return a redirect
