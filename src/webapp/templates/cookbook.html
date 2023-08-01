@@ -43,8 +43,12 @@
             </div>
             {%- endif -%}
             <div class="recipe-info">
-                <p><i class="fas fa-clock"></i> <span class="info-item">30 minutes</span></p>
-                <p><i class="fas fa-users"></i> <span class="info-item">Serves 4</span></p>
+                {%- if recipe.get("time") is not none -%}
+                <p><i class="fas fa-clock"></i> <span class="info-item">{{ recipe["time"] }} minutes</span></p>
+                {%- endif -%}
+                {%- if recipe.get("people") is not none -%}
+                <p><i class="fas fa-users"></i> <span class="info-item">Serves {{ recipe["people"] }}</span></p>
+                {%- endif -%}
             </div>
         </a>
         {% endfor %}

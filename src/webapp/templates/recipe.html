@@ -54,12 +54,12 @@
         <img src="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Preview">
 
         <div class="recipe-info">
-            {%- if recipe["time"] is not none -%}
+            {%- if recipe.get("time") is not none -%}
             <div>
                 <i class="fas fa-clock"></i> <span class="info-item">{{ recipe["time"] }} minutes</span>
             </div>
             {%- endif -%}
-            {%- if recipe["people"] is not none -%}
+            {%- if recipe.get("people") is not none -%}
             <div>
                 <i class="fas fa-users"></i> <span class="info-item">Serves {{ recipe["people"] }}</span>
             </div>

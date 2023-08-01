@@ -67,8 +67,8 @@ async def _push_recipes(recipes, file, message):
                 "message": message,
                 "content": base64.b64encode(json.dumps(recipes, indent=2, sort_keys=True).encode("ascii")).decode("ascii"),
                 "committer": {
-                    "name": "Dennis Hilhorst",
-                    "email": "dhilhorst2000@gmail.com"
+                    "name": "Master Chef",
+                    "email": "robot@masterchef.com"
                 },
                 "sha": file["sha"]
             }),
@@ -79,7 +79,7 @@ async def _push_recipes(recipes, file, message):
         )
 
         if not res.ok:
-            raise CookbookError(f"Error adding recipe: {res.status} ({res.text})")
+            raise CookbookError(f"Error adding recipe: {res.status} ({await res.text()})")
 
 
 async def add_recipe(recipe):
