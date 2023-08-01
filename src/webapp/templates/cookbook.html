@@ -32,7 +32,7 @@
         {%- for recipe_id, recipe in recipes.items() -%}
         <a href="{{ url_for('recipe', id=recipe_id) }}" class="recipe-item" style="display: none" data-tags="vegetarian quick-easy">
             <div class="thumbnail-wrapper">
-                <img src="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Recipe 1">
+                <img src="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Recipe 1" loading="lazy">
             </div>
             <h2>{{ recipe["name"].title() }}</h2>
             {%- if recipe["tags"] is defined and recipe["tags"]|length > 0 -%}
