@@ -53,6 +53,12 @@
         </header>
         <img src="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Preview">
 
+        {%- if recipe.get("url") is not none -%}
+        <div class="recipe-info">
+            <a class="original-url" href="{{ recipe['url'] }}" target="_blank">original recipe</a>
+        </div>
+        {%- endif -%}
+
         <div class="recipe-info">
             {%- if recipe.get("time") is not none -%}
             <div>

@@ -77,3 +77,9 @@ table.nutrition td {
 table.nutrition {
     width: 100%;
 }
+
+a.original-url {
+    text-decoration: none;
+    color: gray;
+    font-size: 0.8em;
+}
