@@ -16,15 +16,21 @@ from .utils import *
 
 RECIPES = None
 FILE = None
+RECIPE_TIMEOUT = None
 
 def _now():
     return datetime.datetime.now().timestamp()
 
 
 async def _get_recipes():
-    global RECIPES, FILE
+    global RECIPES, FILE, RECIPE_TIMEOUT
+
+    if RECIPE_TIMEOUT is not None:
+        if datetime.datetime.now() > RECIPE_TIMEOUT:
+            RECIPE_TIMEOUT = None
 
     if RECIPES is not None:
+        RECIPE_TIMEOUT = datetime.datetime.now() + datetime.timedelta(minutes=15)
         return RECIPES, FILE
 
     async with aiohttp.ClientSession() as session:
@@ -40,7 +46,7 @@ async def _get_recipes():
             raise CookbookError(f"Error getting recipes: failed to connect")
 
         if not res.ok:
-            raise CookbookError(f"Error getting recipes: {res.status} ({res.text})")
+            raise CookbookError(f"Error getting recipes: {res.status} ({await res.text()})")
 
         FILE = await res.json()
         RECIPES = json.loads(base64.b64decode(FILE["content"]).decode("utf-8"))
@@ -59,6 +65,7 @@ def _generate_key(recipes):
 
 
 async def _push_recipes(recipes, file, message):
+    global RECIPES, FILE, RECIPE_TIMEOUT
 
     async with aiohttp.ClientSession() as session:
         res = await session.put(
@@ -79,7 +86,10 @@ async def _push_recipes(recipes, file, message):
         )
 
         if not res.ok:
-            raise CookbookError(f"Error adding recipe: {res.status} ({await res.text()})")
+            RECIPES = None
+            FILE = None
+            RECIPE_TIMEOUT = None
+            raise CookbookError(f"Error pushing recipe: {res.status} ({await res.text()})")
 
 
 async def add_recipe(recipe):
