@@ -29,7 +29,7 @@ async def _get_recipes():
         if datetime.datetime.now() > RECIPE_TIMEOUT:
             RECIPE_TIMEOUT = None
 
-    if RECIPES is not None:
+    if RECIPES is not None and RECIPE_TIMEOUT is not None and FILE is not None:
         RECIPE_TIMEOUT = datetime.datetime.now() + datetime.timedelta(minutes=15)
         return RECIPES, FILE
 
@@ -85,10 +85,13 @@ async def _push_recipes(recipes, file, message):
             }
         )
 
+        # regardless of whether the update was successful, we need to retrieve the recipies again, because
+        # the SHA changed
+        RECIPES = None
+        FILE = None
+        RECIPE_TIMEOUT = None
+
         if not res.ok:
-            RECIPES = None
-            FILE = None
-            RECIPE_TIMEOUT = None
             raise CookbookError(f"Error pushing recipe: {res.status} ({await res.text()})")
 
 
