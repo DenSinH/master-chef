@@ -1,3 +1,4 @@
 squash commits
 
-hidden ingredients in cookbook page for looking up recipes
+sort methods:
+https://stackoverflow.com/questions/5150363/onchange-open-url-via-select-jquery
