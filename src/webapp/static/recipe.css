@@ -32,6 +32,7 @@
     display: block;
     margin: 0 auto;
     max-height: 50vh;
+    max-width: 100%;
 }
 
 @media only screen and (max-width: 600px) {
@@ -67,4 +68,12 @@
     content: "\2022";
     position: absolute;
     left: 0;
+}
+
+table.nutrition td {
+    border-bottom: 1px dashed;
+}
+
+table.nutrition {
+    width: 100%;
 }

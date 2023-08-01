@@ -82,7 +82,7 @@
 
         {%- if recipe["nutrition"] is not none -%}
         <h2>Nutrition</h2>
-        <table>
+        <table class="nutrition">
             {%- for group in recipe["nutrition"] -%}
             <tr><td>{{ group["group"] }}</td><td>{{ group["amount"] }}</td></tr>
             {%- endfor -%}
