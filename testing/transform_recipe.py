@@ -49,12 +49,19 @@ def translate_page(url):
     if not res.ok:
         raise RecipeConversionError(f"Could not get the specified url, status code {res.status_code}")
     soup = BeautifulSoup(res.text, features="html.parser")
+
+    # COMMENTS = ["comment", "opmerking"]
+    # for attr in ["class", "id"]:
+    #     for element in soup.find_all(attrs={attr: re.compile(fr".*({'|'.join(COMMENTS)}).*", flags=re.IGNORECASE)}):
+    #         element.decompose()
+
     text = re.sub(r"(\n\s*)+", "\n", soup.text)
+    prompt = PROMPT.format(url=url, text=text)
 
     print(f"Converting with ChatGPT ({MODEL})")
     messages = [
         {"role": "system", "content": "You are a helpful assistant that converts recipies into JSON format."},
-        {"role": "user", "content": PROMPT.format(url=url, text=text)}
+        {"role": "user", "content": prompt}
     ]
     for i in range(1 + MAX_RETRIES):
         # todo: acreate
@@ -75,5 +82,31 @@ def translate_page(url):
 if __name__ == '__main__':
     from pprint import pprint
 
-    recipe = translate_page("https://15gram.be/recepten/wraps-kip-tikka-masala")
+    recipe = translate_page("https://www.eefkooktzo.nl/wrap-mango-en-kip/")
     pprint(recipe)
+    r"""
+    Traceback (most recent call last):
+      File "C:\Users\Dennis\PycharmProjects\masterchef\testing\transform_recipe.py", line 85, in <module>
+        recipe = translate_page("https://www.eefkooktzo.nl/wrap-mango-en-kip/")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "C:\Users\Dennis\PycharmProjects\masterchef\testing\transform_recipe.py", line 68, in translate_page
+        chat_completion = openai.ChatCompletion.create(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "C:\Users\Dennis\PycharmProjects\masterchef\venv\Lib\site-packages\openai\api_resources\chat_completion.py", line 25, in create
+        return super().create(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "C:\Users\Dennis\PycharmProjects\masterchef\venv\Lib\site-packages\openai\api_resources\abstract\engine_api_resource.py", line 153, in create
+        response, _, api_key = requestor.request(
+                               ^^^^^^^^^^^^^^^^^^
+      File "C:\Users\Dennis\PycharmProjects\masterchef\venv\Lib\site-packages\openai\api_requestor.py", line 298, in request
+        resp, got_stream = self._interpret_response(result, stream)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "C:\Users\Dennis\PycharmProjects\masterchef\venv\Lib\site-packages\openai\api_requestor.py", line 700, in _interpret_response
+        self._interpret_response_line(
+      File "C:\Users\Dennis\PycharmProjects\masterchef\venv\Lib\site-packages\openai\api_requestor.py", line 763, in _interpret_response_line
+        raise self.handle_error_response(
+    openai.error.InvalidRequestError: This model's maximum context length is 4097 tokens. However, your messages resulted in 4119 tokens. Please reduce the length of the messages.
+    
+    Process finished with exit code 1
+    """
+    # openai.error.InvalidRequestError: This model's maximum context length is 4097 tokens. However, your messages resulted in 4119 tokens. Please reduce the length of the messages.

@@ -55,6 +55,13 @@ async def translate_url(url):
         if not res.ok:
             raise CookbookError(f"Could not get the specified url, status code {res.status}")
         soup = BeautifulSoup(await res.text(), features="html.parser")
+
+        # remove comment sections from website
+        COMMENTS = ["comment", "opmerking"]
+        for attr in ["class", "id"]:
+            for element in soup.find_all(attrs={attr: re.compile(fr".*({'|'.join(COMMENTS)}).*", flags=re.IGNORECASE)}):
+                element.decompose()
+
         text = re.sub(r"(\n\s*)+", "\n", soup.text)
         recipe = await translate_page(text, url=url, thumbnail=get_thumbnail(soup))
         URL_CACHE[url] = recipe
@@ -68,10 +75,18 @@ async def translate_page(text, url=None, thumbnail=None):
         {"role": "user", "content": PROMPT.format(url=url or "", thumbnail=thumbnail or "", text=text)}
     ]
     for i in range(1 + MAX_RETRIES):
-        # todo: openai.error.ServiceUnavailableError: The server is overloaded or not ready yet.
-        chat_completion = await openai.ChatCompletion.acreate(
-            model=MODEL, messages=messages, temperature=0.2
-        )
+        try:
+            chat_completion = await openai.ChatCompletion.acreate(
+                model=MODEL, messages=messages, temperature=0.2
+            )
+        except openai.error.ServiceUnavailableError:
+            # todo: openai.error.ServiceUnavailableError: The server is overloaded or not ready yet.
+            # try again later
+            raise
+        except openai.error.InvalidRequestError:
+            # openai.error.InvalidRequestError: This model's maximum context length is 4097 tokens. However, your messages resulted in 4119 tokens. Please reduce the length of the messages.
+            # try using text or increase model size
+            raise
         reply = chat_completion.choices[0].message.content
         try:
             return fix_recipe(json.loads(reply))
