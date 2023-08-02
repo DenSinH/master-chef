@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import traceback
 import sanic
 from sanic import Sanic
 from sanic import Request
@@ -30,9 +31,26 @@ initialize(
 """ UNPROTECTED ACCESS """
 
 
+@app.exception(NotFound)
+async def notfound(request: Request, exc):
+    return sanic.html(f"""
+    <h2>Resource not found:</h2>
+    <p>{' '.join(exc.args)}</p>
+    """)
+
+
+@app.exception(Exception)
+async def exception(request: Request, exc):
+    return sanic.html(f"""
+    <p>An exception occurred: </p>
+    <pre>{traceback.format_exc()}</pre>
+    """)
+
+
 @app.get("/")
 @app.ext.template("cookbook.html")
 async def index(request: Request):
+    raise Exception("test")
     recipes = await cookbook.get_recipes()
     # todo: multiple ordering methods (date_updated, date_created, name, time)
     ordered = OrderedDict(
