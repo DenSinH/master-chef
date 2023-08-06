@@ -1,0 +1,21 @@
+
+
+table {
+    width: 100%;
+}
+
+table td {
+    padding: 5px 10px;
+    border-bottom: 1px dashed;
+}
+
+.dropdown-container {
+    margin: 20px 0;
+}
+
+
+@media only screen and (max-width: 600px) {
+    table {
+        font-size: 0.8em;
+    }
+}

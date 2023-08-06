@@ -1,4 +1,6 @@
 from collections import OrderedDict
+import datetime
+from aiohttp.client_exceptions import ClientResponseError
 import traceback
 import sanic
 from sanic import Sanic
@@ -84,6 +86,34 @@ async def recipe(request: Request, id: str):
 
 
 """ PROTECTED ACCESS """
+
+
+@app.get("/get-usage")
+@protected()
+async def get_usage(request: Request):
+    date = request.args.get("date")
+    try:
+        usage = await cookbook.get_usage(date)
+    except ClientResponseError as e:
+        if e.status == 429:
+            return sanic.empty(500)
+        raise
+    return sanic.json(usage)
+
+
+@app.get("/usage")
+@app.ext.template("usage.html")
+@protected(redirect_on_fail=True)
+async def usage(request: Request):
+    today = datetime.date.today()
+    return {
+        "dates": [
+            datetime.date(today.year, today.month, day).strftime("%Y-%m-%d") for day in reversed(range(1, today.day + 1))
+        ],
+        "today": today.strftime("%Y-%m-%d"),
+        "ctx_cost_1k": 0.0015,
+        "out_cost_1k": 0.002,
+    }
 
 
 @app.get("/recipe/<id>/update")

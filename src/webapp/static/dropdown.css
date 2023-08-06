@@ -1,0 +1,110 @@
+.dropdown-container {
+	 position: relative;
+	 max-width: 240px;
+}
+
+.dropdown-container .dropdown-toggle {
+	 color: #000;
+	 background-color: #fff;
+	 padding: 7px 20px;
+	 box-shadow: 0px 0px 4px -2px rgba(0, 0, 0, 0.5);
+	 border-radius: 10px;
+	 cursor: pointer;
+	 transition: all ease-in-out 0.3s;
+}
+
+.dropdown-container .dropdown-toggle label {
+	 cursor: pointer;
+	 width: 100%;
+}
+
+.dropdown-container .dropdown-toggle:hover,
+.dropdown-container .dropdown-toggle:active,
+.dropdown-container .dropdown-toggle:focus {
+	 background-color: #3357FF;
+	 color: #fff;
+}
+
+.dropdown-container .dropdown-menu {
+	 width: 100%;
+	 border-radius: 10px;
+	 box-shadow: 0px 0px 4px -2px rgba(0, 0, 0, 0.5);
+	 margin-top: 17px;
+	 position: absolute;
+	 left: 0;
+	 top: 100%;
+	 display: none;
+	 background-color: #fff;
+	 z-index: 10;
+}
+
+.dropdown-container .dropdown-menu ul {
+	 list-style: none;
+	 padding: 0;
+	 margin: 0;
+	 overflow: hidden;
+	 border-radius: 10px;
+	 z-index: 10;
+}
+
+.dropdown-container .dropdown-menu span {
+	 display: block;
+	 color: #000;
+	 padding: 7px 20px;
+	 box-shadow: 0px 0px 4px -2px rgba(0, 0, 0, 0.5);
+	 transition: all ease-in-out 0.3s;
+	 cursor: pointer;
+}
+
+.dropdown-container .dropdown-menu span:hover,
+ dropdown-container .dropdown-menu span:active,
+.dropdown-container .dropdown-menu span:focus {
+	 background-color: #0979ce;
+	 color: #fff;
+}
+
+.dropdown-menu, .dropdown-toggle {
+	 position: relative;
+}
+
+.dropdown-menu::before,
+.dropdown-toggle::before {
+	 content: "";
+	 position: absolute;
+	 right: 20px;
+	 top: 50%;
+	 transform: translateY(-50%) rotate(45deg);
+	 border: 5px solid;
+	 border-top-color: rgba(0, 0, 0, 0);
+	 border-left-color: rgba(0, 0, 0, 0);
+	 margin-top: -2.5px;
+	 background-color: rgba(0, 0, 0, 0);
+	 transition: all ease-in-out 0.2s;
+}
+
+.dropdown-menu {
+	 z-index: 10;
+	 position: relative;
+}
+
+.dropdown-menu::before {
+	 z-index: -1;
+	 transform: rotate(-135deg);
+	 top: -4px;
+	 border-color: #fff;
+	 box-shadow: 1px 1px 4px -2px rgba(0, 0, 0, 0.4);
+}
+
+.dropdown-open .dropdown-menu.dropdown-active {
+	 display: block;
+}
+
+.dropdown-container.dropdown-open .dropdown-toggle {
+	 background-color: #0979ce;
+	 color: #fff;
+}
+
+.dropdown-container.dropdown-open .dropdown-toggle:before {
+	 transform: rotate(-135deg);
+}
+ 

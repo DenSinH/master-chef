@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenAI Usage</title>
+    <link rel="stylesheet" href="/static/base.css">
+    <link rel="stylesheet" href="/static/usage.css">
+    <link rel="stylesheet" href="/static/dropdown.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/static/dropdown.js" defer></script>
+    <script>
+        function set_data(usage) {
+            let table = $("#usage");
+            table.empty();
+            usage.forEach(function (request) {
+                table.append(
+                    `<tr>
+                        <td>${new Date(request.aggregation_timestamp * 1000).toLocaleTimeString("nl-NL")}</td>
+                        <td>${request.n_requests}</td>
+                        <td>${request.n_context_tokens_total}</td>
+                        <td>${request.n_generated_tokens_total}</td>
+                        <td>${request.n_context_tokens_total + request.n_generated_tokens_total}</td>
+                        <td>$ ${({{ ctx_cost_1k }} * request.n_context_tokens_total / 1000 + {{ out_cost_1k }} * request.n_generated_tokens_total / 1000).toFixed(6)}</td>
+                    </tr>`
+                );
+            });
+        }
+
+        function update_date(date) {
+            $(".error").hide();
+            const url = '{{ url_for("get_usage") }}';
+            $.get(url, {date: date}).done(function(data) {
+                set_data(data);
+            }).fail(function() {
+                $(".error").show();
+            });
+        }
+
+        $(document).ready(function() {
+            // update_date("{{ today }}");
+        });
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="header">
+                <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
+                <h1>OpenAI Usage</h1>
+            </div>
+        </header>
+
+        <div class="dropdown-container">
+            <div class="dropdown-toggle click-dropdown">
+                Select a date
+            </div>
+            <div class="dropdown-menu">
+                <ul>
+                    {%- for date in dates -%}
+                        <li><span class="dropdown-item" onclick="update_date('{{ date }}')">{{ date }}</span></li>
+                    {%- endfor -%}
+                </ul>
+            </div>
+        </div>
+
+        <p class="warning" style="display: none">Failed to retrieve data... Try again later.</p>
+        <table>
+            <thead>
+                <tr>
+                    <td>Time</td>
+                    <td>Req</td>
+                    <td>Ctx</td>
+                    <td>Out</td>
+                    <td>Total</td>
+                    <td>Est. Cost</td>
+                </tr>
+            </thead>
+            <tbody id="usage">
+            </tbody>
+        </table>
+    </div>
+</body>
+
+</html>
