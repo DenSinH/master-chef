@@ -1,3 +1,4 @@
+from typing import Union
 import aiohttp
 import datetime
 from dotenv import load_dotenv
@@ -11,7 +12,7 @@ API_KEY = os.environ["OPENAI_API_KEY"]
 USAGE_CACHE = {}
 
 
-async def get_usage(date: datetime.date | str):
+async def get_usage(date: Union[datetime.date, str]):
     headers = {'Authorization': f'Bearer {API_KEY}'}
     url = 'https://api.openai.com/v1/usage'
     if isinstance(date, datetime.date):
