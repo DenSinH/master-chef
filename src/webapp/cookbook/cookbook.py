@@ -5,6 +5,7 @@ import base64
 import json
 import string
 import random
+import copy
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -96,7 +97,6 @@ async def _push_recipes(recipes, file, message):
 
 
 async def add_recipe(recipe):
-    recipe = fix_recipe(recipe)
     now = _now()
     recipe["date_created"] = now
     recipe["date_updated"] = now
@@ -108,18 +108,21 @@ async def add_recipe(recipe):
 
 
 async def update_recipe(key, recipe):
-    recipe = fix_recipe(recipe)
     recipes, file = await _get_recipes()
     if key not in recipes:
         raise CookbookError(f"Cannot update recipe with id {key}, as it does not exist")
 
-    if recipes[key] == recipe:
+    new_recipe = copy.deepcopy(recipes[key])
+
+    # preserved "date_created" fields etc.
+    new_recipe.update(**recipe)
+    if recipes[key] == new_recipe:
         # nothing to update
         return
-    recipe["date_updated"] = _now()
+    new_recipe["date_updated"] = _now()
 
-    recipes[key] = recipe
-    await _push_recipes(recipes, file, f"Update recipe {recipe['name']}")
+    recipes[key] = new_recipe
+    await _push_recipes(recipes, file, f"Update recipe {new_recipe['name']}")
     return key
 
 

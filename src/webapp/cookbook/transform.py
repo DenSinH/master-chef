@@ -19,21 +19,20 @@ MAX_RETRIES = 1
 MODEL = "gpt-3.5-turbo"
 PROMPT = """
 The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text from the webpage.
-The recipe contains information on the ingredients, the prepration and possibly nutritional information.
-Could you convert the recipe to a JSON object with the following keys:
+The recipe contains information on the ingredients, the preparation and possibly nutritional information.
+Convert the recipe to a JSON object with the following keys:
 "name": the name of this recipe.
-"ingredients": a list of dictionaries, with keys "ingredient", mapping to the name of the ingredient, and "amount" which is a string containing the amount of this ingredient needed including the unit, or null if no specific amount is given.
+"ingredients": a list of dictionaries, with keys "ingredient", mapping to the name of the ingredient, and "amount" which is a string containing the amount of this ingredient needed including the unit, or 
+               a null value if no specific amount is given.
                For example, the ingredient "one onion" should yield {{'amount': '1', 'ingredient': 'onion'}}, and the ingredient "zout" should yield {{'amount': null, 'ingredient': 'zout'}}.
 "preparation": a list of strings containing the steps of the recipe.
 "nutrition": null if there is no nutritional information in the recipe, or a list of dictionaries containing the keys "group", with the type
 of nutrional information, and "amount": with the amount of this group that is contained in the recipe, as a string including the unit.
-"url:": the literal string "{url}"
 "people": the amount of people that can be fed from this meal as an integer, in case this information is present, otherwise null
 "time": the time that this recipe takes to make in minutes as an integer, in case this information is present, otherwise null
 "tags": interpret the recipe, and generate a list of at most 5 English strings that describe this recipe. For example, what the main ingredient is,
         if it takes long or short to make, whether it is especially high or low in certain nutritional groups, tags like that. Make
         sure the strings are in English.
-"thumbnail": the literal string "{thumbnail}"
 
 Keep the language the same, except in the tags, and preferably do not change anything about the text in the recipe at all.
 Only output the JSON object, and nothing else.
@@ -43,6 +42,46 @@ Here comes the text:
 """
 
 URL_CACHE = {}
+
+
+def fix_recipe(_recipe):
+    def _get_or_none(obj, key, typ):
+        return typ(obj[key]) if (key in obj and obj[key] is not None) else None
+
+    recipe = {}
+    if "name" not in _recipe:
+        raise CookbookError("Recipe has no name")
+    recipe["name"] = str(_recipe["name"])
+
+    for (key, typ) in [("time", int), ("people", int), ("url", str), ("thumbnail", str)]:
+        recipe[key] = _get_or_none(_recipe, key, typ)
+
+    recipe["ingredients"] = []
+    for ingredient in _recipe.get("ingredients", []):
+        recipe["ingredients"].append({
+            "amount": _get_or_none(ingredient, "amount", str),
+            "ingredient": str(ingredient["ingredient"])
+        })
+
+    recipe["preparation"] = []
+    for step in _recipe.get("preparation", []):
+        recipe["preparation"].append(str(step))
+
+    if "nutrition" in _recipe and _recipe["nutrition"] is not None:
+        recipe["nutrition"] = []
+        for group in _recipe.get("nutrition", []):
+            recipe["nutrition"].append({
+                "amount": _get_or_none(group, "amount", str),
+                "group": str(group["group"])
+            })
+    else:
+        recipe["nutrition"] = None
+
+    recipe["tags"] = []
+    for tag in _recipe.get("tags", []):
+        recipe["tags"].append(str(tag))
+
+    return recipe
 
 
 async def translate_url(url):
@@ -72,7 +111,7 @@ async def translate_page(text, url=None, thumbnail=None):
     print(f"Converting with ChatGPT ({MODEL})")
     messages = [
         {"role": "system", "content": "You are a helpful assistant that converts recipies into JSON format."},
-        {"role": "user", "content": PROMPT.format(url=url or "", thumbnail=thumbnail or "", text=text)}
+        {"role": "user", "content": PROMPT.format(text=text)}
     ]
     for i in range(1 + MAX_RETRIES):
         try:
@@ -89,7 +128,11 @@ async def translate_page(text, url=None, thumbnail=None):
             raise
         reply = chat_completion.choices[0].message.content
         try:
-            return fix_recipe(json.loads(reply))
+            # add url / thumbnail after the fact, since we want to use as few tokens as possible
+            fixed = fix_recipe(json.loads(reply))
+            fixed["url"] = url
+            fixed["thumbnail"] = thumbnail
+            return fixed
         except json.JSONDecodeError:
             print("Conversion failed, retrying")
             messages.append({"role": "assistant", "content": reply})

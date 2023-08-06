@@ -17,7 +17,7 @@ headers = {'Authorization': f'Bearer {api_key}'}
 url = 'https://api.openai.com/v1/usage'
 
 # Date for which to get usage data
-date = datetime.date(year=2023, month=8, day=1)
+date = datetime.date(year=2023, month=8, day=2)
 
 # Parameters for API request
 params = {'date': date.strftime('%Y-%m-%d')}
