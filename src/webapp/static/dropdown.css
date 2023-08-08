@@ -59,7 +59,7 @@
 .dropdown-container .dropdown-menu span:hover,
  dropdown-container .dropdown-menu span:active,
 .dropdown-container .dropdown-menu span:focus {
-	 background-color: #0979ce;
+	 background-color: #3357FF;
 	 color: #fff;
 }
 
@@ -100,7 +100,7 @@
 }
 
 .dropdown-container.dropdown-open .dropdown-toggle {
-	 background-color: #0979ce;
+	 background-color: #3357FF;
 	 color: #fff;
 }
 
