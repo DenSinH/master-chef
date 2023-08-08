@@ -7,8 +7,10 @@
     <title>Cookbook</title>
     <link rel="stylesheet" href="/static/base.css">
     <link rel="stylesheet" href="/static/cookbook.css">
+    <link rel="stylesheet" href="/static/dropdown.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/static/dropdown.js" defer></script>
 </head>
 
 <body>
@@ -27,11 +29,32 @@
 
     <div class="search-bar-container">
         <input type="text" id="searchBar" placeholder="Search recipes">
+        <div class="dropdown-container">
+            <div class="dropdown-toggle click-dropdown">
+                Last Updated
+            </div>
+            <div class="dropdown-menu">
+                <ul>
+                    <li><span class="dropdown-item" onclick="sortBy('name', 1)">Name Ascending</span></li>
+                    <li><span class="dropdown-item" onclick="sortBy('name', -1)">Name Descending</span></li>
+                    <li><span class="dropdown-item" onclick="sortBy('updated', -1)">Last Updated</span></li>
+                    <li><span class="dropdown-item" onclick="sortBy('created', 1)">Oldest</span></li>
+                    <li><span class="dropdown-item" onclick="sortBy('created', -1)">Newest</span></li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     <div class="recipe-list">
         {%- for recipe_id, recipe in recipes.items() -%}
-        <a href="{{ url_for('recipe', id=recipe_id) }}" class="recipe-item" style="display: none" data-tags="vegetarian quick-easy">
+        <a
+                href="{{ url_for('recipe', id=recipe_id) }}"
+                class="recipe-item"
+                style="display: none"
+                data-name="{{ recipe.get('name', '').lower() }}"
+                data-created="{{ recipe.get('date_created', 0) }}"
+                data-updated="{{ recipe.get('date_updated', 0) }}"
+        >
             <div class="thumbnail-wrapper">
                 <img src="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Recipe 1" loading="lazy">
             </div>
@@ -136,6 +159,25 @@
                 }
             }
         });
+
+        function sortBy(attribute, direction) {
+            let list = $(".recipe-list");
+            list.find(".recipe-item").sort(function(a, b) {
+                let aattr = $(a).data(attribute);
+                let battr = $(b).data(attribute);
+
+                if (aattr < battr) {
+                    return -direction;
+                }
+                if (battr < aattr) {
+                    return direction;
+                }
+                return 0;
+            })
+            .appendTo(list);
+            numPages = 1;
+            showPages(true);
+        }
     </script>
 </body>
 

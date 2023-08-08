@@ -53,7 +53,7 @@ async def exception(request: Request, exc):
 @app.ext.template("cookbook.html")
 async def index(request: Request):
     recipes = await cookbook.get_recipes()
-    # todo: multiple ordering methods (date_updated, date_created, name, time)
+
     ordered = OrderedDict(
         sorted(
             recipes.items(),
