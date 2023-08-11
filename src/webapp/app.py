@@ -69,7 +69,9 @@ async def index(request: Request):
 @app.get("/login")
 @app.ext.template("login.html")
 async def login_form(request: Request):
-    return {}
+    return {
+        "redirect": dict(request.query_args).get("redirect")
+    }
 
 
 @app.get("/recipe/<id>")
@@ -103,7 +105,7 @@ async def get_usage(request: Request):
 
 @app.get("/usage")
 @app.ext.template("usage.html")
-@protected(redirect_on_fail=True)
+@protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/usage"))
 async def usage(request: Request):
     today = datetime.date.today()
     return {
@@ -118,7 +120,7 @@ async def usage(request: Request):
 
 @app.get("/recipe/<id>/update")
 @app.ext.template("add/form.html")
-@protected(redirect_on_fail=True)
+@protected(redirect_on_fail=True)  # todo: redirect?
 async def update_recipe_form(request: Request, id: str):
     recipes = await cookbook.get_recipes()
     if id not in recipes:
@@ -131,7 +133,7 @@ async def update_recipe_form(request: Request, id: str):
 
 
 @app.post("/recipe/<id>/update")
-@protected(redirect_on_fail=True)
+@protected()
 async def update_recipe(request: Request, id: str):
     recipe = _parse_recipe_form(request.form)
     await cookbook.update_recipe(id, recipe)
@@ -152,7 +154,7 @@ async def delete_recipe(request: Request, id: str):
 
 @app.get("/add/url")
 @app.ext.template("add/url.html")
-@protected(redirect_on_fail=True)
+@protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/url"))
 async def add_recipe_url_form(request: Request):
     return {}
 
@@ -172,7 +174,7 @@ async def add_recipe_url(request: Request):
 
 @app.get("/add/text")
 @app.ext.template("add/text.html")
-@protected(redirect_on_fail=True)
+@protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/text"))
 async def add_recipe_text_form(request: Request):
     return {}
 
@@ -191,7 +193,7 @@ async def add_recipe_text(request: Request):
 
 @app.get("/add/form")
 @app.ext.template("add/form.html")
-@protected(redirect_on_fail=True)
+@protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/form"))
 async def add_recipe_form_form(request: Request):
     return {
         "recipe": {},  # empty recipe for template rendering

@@ -22,7 +22,7 @@ class JwtResonses(Responses):
     @staticmethod
     def exception_response(request: Request, exception):
         if request.method == "GET":
-            return sanic.redirect(request.app.url_for("login_form"))
+            return sanic.redirect(request.app.url_for("login_form", redirect=request.url))
         else:
             if isinstance(exception, sanic_jwt.exceptions.Unauthorized):
                 # unauthorized response
@@ -34,9 +34,9 @@ class JwtResonses(Responses):
     # basically the default, but we return a redirect
     @staticmethod
     def get_token_response(
-            request, access_token, output, config, refresh_token=None
+            request: Request, access_token, output, config, refresh_token=None
     ):
-        response = sanic.redirect("/")
+        response = sanic.redirect(dict(request.query_args).get("redirect", "/"))
 
         if config.cookie_set():
             key = config.cookie_access_token_name()
