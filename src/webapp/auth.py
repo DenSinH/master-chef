@@ -36,7 +36,16 @@ class JwtResonses(Responses):
     def get_token_response(
             request: Request, access_token, output, config, refresh_token=None
     ):
-        response = sanic.redirect(dict(request.query_args).get("redirect", "/"))
+        redirect = dict(request.query_args).get("redirect", "/")
+
+        # special case for recipe page, as it has a template parameter
+        if redirect == "recipe":
+            last_recipe = request.cookies.get("last-recipe", None)
+            if last_recipe is None:
+                redirect = "/"
+            else:
+                redirect = request.app.url_for("recipe", id=last_recipe)
+        response = sanic.redirect(redirect)
 
         if config.cookie_set():
             key = config.cookie_access_token_name()

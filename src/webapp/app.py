@@ -5,6 +5,7 @@ import traceback
 import sanic
 from sanic import Sanic
 from sanic import Request
+from sanic_ext import render
 from sanic.exceptions import NotFound
 from sanic_jwt import initialize, protected
 from auth import authenticate, JwtResonses
@@ -70,21 +71,30 @@ async def index(request: Request):
 @app.ext.template("login.html")
 async def login_form(request: Request):
     return {
-        "redirect": dict(request.query_args).get("redirect")
+        "redirect": dict(request.query_args).get("redirect", "/")
     }
 
 
 @app.get("/recipe/<id>")
-@app.ext.template("recipe.html")
 async def recipe(request: Request, id: str):
     recipes = await cookbook.get_recipes()
     if id not in recipes:
         raise NotFound("No such recipe exists on this website")
 
-    return {
-        "recipe": recipes[id],
-        "recipe_id": id
-    }
+    response = await render(
+        "recipe.html",
+        context={
+            "recipe": recipes[id],
+            "recipe_id": id
+        }
+    )
+
+    response.add_cookie(
+        "last-recipe",
+        id
+    )
+
+    return response
 
 
 """ PROTECTED ACCESS """
@@ -120,7 +130,8 @@ async def usage(request: Request):
 
 @app.get("/recipe/<id>/update")
 @app.ext.template("add/form.html")
-@protected(redirect_on_fail=True)  # todo: redirect?
+# recipe id is obtained from last visited recipe page in cookies
+@protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="recipe"))
 async def update_recipe_form(request: Request, id: str):
     recipes = await cookbook.get_recipes()
     if id not in recipes:
@@ -141,6 +152,7 @@ async def update_recipe(request: Request, id: str):
     return sanic.redirect(app.url_for("recipe", id=id))
 
 
+# todo: fix login redirect to recipe page
 @app.post("/recipe/<id>/delete")
 @protected()
 async def delete_recipe(request: Request, id: str):
