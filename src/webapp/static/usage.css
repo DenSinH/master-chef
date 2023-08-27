@@ -1,5 +1,10 @@
 
 
+.table-wrapper {
+    width: 100%;
+    overflow-x: scroll;
+}
+
 table {
     width: 100%;
 }
