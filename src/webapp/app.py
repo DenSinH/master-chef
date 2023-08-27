@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import datetime
+import aiohttp
 from aiohttp.client_exceptions import ClientResponseError
 import traceback
 import sanic
@@ -172,27 +173,37 @@ async def delete_recipe(request: Request, id: str):
 @app.ext.template("add/url.html")
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/url"))
 async def add_recipe_url_form(request: Request):
-    return {}
+    return {
+        "error": dict(request.query_args).get("error")
+    }
 
 
 @app.post("/add/url")
-@app.ext.template("add/form.html")
 @protected()
 async def add_recipe_url(request: Request):
     url = request.form["url"][0]
-    recipe = await cookbook.translate_url(url)
-    return {
-        "recipe": recipe,
-        "action": app.url_for('add_recipe_form'),
-        "refresh_warning": True
-    }
+    try:
+        recipe = await cookbook.translate_url(url)
+    except aiohttp.client_exceptions.ClientConnectorError:
+        return sanic.response.redirect(app.url_for("add_recipe_url_form", error="notfound"))
+
+    return await render(
+        "add/form.html",
+        context={
+            "recipe": recipe,
+            "action": app.url_for('add_recipe_form'),
+            "refresh_warning": True
+        }
+    )
 
 
 @app.get("/add/text")
 @app.ext.template("add/text.html")
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/text"))
 async def add_recipe_text_form(request: Request):
-    return {}
+    return {
+        "error": dict(request.query_args).get("error")
+    }
 
 
 @app.post("/add/text")
@@ -213,7 +224,8 @@ async def add_recipe_text(request: Request):
 async def add_recipe_form_form(request: Request):
     return {
         "recipe": {},  # empty recipe for template rendering
-        "action": app.url_for('add_recipe_form')
+        "action": app.url_for('add_recipe_form'),
+        "error": dict(request.query_args).get("error"),
     }
 
 

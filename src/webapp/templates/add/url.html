@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Recipe</title>
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon"/>
     <link rel="stylesheet" href="/static/base.css">
     <link rel="stylesheet" href="/static/add.css">
     <link rel="stylesheet" href="/static/spinner.css">
+    <link rel="stylesheet" href="/static/forms.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
@@ -18,7 +18,7 @@
         <div class="add-box">
             <h1>Add via URL</h1>
             <form action="{{ url_for('add_recipe_url') }}" method="post">
-                <input type="url" name="url" placeholder="URL" required>
+                <input type="url" name="url" placeholder="URL" {% if error is not none %}class="error"{% endif %} required>
                 <button id="submit" type="submit">Add</button>
                 <div id="spinner" class="lds-dual-ring"></div>
             </form>
