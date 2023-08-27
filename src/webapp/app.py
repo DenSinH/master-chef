@@ -97,6 +97,10 @@ async def recipe(request: Request, id: str):
     return response
 
 
+@app.get("/recipe/<id>/<name>")
+async def _recipe(request: Request, id: str, name: str):
+    return await recipe(request, id)
+
 """ PROTECTED ACCESS """
 
 

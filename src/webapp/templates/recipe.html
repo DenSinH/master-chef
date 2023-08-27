@@ -25,6 +25,7 @@
             <div class="buttons">
                 <a href="{{ url_for('update_recipe_form', id=recipe_id) }}" class="round-button"><i class="fas fa-edit"></i></a>
                 <a onclick="delete_recipe()" class="round-button"><i class="fas fa-trash"></i></a>
+                <a onclick="share_recipe()" class="round-button"><i class="fas fa-share"></i></a>
             </div>
         </header>
         <img src="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Preview">
