@@ -52,7 +52,7 @@
         <h2>Ingredients</h2>
         <ul class="ingredients">
             {%- for ingredient in recipe["ingredients"] -%}
-            <li>{{ ingredient["amount"] or "" }} {{ ingredient["ingredient"] }}</li>
+            <li>{{ ingredient["amount"] or "" }} {{ ingredient["ingredient"]|capitalize }}</li>
             {%- endfor -%}
         </ul>
 
@@ -67,7 +67,7 @@
         <h2>Nutrition</h2>
         <table class="nutrition">
             {%- for group in recipe["nutrition"] -%}
-            <tr><td>{{ group["group"] }}</td><td>{{ group["amount"] }}</td></tr>
+            <tr><td>{{ group["group"]|capitalize }}</td><td>{{ group["amount"] }}</td></tr>
             {%- endfor -%}
         </table>
         {%- endif -%}

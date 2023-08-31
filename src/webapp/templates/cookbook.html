@@ -63,7 +63,7 @@
             {%- if recipe["tags"] is defined and recipe["tags"]|length > 0 -%}
             <div class="tags">
                 {%- for tag in recipe["tags"] -%}
-                <span class="tag searchable">{{ tag }}</span>
+                <span class="tag searchable">{{ tag|lower }}</span>
                 {%- endfor -%}
             </div>
             {%- endif -%}
@@ -79,7 +79,7 @@
             {%- if recipe["ingredients"] is defined and recipe["ingredients"]|length > 0 -%}
             <span class="hidden advanced-searchable">
                 {%- for ingredient in recipe["ingredients"] -%}
-                {{ ingredient["ingredient"] }}
+                {{ ingredient["ingredient"]|lower }}
                 {% endfor %}
             </span>
             {%- endif -%}
