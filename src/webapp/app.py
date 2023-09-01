@@ -10,6 +10,7 @@ from sanic_ext import render
 from sanic.exceptions import NotFound
 from sanic_jwt import initialize, protected
 from auth import authenticate, JwtResonses
+from minifyloader import MinifyingFileSystemLoader
 
 import cookbook
 
@@ -18,6 +19,9 @@ import os
 
 
 app = Sanic(__name__)
+app.ext.templating.environment.loader = MinifyingFileSystemLoader(
+    "templates/"
+)
 app.config.SECRET = os.environ.get("SECRET", os.environ["PASSWORD"])
 app.static("/static", "./static")
 initialize(
