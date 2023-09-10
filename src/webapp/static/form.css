@@ -32,7 +32,8 @@
 .ingredient-row input,
 .nutrition-row input,
 .preparation-row textarea {
-    flex-grow: 1;
+    flex: 2 2;
+    width: 100%;
 }
 
 .preparation-row textarea {

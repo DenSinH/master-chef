@@ -1,4 +1,3 @@
 ingredient multiplier (if "people" exists)
 instagram reel thumbnails
-reorder ingredient / nutrition fields
 get page thumbnail button for adding recipe manually

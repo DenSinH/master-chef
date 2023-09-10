@@ -58,7 +58,9 @@
                     <div class="ingredient-row">
                         <input type="text" class="amount" name="ingredient-amount" placeholder="Amount" value="{{ ingredient.get('amount') or '' }}">
                         <input type="text" class="ingredient" name="ingredient-type" placeholder="Ingredient" value="{{ ingredient.get('ingredient') or '' }}">
-                        <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
+                        <div class="remove-row-container">
+                            <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
+                        </div>
                     </div>
                     {%- endfor -%}
                 </div>
@@ -73,7 +75,9 @@
                     {%- for step in (recipe.get('preparation') or []) + [''] -%}
                     <div class="preparation-row">
                         <textarea class="step" name="preparation" placeholder="Step">{{ step }}</textarea>
-                        <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
+                        <div class="remove-row-container">
+                            <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
+                        </div>
                     </div>
                     {%- endfor -%}
                 </div>
@@ -94,7 +98,9 @@
                     <div class="nutrition-row">
                         <input type="text" class="amount" name="nutrition-amount" placeholder="Amount" value="{{ group.get('amount', '') or '' }}">
                         <input type="text" class="group" name="nutrition-group" placeholder="Group" value="{{ group.get('group', '') }}">
-                        <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
+                        <div class="remove-row-container">
+                            <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
+                        </div>
                     </div>
                     {%- endfor -%}
                 </div>
