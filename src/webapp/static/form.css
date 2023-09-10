@@ -9,7 +9,6 @@
 .container {
     max-width: 800px;
     margin: 0 auto;
-    padding: 20px;
 }
 
 .ingredient-row,
@@ -68,12 +67,6 @@ textarea {
     border-radius: 5px;
     border: 1px solid #ccc;
     padding: 8px;
-}
-
-.container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
 }
 
 .thumbnail-container {
