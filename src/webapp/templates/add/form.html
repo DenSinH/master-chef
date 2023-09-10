@@ -56,6 +56,7 @@
                 <div id="ingredientRows" class="sortable-list">
                     {%- for ingredient in recipe.get('ingredients', []) + [{}] -%}
                     <div class="ingredient-row">
+                        <span class="handle"><i class="fas fa-grip-lines"></i></span>
                         <input type="text" class="amount" name="ingredient-amount" placeholder="Amount" value="{{ ingredient.get('amount') or '' }}">
                         <input type="text" class="ingredient" name="ingredient-type" placeholder="Ingredient" value="{{ ingredient.get('ingredient') or '' }}">
                         <div class="remove-row-container">
@@ -74,6 +75,7 @@
                 <div id="preparationRows" class="sortable-list">
                     {%- for step in (recipe.get('preparation') or []) + [''] -%}
                     <div class="preparation-row">
+                        <span class="handle"><i class="fas fa-grip-lines"></i></span>
                         <textarea class="step" name="preparation" placeholder="Step">{{ step }}</textarea>
                         <div class="remove-row-container">
                             <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
@@ -96,6 +98,7 @@
                 <div id="nutritionRows" class="sortable-list">
                     {%- for group in (recipe.get('nutrition') or []) + [{}] -%}
                     <div class="nutrition-row">
+                        <span class="handle"><i class="fas fa-grip-lines"></i></span>
                         <input type="text" class="amount" name="nutrition-amount" placeholder="Amount" value="{{ group.get('amount') or '' }}">
                         <input type="text" class="group" name="nutrition-group" placeholder="Group" value="{{ group.get('group') }}">
                         <div class="remove-row-container">

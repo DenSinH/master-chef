@@ -57,7 +57,7 @@ $(document).ready(function () {
     set_callbacks();
 
     $(document).on('click', '.remove-row', function () {
-        $(this).parent().remove();
+        $(this).parent().parent().remove();
     });
 
     $('#recipe-form').on('keydown', 'input, textarea', function (event) {
@@ -112,15 +112,18 @@ $(document).ready(function () {
     new Sortable(document.getElementById('ingredientRows'), {
         animation: 150,
         ghostClass: 'sortable-ghost',
+        handle: ".handle",
     });
 
     new Sortable(document.getElementById('nutritionRows'), {
         animation: 150,
         ghostClass: 'sortable-ghost',
+        handle: ".handle",
     });
 
     new Sortable(document.getElementById('preparationRows'), {
         animation: 150,
         ghostClass: 'sortable-ghost',
+        handle: ".handle",
     });
 });
