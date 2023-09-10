@@ -50,11 +50,11 @@
         </div>
 
         <h2>Ingredients</h2>
-        <ul class="ingredients">
+        <table class="ingredients">
             {%- for ingredient in recipe["ingredients"] -%}
-            <li>{{ ingredient["amount"] or "" }} {{ ingredient["ingredient"]|capitalize }}</li>
+            <tr><td>{{ (ingredient["amount"] or "")|capitalize }}</td><td>{{ ingredient["ingredient"]|capitalize }}</td></tr>
             {%- endfor -%}
-        </ul>
+        </table>
 
         <h2>Instructions</h2>
         <ol class="instructions">

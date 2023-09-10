@@ -77,7 +77,7 @@ function copy_url() {
 }
 
 $(document).ready(function() {
-    $(".ingredients li").click(function() {
+    $(".ingredients tr").click(function() {
         $(this).toggleClass("active");
     });
     $(".instructions li").click(function() {

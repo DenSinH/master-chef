@@ -1,8 +1,5 @@
-squash commits
-
-sort methods:
-https://stackoverflow.com/questions/5150363/onchange-open-url-via-select-jquery
-
-exception response (format traceback)
 ingredient multiplier (if "people" exists)
 instagram reel thumbnails
+reorder ingredient / nutrition fields
+remarks field
+get page thumbnail button for adding recipe manually
