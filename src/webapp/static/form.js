@@ -1,9 +1,12 @@
 
 function add_ingredient() {
     const row = $('<div class="ingredient-row">' +
+        '<span class="handle"><i class="fas fa-grip-lines"></i></span>' +
         '<input type="text" class="amount" name="ingredient-amount" placeholder="Amount">' +
         '<input type="text" class="ingredient" name="ingredient-type" placeholder="Ingredient">' +
-        '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
+        '<div class="remove-row-container">' +
+            '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
+        '</div>' +
         '</div>');
     $('#ingredientRows').append(row);
     set_callbacks();
@@ -11,8 +14,11 @@ function add_ingredient() {
 
 function add_step() {
     const row = $('<div class="preparation-row">' +
+        '<span class="handle"><i class="fas fa-grip-lines"></i></span>' +
         '<textarea class="step" name="preparation" placeholder="Step"></textarea>' +
-        '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
+        '<div class="remove-row-container">' +
+            '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
+        '</div>' +
         '</div>');
     $('#preparationRows').append(row);
     set_callbacks();
@@ -20,9 +26,12 @@ function add_step() {
 
 function add_group() {
     const row = $('<div class="ingredient-row">' +
+        '<span class="handle"><i class="fas fa-grip-lines"></i></span>' +
         '<input type="text" class="amount" name="nutrition-amount" placeholder="Amount">' +
         '<input type="text" class="ingredient" name="nutrition-group" placeholder="Group">' +
-        '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
+        '<div class="remove-row-container">' +
+            '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
+        '</div>' +
         '</div>');
     $('#nutritionRows').append(row);
     set_callbacks();

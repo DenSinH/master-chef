@@ -100,7 +100,7 @@
                     <div class="nutrition-row">
                         <span class="handle"><i class="fas fa-grip-lines"></i></span>
                         <input type="text" class="amount" name="nutrition-amount" placeholder="Amount" value="{{ group.get('amount') or '' }}">
-                        <input type="text" class="group" name="nutrition-group" placeholder="Group" value="{{ group.get('group') }}">
+                        <input type="text" class="group" name="nutrition-group" placeholder="Group" value="{{ group.get('group') or '' }}">
                         <div class="remove-row-container">
                             <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
                         </div>
