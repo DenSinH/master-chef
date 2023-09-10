@@ -63,7 +63,16 @@
             {%- endfor -%}
         </ol>
 
-        {%- if recipe["nutrition"] is not none -%}
+        {%- if recipe.get("remarks") is not none -%}
+        {%- if recipe["remarks"].strip() -%}
+        <h2>Remarks</h2>
+        <p class="remarks">
+            {{ recipe["remarks"]|capitalize }}
+        </p>
+        {%- endif -%}
+        {%- endif -%}
+
+        {%- if recipe.get("nutrition") is not none -%}
         <h2>Nutrition</h2>
         <table class="nutrition">
             {%- for group in recipe["nutrition"] -%}

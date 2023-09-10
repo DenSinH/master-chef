@@ -266,6 +266,7 @@ def _parse_recipe_form(form: sanic.request.RequestParameters):
         "people": int(form["people"][0]) if "people" in form else None,
         "time": int(form["time"][0]) if "time" in form else None,
         "ingredients": ingredients,
+        "remarks": form["remarks"][0] if "remarks" in form else None,
         "nutrition": nutrition,
         "preparation": form.getlist("preparation", []),
         "tags": form.getlist("tag", []),
