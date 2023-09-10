@@ -108,4 +108,19 @@ $(document).ready(function () {
         $("#thumbnailPreview").show();
         $("#thumbnailPreview").attr('src', $("#thumbnailField").val());
     }
+
+    new Sortable(document.getElementById('ingredientRows'), {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+    });
+
+    new Sortable(document.getElementById('nutritionRows'), {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+    });
+
+    new Sortable(document.getElementById('preparationRows'), {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+    });
 });

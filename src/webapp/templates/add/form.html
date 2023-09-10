@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/static/forms.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
 
 <body>
@@ -52,7 +53,7 @@
                     <label>Ingredients:</label>
                     <span id="addIngredient" class="round-button"><i class="fas fa-plus"></i></span>
                 </div>
-                <div id="ingredientRows">
+                <div id="ingredientRows" class="sortable-list">
                     {%- for ingredient in recipe.get('ingredients', []) + [{}] -%}
                     <div class="ingredient-row">
                         <input type="text" class="amount" name="ingredient-amount" placeholder="Amount" value="{{ ingredient.get('amount') or '' }}">
@@ -68,7 +69,7 @@
                     <label>Preparation:</label>
                     <span id="addStep" class="round-button"><i class="fas fa-plus"></i></span>
                 </div>
-                <div id="preparationRows">
+                <div id="preparationRows" class="sortable-list">
                     {%- for step in (recipe.get('preparation') or []) + [''] -%}
                     <div class="preparation-row">
                         <textarea class="step" name="preparation" placeholder="Step">{{ step }}</textarea>
@@ -88,7 +89,7 @@
                     <label>Nutrition:</label>
                     <span id="addGroup" class="round-button"><i class="fas fa-plus"></i></span>
                 </div>
-                <div id="nutritionRows">
+                <div id="nutritionRows" class="sortable-list">
                     {%- for group in (recipe.get('nutrition') or []) + [{}] -%}
                     <div class="nutrition-row">
                         <input type="text" class="amount" name="nutrition-amount" placeholder="Amount" value="{{ group.get('amount', '') or '' }}">
