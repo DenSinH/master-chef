@@ -40,6 +40,10 @@
     resize: none;
 }
 
+.remarks {
+    resize: vertical;
+}
+
 form button[type="submit"] {
     margin-top: 20px;
 }
