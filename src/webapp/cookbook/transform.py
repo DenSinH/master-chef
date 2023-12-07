@@ -40,10 +40,12 @@ Convert the recipe to a JSON object with the following keys:
 "name": the name of this recipe.
 "ingredients": a list of dictionaries, with keys "ingredient", mapping to the name of the ingredient, and "amount" which is a string containing the amount of this ingredient needed including the unit, or 
                a null value if no specific amount is given.
-               For example, the ingredient "one onion" should yield {{'amount': '1', 'ingredient': 'onion'}}, and the ingredient "zout" should yield {{'amount': null, 'ingredient': 'zout'}}.
+               For example, the ingredient "one onion" should yield {{'amount': '1', 'ingredient': 'onion'}}, and the ingredient "zout" should yield {{'amount': null, 'ingredient': 'zout'}}
+               and the ingredient "1el Komijn" should yield {{'amount': '1 el', 'ingredient': 'Komijn'}}, and "400gr tomaat" should yield {{'amount': '400 gr', 'ingredient': 'tomaat'}}.
 "preparation": a list of strings containing the steps of the recipe.
 "nutrition": null if there is no nutritional information in the recipe, or a list of dictionaries containing the keys "group", with the type
-of nutrional information, and "amount": with the amount of this group that is contained in the recipe, as a string including the unit.
+of nutrional information, and "amount": with the amount of this group that is contained in the recipe, as a string including the unit, so
+"Fats 12gr" should yield {{'group': 'fats', 'amount': '12 gr'}}.
 "people": the amount of people that can be fed from this meal as an integer, in case this information is present, otherwise null
 "time": the time that this recipe takes to make in minutes as an integer, in case this information is present, otherwise null
 "tags": interpret the recipe, and generate a list of at most 5 English strings that describe this recipe. For example, what the main ingredient is,
@@ -51,7 +53,7 @@ of nutrional information, and "amount": with the amount of this group that is co
         sure the strings are in English.
 
 Keep the language the same, except in the tags, and preferably do not change anything about the text in the recipe at all.
-Only output the JSON object, and nothing else.
+Only output the JSON object, and nothing else. You can do this!
 Here comes the text:
 
 {text}
