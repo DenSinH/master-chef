@@ -8,12 +8,28 @@ load_dotenv()
 import os
 import re
 import json
+import random
 
 from .utils import *
 from .thumbnail import get_thumbnail
 
 
 openai.api_key = os.environ["OPENAI_API_KEY"]
+
+
+def _get_headers():
+    USER_AGENTS = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1661.62',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/111.0'
+    ]
+    return {
+        "User-Agent": random.choice(USER_AGENTS)
+    }
 
 MAX_RETRIES = 1
 MODEL = "gpt-3.5-turbo"
@@ -89,7 +105,7 @@ async def translate_url(url):
         return URL_CACHE[url]
 
     print(f"Retrieving url {url}")
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False), headers=_get_headers()) as session:
         res = await session.get(url)
         if not res.ok:
             raise CookbookError(f"Could not get the specified url, status code {res.status}")
