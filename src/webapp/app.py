@@ -214,7 +214,7 @@ async def add_recipe_text_form(request: Request):
 @app.ext.template("add/form.html")
 @protected()
 async def add_recipe_text(request: Request):
-    recipe = cookbook.translate_page(request.form["text"][0])
+    recipe = await cookbook.translate_page(request.form["text"][0])
     return {
         "recipe": recipe,
         "action": app.url_for('add_recipe_form'),

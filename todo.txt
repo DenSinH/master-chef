@@ -1,3 +1,17 @@
 ingredient multiplier (if "people" exists)
 instagram reel thumbnails
 get page thumbnail button for adding recipe manually
+
+https://www.eefkooktzo.nl/simpele-burritos-gehakt/:
+<script async="" src="https://cdn.foodinfluencersunited.nl/prod.js"></script>
+<script id="r2bFiuCdnLogic" defer="" src="https://cdn.foodinfluencersunited.nl/r2bLogic.js"></script>
+
+...
+
+<button title="Bestel bij AH" type="button" class="fiu-supermarket-button fiu-albert-heijn-button" data-supermarket="albert-heijn"><svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" id="svg3858" height="100" width="100" viewBox="0 0 100 100" version="1.1">
+    ...
+</button>
+
+<button title="Bestel bij Jumbo" type="button" class="fiu-supermarket-button fiu-jumbo-button" data-supermarket="jumbo">
+    ...
+</button>
