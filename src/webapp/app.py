@@ -22,6 +22,14 @@ app = Sanic(__name__)
 app.ext.templating.environment.loader = MinifyingFileSystemLoader(
     "templates/"
 )
+
+
+def _strftimestamp(timestamp):
+    date = datetime.datetime.fromtimestamp(timestamp)
+    return date.strftime("%Y-%m-%d")
+
+
+app.ext.templating.environment.filters["strftimestamp"] = _strftimestamp
 app.config.SECRET = os.environ.get("SECRET", os.environ["PASSWORD"])
 app.static("/static", "./static")
 initialize(
@@ -33,6 +41,7 @@ initialize(
     login_redirect_url="/login",
     secret=app.config.SECRET,
     responses_class=JwtResonses,
+    expiration_delta=60 * 60
 )
 
 
@@ -68,7 +77,8 @@ async def index(request: Request):
         )
     )
     return {
-        "recipes": ordered
+        "recipes": ordered,
+        "authenticated": await app.ctx.auth.is_authenticated(request)
     }
 
 
@@ -90,7 +100,8 @@ async def recipe(request: Request, id: str):
         "recipe.html",
         context={
             "recipe": recipes[id],
-            "recipe_id": id
+            "recipe_id": id,
+            "authenticated": await app.ctx.auth.is_authenticated(request)
         }
     )
 
@@ -127,9 +138,15 @@ async def get_usage(request: Request):
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/usage"))
 async def usage(request: Request):
     today = datetime.date.today()
+    dates = set()
+    recipes = await cookbook.get_recipes()
+    for _, recipe in recipes.items():
+        if "date_created" in recipe:
+            dates.add(datetime.datetime.fromtimestamp(recipe["date_created"]).date())
+
     return {
         "dates": [
-            datetime.date(today.year, today.month, day).strftime("%Y-%m-%d") for day in reversed(range(1, today.day + 1))
+            date.strftime("%Y-%m-%d") for date in sorted(dates, reverse=True)
         ],
         "today": today.strftime("%Y-%m-%d"),
         "ctx_cost_1k": 0.0015,

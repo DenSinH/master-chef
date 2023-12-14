@@ -23,8 +23,12 @@
                 <h1>{{ recipe["name"].title() }}</h1>
             </div>
             <div class="buttons">
+                {%- if authenticated -%}
                 <a href="{{ url_for('update_recipe_form', id=recipe_id) }}" class="round-button"><i class="fas fa-edit"></i></a>
                 <a onclick="delete_recipe()" class="round-button"><i class="fas fa-trash"></i></a>
+                {%- else -%}
+                <a href="{{ url_for('login_form', redirect='recipe') }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
+                {%- endif -%}
                 <a onclick="share_recipe()" class="round-button"><i class="fas fa-share"></i></a>
             </div>
         </header>
@@ -45,6 +49,18 @@
             {%- if recipe.get("people") is not none -%}
             <div>
                 <i class="fas fa-users"></i> <span class="info-item">Serves {{ recipe["people"] }}</span>
+            </div>
+            {%- endif -%}
+        </div>
+        <div class="recipe-info">
+            {%- if recipe.get("date_created") is not none -%}
+            <div>
+                <i class="fas fa-calendar-plus"></i> <span class="info-item">Added on {{ recipe["date_created"]|strftimestamp }}</span>
+            </div>
+            {%- endif -%}
+            {%- if recipe.get("date_updated") is not none -%}
+            <div>
+                <i class="fas fa-calendar-check"></i> <span class="info-item">Updated on {{ recipe["date_updated"]|strftimestamp }}</span>
             </div>
             {%- endif -%}
         </div>
