@@ -22,6 +22,14 @@ app = Sanic(__name__)
 app.ext.templating.environment.loader = MinifyingFileSystemLoader(
     "templates/"
 )
+
+
+def _strftimestamp(timestamp):
+    date = datetime.datetime.fromtimestamp(timestamp)
+    return date.strftime("%Y-%m-%d")
+
+
+app.ext.templating.environment.filters["strftimestamp"] = _strftimestamp
 app.config.SECRET = os.environ.get("SECRET", os.environ["PASSWORD"])
 app.static("/static", "./static")
 initialize(
