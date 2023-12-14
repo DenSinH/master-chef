@@ -23,8 +23,12 @@
                 <h1>{{ recipe["name"].title() }}</h1>
             </div>
             <div class="buttons">
+                {%- if authenticated -%}
                 <a href="{{ url_for('update_recipe_form', id=recipe_id) }}" class="round-button"><i class="fas fa-edit"></i></a>
                 <a onclick="delete_recipe()" class="round-button"><i class="fas fa-trash"></i></a>
+                {%- else -%}
+                <a href="{{ url_for('login_form', redirect='recipe') }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
+                {%- endif -%}
                 <a onclick="share_recipe()" class="round-button"><i class="fas fa-share"></i></a>
             </div>
         </header>

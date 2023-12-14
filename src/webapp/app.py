@@ -68,7 +68,8 @@ async def index(request: Request):
         )
     )
     return {
-        "recipes": ordered
+        "recipes": ordered,
+        "authenticated": await app.ctx.auth.is_authenticated(request)
     }
 
 
@@ -90,7 +91,8 @@ async def recipe(request: Request, id: str):
         "recipe.html",
         context={
             "recipe": recipes[id],
-            "recipe_id": id
+            "recipe_id": id,
+            "authenticated": await app.ctx.auth.is_authenticated(request)
         }
     )
 

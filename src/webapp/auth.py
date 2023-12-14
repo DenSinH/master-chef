@@ -3,10 +3,23 @@ import sanic_jwt.exceptions
 from sanic import Request
 from sanic_jwt import exceptions
 from sanic_jwt import Responses
-from sanic_jwt.responses import _set_cookie
+from sanic_jwt.responses import COOKIE_OPTIONS
 
 from dotenv import load_dotenv; load_dotenv()
 import os
+
+
+def _set_cookie(response, key, value, config, force_httponly=None):
+    response.cookies.add_cookie(key, value)
+    response.cookies.get_cookie(key).httponly = (
+        config.cookie_httponly() if force_httponly is None else force_httponly
+    )
+    response.cookies.get_cookie(key).path = config.cookie_path()
+
+    for item, option in COOKIE_OPTIONS:
+        value = getattr(config, option)()
+        if value:
+            setattr(response.cookies.get_cookie(key), item, value)
 
 
 async def authenticate(request, *args, **kwargs):
