@@ -4,6 +4,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.recipe-info-detail {
     margin-top: 10px;
 }
 
@@ -38,6 +41,10 @@
 @media only screen and (max-width: 600px) {
     .recipe-details {
         padding: 0 10px;
+    }
+
+    .recipe-info {
+        flex-flow: column;
     }
 }
 
