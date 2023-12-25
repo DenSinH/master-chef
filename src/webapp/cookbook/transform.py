@@ -1,6 +1,7 @@
 import openai
 import aiohttp
 from bs4 import BeautifulSoup
+import tldextract as tld
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,8 +18,15 @@ from .thumbnail import get_thumbnail
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
 
-def _get_headers():
-    USER_AGENTS = [
+def _get_headers(url):
+    _NO_USER_AGENT = {
+        "cdninstagram",
+        "ig",
+        "igsonar",
+        "facebook",
+        "instagram"
+    }
+    _USER_AGENTS = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
@@ -27,9 +35,11 @@ def _get_headers():
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1661.62',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/111.0'
     ]
-    return {
-        "User-Agent": random.choice(USER_AGENTS)
-    }
+    headers = {}
+    if tld.extract(url).domain.lower() not in _NO_USER_AGENT:
+        headers["User-Agent"] = random.choice(_USER_AGENTS)
+    return headers
+
 
 MAX_RETRIES = 1
 MODEL = "gpt-3.5-turbo"
@@ -58,8 +68,6 @@ Here comes the text:
 
 {text}
 """
-
-URL_CACHE = {}
 
 
 def fix_recipe(_recipe):
@@ -103,11 +111,8 @@ def fix_recipe(_recipe):
 
 
 async def translate_url(url):
-    if url in URL_CACHE:
-        return URL_CACHE[url]
-
     print(f"Retrieving url {url}")
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False), headers=_get_headers()) as session:
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False), headers=_get_headers(url)) as session:
         res = await session.get(url)
         if not res.ok:
             raise CookbookError(f"Could not get the specified url, status code {res.status}")
@@ -121,7 +126,6 @@ async def translate_url(url):
 
         text = re.sub(r"(\n\s*)+", "\n", soup.text)
         recipe = await translate_page(text, url=url, thumbnail=get_thumbnail(soup))
-        URL_CACHE[url] = recipe
         return recipe
 
 

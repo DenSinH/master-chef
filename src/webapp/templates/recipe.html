@@ -60,25 +60,25 @@
 
         <div class="recipe-info">
             {%- if recipe.get("time") is not none -%}
-            <div>
+            <div class="recipe-info-detail">
                 <i class="fas fa-clock"></i> <span class="info-item">{{ recipe["time"] }} minutes</span>
             </div>
             {%- endif -%}
             {%- if recipe.get("people") is not none -%}
-            <div>
+            <div class="recipe-info-detail">
                 <i class="fas fa-users"></i> <span class="info-item">Serves {{ recipe["people"] }}</span>
             </div>
             {%- endif -%}
         </div>
         <div class="recipe-info">
             {%- if recipe.get("date_created") is not none -%}
-            <div>
-                <i class="fas fa-calendar-plus"></i> <span class="info-item">Added on {{ recipe["date_created"]|strftimestamp }}</span>
+            <div class="recipe-info-detail">
+                <i class="fas fa-calendar-plus"></i> <span class="info-item">Added {{ recipe["date_created"]|strftimestamp }}</span>
             </div>
             {%- endif -%}
             {%- if recipe.get("date_updated") is not none -%}
-            <div>
-                <i class="fas fa-calendar-check"></i> <span class="info-item">Updated on {{ recipe["date_updated"]|strftimestamp }}</span>
+            <div class="recipe-info-detail">
+                <i class="fas fa-calendar-check"></i> <span class="info-item">Updated {{ recipe["date_updated"]|strftimestamp }}</span>
             </div>
             {%- endif -%}
         </div>
