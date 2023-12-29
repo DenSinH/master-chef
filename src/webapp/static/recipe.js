@@ -1,5 +1,3 @@
-
-
 function share_recipe() {
     if (navigator.share) {
         try {
@@ -60,6 +58,146 @@ function copy_url() {
     show_popup('URL Copied!');
 }
 
+function reduce(numerator, denominator) {
+  let gcd = function gcd(a,b){
+    return b ? gcd(b, a % b) : a;
+  };
+  gcd = gcd(numerator, denominator);
+  return [numerator / gcd, denominator / gcd];
+}
+
+function formatFrac(numerator, denominator) {
+	if (denominator === 1) {
+  	return String(numerator);
+  }
+  else if (numerator === denominator) {
+  	return "1";
+  }
+	else if (numerator < denominator) {
+    return numerator + "/" + denominator;
+  }
+  else {
+    return +(numerator / denominator).toFixed(2);
+  }
+}
+
+function convert(amount, base, people) {
+  const specre = /[½⅓⅕⅙⅛⅔⅖⅚⅜¾⅗⅝⅞⅘¼⅐⅑⅒↉]/i;
+  const specchar = {
+  	'½' : [1, 2],
+    '⅓' : [1, 3],
+    '⅕' : [1, 5],
+    '⅙' : [1, 6],
+    '⅛' : [1, 8],
+    '⅔' : [2, 3],
+    '⅖' : [2, 5],
+    '⅚' : [5, 6],
+    '⅜' : [3, 8],
+    '¾' : [3, 4],
+    '⅗' : [3, 5],
+    '⅝' : [5, 8],
+    '⅞' : [7, 8],
+    '⅘' : [4, 5],
+    '¼' : [1, 4],
+    '⅐' : [1, 7],
+    '⅑' : [1, 9],
+    '⅒' : [1, 10],
+  }
+  const amtre = /(\d+)(?:\s*([\/\.,])\s*(\d+))?/i;
+  const amttext = /^\D*$/;
+  const amtret = /^\D*(\d+)(?:\s*([\/\.,])\s*(\d+))?\D*$/i;
+  // converted int
+  if (Number.isInteger(amount)) {
+    return formatFrac(people * amount, base);
+  }
+  // converted float
+  else if (typeof amount === "number" && !Number.isInteger(amount)) {
+    return (people * amount) / base;
+  }
+  // special character fractions
+  else if (specre.test(amount)) {
+    // digits leftover in amount, do simple conversion
+  	if (/\d/.test(amount)) {
+      let formatted = formatFrac(people, base);
+      if (formatted == 1) {
+        return amount;
+      }
+      return formatted  + " * " + amount;
+    }
+    // compute transformed fraction
+  	let transformed = amount.replace(specre, function(f) {
+      let reduced = reduce(people * specchar[f][0], base * specchar[f][1]);
+      return formatFrac(reduced[0], reduced[1]);
+    });
+    return transformed;
+  }
+  // only text unit (snuf, a bit, some)
+  else if (amttext.test(amount)) {
+  	return amount;
+  }
+  // properly formatted fractional / floating point amount (1.2, 3, 4,5, 2/3)
+  else if (amtret.test(amount)) {
+    let transformed = amount.replace(amtre, function(s, n, sep, d) {
+      if (sep === "/") {
+        if (d === undefined) {
+          d = "1";
+        }
+        let reduced = reduce(people * parseInt(n), base * parseInt(d));
+      	return formatFrac(reduced[0], reduced[1]);
+      }
+      else {
+        return +(people * parseFloat(n + "." + d) / base).toFixed(2);
+      }
+    });
+
+    return transformed;
+  }
+  // improperly formatted amount, simple conversion
+  else {
+  	let formatted = formatFrac(people, base);
+    if (formatted == 1) {
+    	return amount;
+    }
+    return formatted  + " * " + amount;
+  }
+}
+
+function set_amounts(base, people) {
+    if (people === base) {
+        $(".ingredients .ingredient-amount").each(function() {
+            let el = $(this);
+            el.text(el.data("base"));
+        });
+    }
+    else {
+        $(".ingredients .ingredient-amount").each(function() {
+            let el = $(this);
+            el.text(convert(el.data("base"), base, people));
+        });
+    }
+}
+
+function incr_people() {
+    let people_amount = $("#people-amount");
+    let people = parseInt(people_amount.text()) + 1;
+    people_amount.text(people);
+    let base = parseInt(people_amount.data("base"));
+    set_amounts(base, people);
+}
+
+function decr_people() {
+    let people_amount = $("#people-amount");
+    let people = parseInt(people_amount.text()) - 1;
+    if (people >= 1) {
+        people_amount.text(people);
+        let base = parseInt(people_amount.data("base"));
+        set_amounts(base, people);
+    }
+    else {
+        // cannot go below 1 person
+    }
+}
+
 $(document).ready(function() {
     $(".ingredients tr").click(function() {
         $(this).toggleClass("active");
@@ -67,4 +205,6 @@ $(document).ready(function() {
     $(".instructions li").click(function() {
         $(this).toggleClass("active");
     });
+    $("#incr-people").click(incr_people);
+    $("#decr-people").click(decr_people);
 });

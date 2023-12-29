@@ -84,9 +84,27 @@
         </div>
 
         <h2>Ingredients</h2>
+        {%- if recipe.get("people") is not none -%}
+        <div class="ingredient-conversion">
+            <div class="people">
+                <div id="people-amount" data-base="{{ recipe['people'] }}">
+                    {{ recipe['people'] }}
+                </div>
+                <div class="people-text">People</div></div>
+            <div class="buttons">
+                <div id="decr-people" class="round-button"><i class="fas fa-minus"></i></div>
+                <div id="incr-people" class="round-button"><i class="fas fa-plus"></i></div>
+            </div>
+        </div>
+        {%- endif -%}
         <table class="ingredients">
             {%- for ingredient in recipe["ingredients"] -%}
-            <tr><td>{{ (ingredient["amount"] or "")|capitalize }}</td><td>{{ ingredient["ingredient"]|capitalize }}</td></tr>
+            <tr class="ingredient">
+                <td class="ingredient-amount" data-base="{{ (ingredient['amount'] or '&nbsp')|capitalize|safe }}">
+                    {{ (ingredient["amount"] or "&nbsp")|capitalize|safe }}
+                </td>
+                <td>{{ ingredient["ingredient"]|capitalize }}</td>
+            </tr>
             {%- endfor -%}
         </table>
 

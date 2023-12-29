@@ -38,16 +38,6 @@
     max-width: 100%;
 }
 
-@media only screen and (max-width: 600px) {
-    .recipe-details {
-        padding: 0 10px;
-    }
-
-    .recipe-info {
-        flex-flow: column;
-    }
-}
-
 .recipe-details h2 {
     margin-top: 20px;
 }
@@ -58,6 +48,11 @@
     position: relative;
 }
 
+.ingredient .ingredient-amount {
+    font-weight: bold;
+    text-align: right;
+    padding: 8px 10px;
+}
 
 .ingredients tr.active,
 .instructions li.active {
@@ -74,9 +69,29 @@
 }
 
 .ingredients td:first-child:before {
-    content: "\2022";
+    content: "\25B6";
     position: absolute;
     left: -20px;
+}
+
+.ingredient-conversion {
+    display: flex;
+    justify-content: space-between;
+    max-width: 300px;
+    background-color: lightgray;
+    border-radius: 30px;
+    padding: 5px;
+    margin-bottom: 1em;
+}
+
+#people-amount {
+    margin-right: 1ch;
+}
+
+.ingredient-conversion .people {
+    display: flex;
+    margin: auto 5px;
+    font-weight: bold;
 }
 
 table.nutrition td {
@@ -91,4 +106,18 @@ a.original-url {
     text-decoration: none;
     color: gray;
     font-size: 0.8em;
+}
+
+@media only screen and (max-width: 600px) {
+    .recipe-details {
+        padding: 0 10px;
+    }
+
+    .recipe-info {
+        flex-flow: column;
+    }
+
+    .ingredient-conversion {
+        max-width: 100%;
+    }
 }
