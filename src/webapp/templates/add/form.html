@@ -30,7 +30,7 @@
 
             <div class="form-field">
                 <label>Name:</label>
-                <input type="text" name="name" placeholder="Enter recipe name" value="{{ recipe.get('name') or '' }}" required>
+                <input id="recipe-name" type="text" name="name" placeholder="Enter recipe name" value="{{ recipe.get('name') or '' }}" required>
             </div>
 
             <div class="form-field">
@@ -128,7 +128,11 @@
 
             <div class="form-field">
                 <label>Thumbnail:</label>
-                <input type="text" id="thumbnailField" name="thumbnail" placeholder="Enter thumbnail url" value="{{ recipe.get('thumbnail') or '' }}">
+                <div class="thumbnail-input-row">
+                    <input type="text" id="thumbnailField" name="thumbnail" placeholder="Enter thumbnail url" value="{{ recipe.get('thumbnail') or '' }}">
+                    <input type="file" accept="image/*" capture="camera" id="image-upload-input" style="display: none">
+                    <span class="round-button" id="image-upload"><i class="fas fa-upload"></i></span>
+                </div>
                 <div class="thumbnail-container">
                     {%- if not recipe.get('thumbnail') -%}
                         <img style="display: none" id="thumbnailPreview" src="" alt="" onerror="$('#thumbnailError').show();">
@@ -144,6 +148,7 @@
         </form>
     </div>
 
+    <script src="/static/base.js"></script>
     <script src="/static/form.js"></script>
 </body>
 

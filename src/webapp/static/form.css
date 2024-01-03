@@ -16,7 +16,8 @@
 .nutrition-row,
 .ingredient-header,
 .preparation-header,
-.nutrition-header {
+.nutrition-header,
+.thumbnail-input-row {
     display: flex;
     align-items: center;
     margin-bottom: 10px;
@@ -26,6 +27,10 @@
 .preparation-header,
 .nutrition-header {
     justify-content: space-between;
+}
+
+.thumbnail-input-row input {
+    width: 100%;
 }
 
 .ingredient-row input,

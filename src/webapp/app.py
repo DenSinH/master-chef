@@ -11,6 +11,7 @@ from sanic.exceptions import NotFound
 from sanic_jwt import initialize, protected
 from auth import authenticate, JwtResonses
 from minifyloader import MinifyingFileSystemLoader
+from imgupload import upload_imgur
 
 import cookbook
 
@@ -237,6 +238,23 @@ async def add_recipe_text(request: Request):
         "action": app.url_for('add_recipe_form'),
         "refresh_warning": True
     }
+
+
+@app.post("/add/upload-image")
+@protected()
+async def upload_image(request: Request):
+    link = None
+    for name, file in request.files.items():
+        if not file:
+            continue
+        file = file[0]
+        try:
+            link = upload_imgur(file.body, title=file.name)
+        except Exception as e:
+            pass
+        break
+
+    return sanic.json({"link": link})
 
 
 @app.get("/add/form")

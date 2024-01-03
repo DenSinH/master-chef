@@ -99,24 +99,28 @@ $(document).ready(function () {
         });
     });
 
-    var thumbnailTimer;
-    $("#thumbnailField").on('keyup', function () {
-        clearTimeout(thumbnailTimer);
-        thumbnailTimer = setTimeout(doneTyping, 1000);
+    function loadThumbnail() {
         $("#thumbnailLoading").show();
         $("#thumbnailError").hide();
         $("#thumbnailPreview").hide();
+    }
+
+    function showThumbnail() {
+        $("#thumbnailLoading").hide();
+        $("#thumbnailPreview").show();
+        $("#thumbnailPreview").attr('src', $("#thumbnailField").val());
+    }
+
+    var thumbnailTimer;
+    $("#thumbnailField").on('keyup', function () {
+        clearTimeout(thumbnailTimer);
+        thumbnailTimer = setTimeout(showThumbnail, 1000);
+        loadThumbnail();
     });
 
     $("#thumbnailField").on('keydown', function () {
         clearTimeout(thumbnailTimer);
     });
-
-    function doneTyping () {
-        $("#thumbnailLoading").hide();
-        $("#thumbnailPreview").show();
-        $("#thumbnailPreview").attr('src', $("#thumbnailField").val());
-    }
 
     new Sortable(document.getElementById('ingredientRows'), {
         animation: 150,
@@ -134,5 +138,53 @@ $(document).ready(function () {
         animation: 150,
         ghostClass: 'sortable-ghost',
         handle: ".handle",
+    });
+
+    $("#image-upload-input").on("change", function() {
+        let file = this.files[0];
+
+        if (file) {
+            let old_val = $("#thumbnailField").val();
+            $("#thumbnailField").val("");
+            $("#thumbnailField").prop("disabled", true);
+            loadThumbnail();
+
+            // Create a FormData object and append the file
+            let formData = new FormData();
+            formData.append('image', file, $("#recipe-name").val() || file.name);
+
+            // Send the FormData to the server using fetch
+            fetch('/add/upload-image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.link) {
+                    $("#thumbnailField").val(data.link);
+                }
+                else {
+                    // allow retrying same image
+                    this.value = "";
+                    show_popup("Did not get URL for uploaded image");
+                    $("#thumbnailField").val(old_val);
+                }
+            })
+            .catch(error => {
+                // allow retrying same image
+                this.value = "";
+                console.error('Error uploading file:', error);
+                show_popup('Error uploading file: ' + error);
+                $("#thumbnailField").val(old_val);
+            })
+            .finally(() => {
+                $("#thumbnailField").prop("disabled", false);
+                showThumbnail();
+            });
+        }
+    });
+
+    $("#image-upload").click(function() {
+        $("#image-upload-input").click();
     });
 });
