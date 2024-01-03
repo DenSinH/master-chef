@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta property="og:image" itemprop="image primaryImageOfPage" content="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}">
+    <meta property="og:image" itemprop="image primaryImageOfPage" content="{{ recipe['thumbnail'] or '/static/spaghet.png' }}">
     <title>{{ recipe["name"].title() }}</title>
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon"/>
     <link rel="stylesheet" href="/static/base.css">
@@ -51,7 +51,7 @@
                 <a onclick="share_recipe()" class="round-button"><i class="fas fa-share"></i></a>
             </div>
         </header>
-        <img src="{{ recipe['thumbnail'] or '/static/placeholder.jpg' }}" onerror="this.onerror=null; this.src='/static/placeholder.jpg'" alt="Preview">
+        <img src="{{ recipe['thumbnail'] or '/static/spaghet.png' }}" onerror="this.onerror=null; this.src='/static/spaghet.png'" alt="Preview">
 
         {%- if recipe.get("url") is not none -%}
         <div class="recipe-info">
