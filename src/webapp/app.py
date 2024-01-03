@@ -249,9 +249,9 @@ async def upload_image(request: Request):
             continue
         file = file[0]
         try:
-            link = upload_imgur(file.body, title=file.name)
+            link = await upload_imgur(file.body, title=file.name)
         except Exception as e:
-            pass
+            raise e
         break
 
     return sanic.json({"link": link})
