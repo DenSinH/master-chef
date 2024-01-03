@@ -29,13 +29,10 @@
     justify-content: space-between;
 }
 
-.thumbnail-input-row input {
-    width: 100%;
-}
-
 .ingredient-row input,
 .nutrition-row input,
-.preparation-row textarea {
+.preparation-row textarea,
+.thumbnail-input-row input {
     flex: 2 2;
     width: 100%;
 }
