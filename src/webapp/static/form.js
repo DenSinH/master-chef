@@ -59,6 +59,45 @@ function set_callbacks() {
     }
 }
 
+function resizeAndCompressImage(file, maxWidth, callback) {
+    var reader = new FileReader();
+
+    reader.onload = function(e) {
+        var img = new Image();
+
+        img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+
+            // Calculate the new dimensions while maintaining the aspect ratio
+            var newWidth, newHeight;
+            if (img.width > img.height) {
+                newWidth = maxWidth;
+                newHeight = (img.height * maxWidth) / img.width;
+            } else {
+                newHeight = maxWidth;
+                newWidth = (img.width * maxWidth) / img.height;
+            }
+
+            // Set the canvas dimensions
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+
+            // Draw the image on the canvas
+            ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+            // Convert the canvas content to a compressed JPEG blob
+            canvas.toBlob(function(blob) {
+                callback(blob);
+            }, 'image/jpeg', 0.8);
+        };
+
+        img.src = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+}
+
 $(document).ready(function () {
     $('#addIngredient').click(add_ingredient);
     $('#addStep').click(add_step);
@@ -147,39 +186,43 @@ $(document).ready(function () {
             let old_val = $("#thumbnailField").val();
             $("#thumbnailField").val("");
             $("#thumbnailField").prop("disabled", true);
+            $(this).prop("disabled", true);
             loadThumbnail();
 
             // Create a FormData object and append the file
-            let formData = new FormData();
-            formData.append('image', file, $("#recipe-name").val() || file.name);
+            resizeAndCompressImage(file, 1024, function(compressedBlob) {
+                let formData = new FormData();
+                formData.append('image', compressedBlob, $("#recipe-name").val() || file.name);
 
-            // Send the FormData to the server using fetch
-            fetch('/add/upload-image', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.link) {
-                    $("#thumbnailField").val(data.link);
-                }
-                else {
+                // Send the FormData to the server using fetch
+                fetch('/add/upload-image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.link) {
+                        $("#thumbnailField").val(data.link);
+                    }
+                    else {
+                        // allow retrying same image
+                        this.value = "";
+                        show_popup("Did not get URL for uploaded image");
+                        $("#thumbnailField").val(old_val);
+                    }
+                })
+                .catch(error => {
                     // allow retrying same image
                     this.value = "";
-                    show_popup("Did not get URL for uploaded image");
+                    console.error('Error uploading file:', error);
+                    show_popup('Error uploading file: ' + error);
                     $("#thumbnailField").val(old_val);
-                }
-            })
-            .catch(error => {
-                // allow retrying same image
-                this.value = "";
-                console.error('Error uploading file:', error);
-                show_popup('Error uploading file: ' + error);
-                $("#thumbnailField").val(old_val);
-            })
-            .finally(() => {
-                $("#thumbnailField").prop("disabled", false);
-                showThumbnail();
+                })
+                .finally(() => {
+                    $(this).prop("disabled", false);
+                    $("#thumbnailField").prop("disabled", false);
+                    showThumbnail();
+                });
             });
         }
     });
