@@ -66,9 +66,15 @@ async def exception(request: Request, exc):
 
 
 @app.get("/")
-@app.ext.template("cookbook.html")
 async def index(request: Request):
-    recipes = await cookbook.get_recipes()
+    return await collection(request, collection=cookbook.DEFAULT_COLLECTION)
+
+
+@app.get("/collection/<collection:str>")
+@app.ext.template("cookbook.html")
+async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLECTION):
+    print("collection", collection)
+    recipes = await cookbook.get_recipes(collection)
 
     ordered = OrderedDict(
         sorted(
@@ -78,6 +84,8 @@ async def index(request: Request):
         )
     )
     return {
+        "collection": collection,
+        "collections": cookbook.COLLECTIONS,
         "recipes": ordered,
         "authenticated": await app.ctx.auth.is_authenticated(request)
     }
@@ -91,32 +99,30 @@ async def login_form(request: Request):
     }
 
 
-@app.get("/recipe/<id>")
-async def recipe(request: Request, id: str):
-    recipes = await cookbook.get_recipes()
+@app.get("/recipe/<collection:str>/<id>")
+async def recipe(request: Request, collection: str, id: str):
+    recipes = await cookbook.get_recipes(collection)
     if id not in recipes:
         raise NotFound("No such recipe exists on this website")
 
     response = await render(
         "recipe.html",
         context={
+            "collection": collection,
             "recipe": recipes[id],
             "recipe_id": id,
             "authenticated": await app.ctx.auth.is_authenticated(request)
         }
     )
 
-    response.add_cookie(
-        "last-recipe",
-        id
-    )
+    response.add_cookie("last-recipe", id)
 
     return response
 
 
-@app.get("/recipe/<id>/<name>")
-async def _recipe(request: Request, id: str, name: str):
-    return await recipe(request, id)
+@app.get("/recipe/<collection:str>/<id>/<name>")
+async def _recipe(request: Request, collection: str, id: str, name: str):
+    return await recipe(request, collection, id)
 
 """ PROTECTED ACCESS """
 
@@ -140,10 +146,11 @@ async def get_usage(request: Request):
 async def usage(request: Request):
     today = datetime.date.today()
     dates = set()
-    recipes = await cookbook.get_recipes()
-    for _, recipe in recipes.items():
-        if "date_created" in recipe:
-            dates.add(datetime.datetime.fromtimestamp(recipe["date_created"]).date())
+    for collection in cookbook.COLLECTIONS:
+        recipes = await cookbook.get_recipes(collection)
+        for _, recipe in recipes.items():
+            if "date_created" in recipe:
+                dates.add(datetime.datetime.fromtimestamp(recipe["date_created"]).date())
 
     return {
         "dates": [
@@ -155,54 +162,56 @@ async def usage(request: Request):
     }
 
 
-@app.get("/recipe/<id>/update")
+@app.get("/recipe//<collection:str>/<id>/update")
 @app.ext.template("add/form.html")
 # recipe id is obtained from last visited recipe page in cookies
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="recipe"))
-async def update_recipe_form(request: Request, id: str):
-    recipes = await cookbook.get_recipes()
+async def update_recipe_form(request: Request, collection: str, id: str):
+    recipes = await cookbook.get_recipes(collection)
     if id not in recipes:
         raise NotFound("No such recipe exists on this website")
 
     return {
+        "collection": collection,
         "recipe": recipes[id],
-        "action": app.url_for('update_recipe', id=id)
+        "action": app.url_for('update_recipe', id=id, collection=collection)
     }
 
 
-@app.post("/recipe/<id>/update")
+@app.post("/recipe/<collection:str>/<id>/update")
 @protected()
-async def update_recipe(request: Request, id: str):
+async def update_recipe(request: Request, collection: str, id: str):
     recipe = _parse_recipe_form(request.form)
-    await cookbook.update_recipe(id, recipe)
+    await cookbook.update_recipe(collection, id, recipe)
 
-    return sanic.redirect(app.url_for("recipe", id=id))
+    return sanic.redirect(app.url_for("recipe", id=id, collection=collection))
 
 
 # todo: fix login redirect to recipe page
-@app.post("/recipe/<id>/delete")
+@app.post("/recipe/<collection:str>/<id>/delete")
 @protected()
-async def delete_recipe(request: Request, id: str):
-    recipes = await cookbook.get_recipes()
+async def delete_recipe(request: Request, collection: str, id: str):
+    recipes = await cookbook.get_recipes(collection)
     if id not in recipes:
         raise NotFound("No such recipe exists on this website")
 
-    await cookbook.delete_recipe(id)
+    await cookbook.delete_recipe(collection, id)
     return sanic.empty()
 
 
-@app.get("/add/url")
+@app.get("/collection/<collection:str>/add/url")
 @app.ext.template("add/url.html")
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/url"))
-async def add_recipe_url_form(request: Request):
+async def add_recipe_url_form(request: Request, collection: str):
     return {
+        "collection": collection,
         "error": dict(request.query_args).get("error")
     }
 
 
-@app.post("/add/url")
+@app.post("/collection/<collection:str>/add/url")
 @protected()
-async def add_recipe_url(request: Request):
+async def add_recipe_url(request: Request, collection: str):
     url = request.form["url"][0]
     try:
         recipe = await cookbook.translate_url(url)
@@ -212,30 +221,33 @@ async def add_recipe_url(request: Request):
     return await render(
         "add/form.html",
         context={
+            "collection": collection,
             "recipe": recipe,
-            "action": app.url_for('add_recipe_form'),
+            "action": app.url_for('add_recipe_form', collection=collection),
             "refresh_warning": True
         }
     )
 
 
-@app.get("/add/text")
+@app.get("/collection/<collection:str>/add/text")
 @app.ext.template("add/text.html")
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/text"))
-async def add_recipe_text_form(request: Request):
+async def add_recipe_text_form(request: Request, collection: str):
     return {
+        "collection": collection,
         "error": dict(request.query_args).get("error")
     }
 
 
-@app.post("/add/text")
+@app.post("/collection/<collection:str>/add/text")
 @app.ext.template("add/form.html")
 @protected()
-async def add_recipe_text(request: Request):
+async def add_recipe_text(request: Request, collection: str):
     recipe = await cookbook.translate_page(request.form["text"][0])
     return {
+        "collection": collection,
         "recipe": recipe,
-        "action": app.url_for('add_recipe_form'),
+        "action": app.url_for('add_recipe_form', collection=collection),
         "refresh_warning": True
     }
 
@@ -257,13 +269,14 @@ async def upload_image(request: Request):
     return sanic.json({"link": link})
 
 
-@app.get("/add/form")
+@app.get("/collection/<collection:str>/add/form")
 @app.ext.template("add/form.html")
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/form"))
-async def add_recipe_form_form(request: Request):
+async def add_recipe_form_form(request: Request, collection: str):
     return {
+        "collection": collection,
         "recipe": {},  # empty recipe for template rendering
-        "action": app.url_for('add_recipe_form'),
+        "action": app.url_for('add_recipe_form', collection=collection),
         "error": dict(request.query_args).get("error"),
     }
 
@@ -310,12 +323,20 @@ def _parse_recipe_form(form: sanic.request.RequestParameters):
     return recipe
 
 
-@app.post("/add/form")
+@app.post("/collection/<collection:str>/add/form")
 @protected()
-async def add_recipe_form(request: Request):
+async def add_recipe_form(request: Request, collection: str):
     recipe = _parse_recipe_form(request.form)
-    id = await cookbook.add_recipe(recipe)
-    return sanic.redirect(app.url_for("recipe", id=id))
+    id = await cookbook.add_recipe(collection, recipe)
+    return sanic.redirect(app.url_for("recipe", id=id, collection=collection))
+
+
+@app.post("/move/<collectionfrom:str>/<collectionto:str>/<id>")
+@protected()
+async def move_recipe(request: Request, collectionfrom: str, collectionto: str, id: str):
+    recipe = await cookbook.delete_recipe(collectionfrom, id)
+    id = await cookbook.add_recipe(collectionto, recipe)
+    return sanic.json({"redirect": app.url_for("recipe", id=id, collection=collectionto)})
 
 
 if __name__ == '__main__':

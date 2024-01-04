@@ -16,7 +16,7 @@
     <div class="add-container">
         <div class="add-box">
             <h1>Add via text</h1>
-            <form action="{{ url_for('add_recipe_text') }}" method="post">
+            <form action="{{ url_for('add_recipe_text', collection=collection) }}" method="post">
                 <textarea name="text" placeholder="Text" {% if error is not none %}class="error"{% endif %} required></textarea>
                 <button id="submit" type="submit">Add</button>
                 <div id="spinner" class="lds-dual-ring"></div>

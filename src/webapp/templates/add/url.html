@@ -17,7 +17,7 @@
     <div class="add-container">
         <div class="add-box">
             <h1>Add via URL</h1>
-            <form action="{{ url_for('add_recipe_url') }}" method="post">
+            <form action="{{ url_for('add_recipe_url', collection=collection) }}" method="post">
                 <input type="url" name="url" placeholder="URL" {% if error is not none %}class="error"{% endif %} required>
                 <button id="submit" type="submit">Add</button>
                 <div id="spinner" class="lds-dual-ring"></div>

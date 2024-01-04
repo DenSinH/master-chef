@@ -15,29 +15,53 @@ import os
 from .utils import *
 
 
-RECIPES = None
-FILE = None
-RECIPE_TIMEOUT = None
+class CollectionCache:
+
+    def __init__(self):
+        self.recipes = None
+        self.file = None
+        self.recipe_timeout = None
+
+    def clear(self):
+        self.recipes = None
+        self.file = None
+        self.recipe_timeout = None
+
+
+DEFAULT_COLLECTION = "recipes"
+COLLECTIONS = {
+    DEFAULT_COLLECTION, "unmade"
+}
+_COLLECTIONS = {c: CollectionCache() for c in COLLECTIONS}
+
 
 def _now():
     return datetime.datetime.now().timestamp()
 
 
-async def _get_recipes():
-    global RECIPES, FILE, RECIPE_TIMEOUT
+def _get_collection(collection) -> CollectionCache:
+    if collection not in COLLECTIONS:
+        raise CookbookError(f"Collection {collection} not found")
 
-    if RECIPE_TIMEOUT is not None:
-        if datetime.datetime.now() > RECIPE_TIMEOUT:
-            RECIPE_TIMEOUT = None
+    return _COLLECTIONS[collection]
 
-    if RECIPES is not None and RECIPE_TIMEOUT is not None and FILE is not None:
-        RECIPE_TIMEOUT = datetime.datetime.now() + datetime.timedelta(minutes=15)
-        return RECIPES, FILE
+
+async def _get_recipes(collection) -> CollectionCache:
+    col = _get_collection(collection)
+
+    # check collection cache timeout
+    if col.recipe_timeout is not None:
+        if datetime.datetime.now() > col.recipe_timeout:
+            col.recipe_timeout = None
+
+    if col.recipes is not None and col.recipe_timeout is not None and col.file is not None:
+        col.recipe_timeout = datetime.datetime.now() + datetime.timedelta(minutes=15)
+        return col
 
     async with aiohttp.ClientSession() as session:
         try:
             res = await session.get(
-                "https://api.github.com/repos/DenSinH/master-chef-recipes/contents/recipes.json",
+                f"https://api.github.com/repos/DenSinH/master-chef-recipes/contents/{collection}.json",
                 headers={
                     "accept": "application/vnd.github+json",
                     "authorization": f"token {os.environ['GITHUB_RECIPES_READ_PAT_TOKEN']}"
@@ -49,13 +73,14 @@ async def _get_recipes():
         if not res.ok:
             raise CookbookError(f"Error getting recipes: {res.status} ({await res.text()})")
 
-        FILE = await res.json()
-        RECIPES = json.loads(base64.b64decode(FILE["content"]).decode("utf-8"))
-        return RECIPES, FILE
+        col.file = await res.json()
+        col.recipes = json.loads(base64.b64decode(col.file["content"]).decode("utf-8"))
+        return col
 
 
-async def get_recipes():
-    return (await _get_recipes())[0]
+async def get_recipes(collection):
+    # for external use, ensure we don't mutate our collection cache
+    return copy.deepcopy((await _get_recipes(collection)).recipes)
 
 
 def _generate_key(recipes):
@@ -65,20 +90,20 @@ def _generate_key(recipes):
             return key
 
 
-async def _push_recipes(recipes, file, message):
-    global RECIPES, FILE, RECIPE_TIMEOUT
+async def _push_recipes(collection, message):
+    col = _get_collection(collection)
 
     async with aiohttp.ClientSession() as session:
         res = await session.put(
-            "https://api.github.com/repos/DenSinH/master-chef-recipes/contents/recipes.json",
+            f"https://api.github.com/repos/DenSinH/master-chef-recipes/contents/{collection}.json",
             data=json.dumps({
                 "message": message,
-                "content": base64.b64encode(json.dumps(recipes, indent=2, sort_keys=True).encode("ascii")).decode("ascii"),
+                "content": base64.b64encode(json.dumps(col.recipes, indent=2, sort_keys=True).encode("ascii")).decode("ascii"),
                 "committer": {
                     "name": "Master Chef",
                     "email": "robot@masterchef.com"
                 },
-                "sha": file["sha"]
+                "sha": col.file["sha"]
             }),
             headers={
                 "accept": "application/vnd.github+json",
@@ -88,46 +113,46 @@ async def _push_recipes(recipes, file, message):
 
         # regardless of whether the update was successful, we need to retrieve the recipies again, because
         # the SHA changed
-        RECIPES = None
-        FILE = None
-        RECIPE_TIMEOUT = None
+        col.clear()
 
         if not res.ok:
             raise CookbookError(f"Error pushing recipe: {res.status} ({await res.text()})")
 
 
-async def add_recipe(recipe):
+async def add_recipe(collection, recipe):
     now = _now()
-    recipe["date_created"] = now
+    if "date_created" not in recipe:
+        recipe["date_created"] = now
     recipe["date_updated"] = now
-    recipes, file = await _get_recipes()
-    key = _generate_key(recipes)
-    recipes[key] = recipe
-    await _push_recipes(recipes, file, f"Add recipe {recipe['name']}")
+    col = await _get_recipes(collection)
+    key = _generate_key(col.recipes)
+    col.recipes[key] = recipe
+    await _push_recipes(collection, f"Add recipe {recipe['name']} in {collection}")
     return key
 
 
-async def update_recipe(key, recipe):
-    recipes, file = await _get_recipes()
-    if key not in recipes:
-        raise CookbookError(f"Cannot update recipe with id {key}, as it does not exist")
+async def update_recipe(collection, key, recipe):
+    col = await _get_recipes(collection)
+    if key not in col.recipes:
+        raise CookbookError(f"Cannot update recipe with id {key} in collection {collection}, as it does not exist")
 
-    new_recipe = copy.deepcopy(recipes[key])
+    new_recipe = copy.deepcopy(col.recipes[key])
 
     # preserved "date_created" fields etc.
     new_recipe.update(**recipe)
-    if recipes[key] == new_recipe:
+    if col.recipes[key] == new_recipe:
         # nothing to update
         return
     new_recipe["date_updated"] = _now()
 
-    recipes[key] = new_recipe
-    await _push_recipes(recipes, file, f"Update recipe {new_recipe['name']}")
+    col.recipes[key] = new_recipe
+    await _push_recipes(collection, f"Update recipe {new_recipe['name']} in {collection}")
     return key
 
 
-async def delete_recipe(key):
-    recipes, file = await _get_recipes()
-    recipe = recipes.pop(key)
+async def delete_recipe(collection, key):
+    col = await _get_recipes(collection)
+    recipe = col.recipes.pop(key)
 
-    await _push_recipes(recipes, file, f"Delete recipe {recipe['name']}")
+    await _push_recipes(collection, f"Delete recipe {recipe['name']} in {collection}")
+    return recipe

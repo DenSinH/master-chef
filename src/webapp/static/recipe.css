@@ -1,4 +1,7 @@
 
+h1.unmade {
+    color: red;
+}
 
 .recipe-info {
     display: flex;

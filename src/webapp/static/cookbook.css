@@ -1,4 +1,9 @@
 
+h1.unmade,
+h2.unmade {
+    color: red;
+}
+
 .recipe-list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));

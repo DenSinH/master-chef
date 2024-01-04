@@ -17,17 +17,22 @@
 <body>
     <header>
         <div class="header">
-            <img id="icon" src="/static/icon.png" alt="icon">
-            <h1>Merel's Kitchen</h1>
+            <img id="icon" src="/static/icon.png" alt="icon" {% if collection != 'recipes' %}onclick="window.location.href='{{ url_for('index') }}'" {% endif %}>
+            <h1 class="{{ collection }}">Merel's Kitchen</h1>
         </div>
         <div class="buttons">
             {%- if authenticated -%}
-            <a href="{{ url_for('usage') }}" class="round-button"><i class="fas fa-chart-bar"></i></a>
-            <a href="{{ url_for('add_recipe_url_form') }}" class="round-button"><i class="fas fa-code"></i></a>
-            <a href="{{ url_for('add_recipe_text_form') }}" class="round-button"><i class="fas fa-clipboard-list"></i></a>
-            <a href="{{ url_for('add_recipe_form_form') }}" class="round-button"><i class="fas fa-edit"></i></a>
+            <a href="{{ url_for('usage') }}" class="round-button admin"><i class="fas fa-chart-bar"></i></a>
+            <a href="{{ url_for('add_recipe_url_form', collection=collection) }}" class="round-button admin"><i class="fas fa-code"></i></a>
+            <a href="{{ url_for('add_recipe_text_form', collection=collection) }}" class="round-button admin"><i class="fas fa-clipboard-list"></i></a>
+            <a href="{{ url_for('add_recipe_form_form', collection=collection) }}" class="round-button admin"><i class="fas fa-edit"></i></a>
             {%- else -%}
             <a href="{{ url_for('login_form') }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
+            {%- endif -%}
+            {%- if collection == 'unmade' -%}
+            <a href="{{ url_for('collection', collection='recipes') }}" class="round-button"><i class="fas fa-utensils"></i></a>
+            {%- else -%}
+            <a href="{{ url_for('collection', collection='unmade') }}" class="round-button"><i class="fas fa-question"></i></a>
             {%- endif -%}
         </div>
     </header>
@@ -53,7 +58,7 @@
     <div class="recipe-list">
         {%- for recipe_id, recipe in recipes.items() -%}
         <a
-                href="{{ url_for('recipe', id=recipe_id) }}"
+                href="{{ url_for('recipe', id=recipe_id, collection=collection) }}"
                 class="recipe-item"
                 style="display: none"
                 data-name="{{ recipe.get('name', '').lower() }}"
@@ -63,7 +68,7 @@
             <div class="thumbnail-wrapper">
                 <img src="{{ recipe['thumbnail'] or '/static/spaghet.png' }}" onerror="this.onerror=null; this.src='/static/spaghet.png'" alt="Recipe 1" loading="lazy">
             </div>
-            <h2 class="searchable">{{ recipe["name"].title() }}</h2>
+            <h2 class="searchable {{ collection }}">{{ recipe["name"].title() }}</h2>
             {%- if recipe["tags"] is defined and recipe["tags"]|length > 0 -%}
             <div class="tags">
                 {%- for tag in recipe["tags"] -%}

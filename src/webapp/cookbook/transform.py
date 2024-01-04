@@ -125,6 +125,7 @@ async def translate_url(url):
                 element.decompose()
 
         text = re.sub(r"(\n\s*)+", "\n", soup.text)
+        print(text)
         recipe = await translate_page(text, url=url, thumbnail=get_thumbnail(soup))
         return recipe
 
