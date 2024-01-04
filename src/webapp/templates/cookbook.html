@@ -20,13 +20,16 @@
             <img id="icon" src="/static/icon.png" alt="icon" {% if collection != 'recipes' %}onclick="window.location.href='{{ url_for('index') }}'" {% endif %}>
             <h1 class="{{ collection }}">Merel's Kitchen</h1>
         </div>
+        {%- if authenticated -%}
         <div class="buttons">
-            {%- if authenticated -%}
             <a href="{{ url_for('usage') }}" class="round-button admin"><i class="fas fa-chart-bar"></i></a>
             <a href="{{ url_for('add_recipe_url_form', collection=collection) }}" class="round-button admin"><i class="fas fa-link"></i></a>
             <a href="{{ url_for('add_recipe_text_form', collection=collection) }}" class="round-button admin"><i class="fas fa-align-left"></i></a>
             <a href="{{ url_for('add_recipe_form_form', collection=collection) }}" class="round-button admin"><i class="fas fa-edit"></i></a>
-            {%- else -%}
+        </div>
+        {%- endif -%}
+        <div class="buttons">
+            {%- if not authenticated -%}
             <a href="{{ url_for('login_form', redirect=url_for('collection', collection=collection)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
             {%- endif -%}
             <a href="{{ url_for('about') }}" class="round-button"><i class="fas fa-user"></i></a>
