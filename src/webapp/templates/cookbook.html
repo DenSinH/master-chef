@@ -34,6 +34,9 @@
             {%- else -%}
             <a href="{{ url_for('collection', collection='unmade') }}" class="round-button"><i class="fas fa-question"></i></a>
             {%- endif -%}
+            {%- if recipes|length -%}
+            <span onclick="random_recipe()" class="round-button"><i class="fas fa-random"></i></span>
+            {%- endif -%}
         </div>
     </header>
 

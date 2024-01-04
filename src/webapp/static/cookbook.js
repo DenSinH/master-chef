@@ -1,3 +1,9 @@
+function random_recipe() {
+    let recipes = $("a.recipe-item");
+    let randomIndex = Math.floor(Math.random() * recipes.length);
+    recipes[randomIndex].click();
+}
+
 const pageSize = 20;
 var numPages = 1;
 var searching = false;
