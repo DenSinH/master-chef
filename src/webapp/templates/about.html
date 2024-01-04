@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:image" itemprop="image primaryImageOfPage" content="/static/spaghet.png">
+    <title>About</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="/static/base.css">
+    <link rel="stylesheet" href="/static/recipe.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script src="/static/base.js"></script>
+</head>
+
+<body>
+    <div class="recipe-details">
+        <header>
+            <div class="header">
+                <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
+                <h1>About</h1>
+            </div>
+        </header>
+        <h2>About me</h2>
+        <p>
+            Welcome to my personal cookbook! My name is Dennis Hilhorst and I set this project up so I can easily
+            track, save and edit recipes that I like. I have kept expanding on it, and perhaps it is even useful
+            to others!
+        </p>
+        <h2>To-do</h2>
+        <ul>
+            <li>AH Winkelmand API?</li>
+            <li>Improve tag info (recipe language, meal type, kitchen type, beef/pork/chicken/vegetarian, ...)</li>
+        </ul>
+        <h2>Other stuff</h2>
+        <ul>
+            <li>The ImGur album used to store custom images is found <a href="https://imgur.com/a/{{ album }}" target="_blank">here</a></li>
+            <li>The GitHub repo with the code is found <a href="https://github.com/DenSinH/master-chef" target="_blank">here</a></li>
+            <li>The GitHub repo with the recipes is found <a href="https://github.com/DenSinH/master-chef-recipes" target="_blank">here</a></li>
+        </ul>
+    </div>
+</body>
+
+</html>

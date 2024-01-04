@@ -3,8 +3,8 @@ function share_recipe() {
         try {
             const title = document.title;
             let url;
-            if (window.location.pathname.split('/').filter((section) => section).length >= 3) {
-                // url has name of recipe (/recipe/id/name)
+            if (window.location.pathname.split('/').filter((section) => section).length >= 4) {
+                // url has name of recipe (/recipe/collection/id/name)
                 url = window.location.href;
             }
             else {

@@ -91,6 +91,14 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
     }
 
 
+@app.get("/about")
+@app.ext.template("about.html")
+async def about(request: Request):
+    return {
+        "album": os.environ["IMGUR_ALBUM_ID"]
+    }
+
+
 @app.get("/login")
 @app.ext.template("login.html")
 async def login_form(request: Request):
@@ -123,6 +131,7 @@ async def recipe(request: Request, collection: str, id: str):
 @app.get("/recipe/<collection:str>/<id>/<name>")
 async def _recipe(request: Request, collection: str, id: str, name: str):
     return await recipe(request, collection, id)
+
 
 """ PROTECTED ACCESS """
 

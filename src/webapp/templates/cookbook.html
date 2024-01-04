@@ -29,6 +29,7 @@
             {%- else -%}
             <a href="{{ url_for('login_form', redirect=url_for('collection', collection=collection)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
             {%- endif -%}
+            <a href="{{ url_for('about') }}" class="round-button"><i class="fas fa-user"></i></a>
             {%- if collection == 'unmade' -%}
             <a href="{{ url_for('collection', collection='recipes') }}" class="round-button"><i class="fas fa-utensils"></i></a>
             {%- else -%}
