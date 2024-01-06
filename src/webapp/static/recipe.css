@@ -111,6 +111,10 @@ a.original-url {
     font-size: 0.8em;
 }
 
+a.original-url:hover {
+    text-decoration: underline;
+}
+
 @media only screen and (max-width: 600px) {
     .recipe-details {
         padding: 0 10px;
