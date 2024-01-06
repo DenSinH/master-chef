@@ -12,6 +12,7 @@ import json
 import random
 
 from .utils import *
+from .meta import *
 from .thumbnail import get_thumbnail
 
 
@@ -69,6 +70,21 @@ Here comes the text:
 {text}
 """
 
+META_PROMPT = f"""
+For this recipe, generate a JSON object containing meta information that classifies the recipe.
+It should contain the following keys and values:
+"language": One of {LANGUAGES}, depending on the language of the recipe.
+"meal_type": One of {MEAL_TYPES} that best describes the meal.
+"meat_type": A list of at most two of {MEAT_TYPES} that best describe the meal. Note that it is impossible for a recipe
+             to be both vegetarian and contain meat, and that "other" should never go with another meat type.
+"carb_type": A list of at most two of {CARB_TYPES} that best describe the meal. Note that it is impossible for a recipe
+             to be have both "none" or "other" and any other carb type.
+"cuisine": One of {CUISINE_TYPES} that best describes the meal.
+"temperature": One of {TEMPERATURE_TYPES} that best describes the meal.
+
+Please output only the JSON object and nothing else. You can do this!
+"""
+
 
 def fix_recipe(_recipe):
     def _get_or_none(obj, key, typ):
@@ -103,11 +119,42 @@ def fix_recipe(_recipe):
     else:
         recipe["nutrition"] = None
 
-    recipe["tags"] = []
-    for tag in _recipe.get("tags", []):
-        recipe["tags"].append(str(tag))
-
     return recipe
+
+
+def fix_meta(_meta):
+    def _get_or(key, default=None, allowed_values=None):
+        if allowed_values is not None:
+            if _meta.get(key) in allowed_values:
+                return _meta.get(key)
+            return default
+        else:
+            return _meta.get(key, default=default)
+
+    meta = {}
+    meta["language"] = _get_or("language", allowed_values=LANGUAGES)
+    meta["meal_type"] = _get_or("meal_type", default="other", allowed_values=MEAL_TYPES)
+    meta["meat_type"] = []
+    for meat_type in _meta.get("meat_type", []):
+        if meat_type in MEAT_TYPES:
+            meta["meat_type"].append(meat_type)
+        if len(meta["meat_type"]) >= 2:
+            break
+    if not meta["meat_type"]:
+        meta["meat_type"] = ["other"]
+
+    meta["carb_type"] = []
+    for carb_type in _meta.get("carb_type", []):
+        if carb_type in CARB_TYPES:
+            meta["carb_type"].append(carb_type)
+        if len(meta["carb_type"]) >= 2:
+            break
+    if not meta["carb_type"]:
+        meta["carb_type"] = ["other"]
+
+    meta["cuisine"] = _get_or("cuisine", default="other", allowed_values=CUISINE_TYPES)
+    meta["temperature"] = _get_or("temperature", allowed_values=TEMPERATURE_TYPES)
+    return meta
 
 
 async def translate_url(url):
@@ -125,17 +172,11 @@ async def translate_url(url):
                 element.decompose()
 
         text = re.sub(r"(\n\s*)+", "\n", soup.text)
-        print(text)
         recipe = await translate_page(text, url=url, thumbnail=get_thumbnail(soup))
         return recipe
 
 
-async def translate_page(text, url=None, thumbnail=None):
-    print(f"Converting with ChatGPT ({MODEL})")
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant that converts recipies into JSON format."},
-        {"role": "user", "content": PROMPT.format(text=text)}
-    ]
+async def _chatgpt_json_and_fix(messages, fix):
     for i in range(1 + MAX_RETRIES):
         try:
             chat_completion = await openai.ChatCompletion.acreate(
@@ -151,17 +192,35 @@ async def translate_page(text, url=None, thumbnail=None):
             raise
         reply = chat_completion.choices[0].message.content
         try:
-            # add url / thumbnail after the fact, since we want to use as few tokens as possible
-            fixed = fix_recipe(json.loads(reply))
-            fixed["url"] = url
-            fixed["thumbnail"] = thumbnail
-            return fixed
+            return reply, fix(json.loads(reply))
         except json.JSONDecodeError:
             print("Conversion failed, retrying")
             messages.append({"role": "assistant", "content": reply})
-            messages.append({"role": "user", "content": "this is not a parseable json object, "
-                                                        "only output the json object"})
+            messages.append({"role": "user", "content": "this is not a parsable json object, "
+                                                        "output only the json object"})
     raise CookbookError("ChatGPT did not return a parsable json object, please try again")
+
+
+async def translate_page(text, url=None, thumbnail=None):
+    print(f"Converting with ChatGPT ({MODEL})")
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant that converts recipies into JSON format."},
+        {"role": "user", "content": PROMPT.format(text=text)}
+    ]
+
+    reply, fixed = await _chatgpt_json_and_fix(messages, fix_recipe)
+    messages.append({"role": "assistant", "content": reply})
+    messages.append({"role": "user", "content": META_PROMPT})
+    try:
+        _, meta = await _chatgpt_json_and_fix(messages, fix_meta)
+    except:
+        meta = {}
+    fixed["meta"] = meta
+
+    # add url / thumbnail after the fact, since we want to use as few tokens as possible
+    fixed["url"] = url
+    fixed["thumbnail"] = thumbnail
+    return fixed
 
 
 if __name__ == '__main__':
