@@ -41,14 +41,14 @@ body {
 }
 
 .add-box button {
-    background-color: #3357FF;
+    background-color: var(--blue);
     color: #fff;
     font-weight: bold;
     transition: background-color 0.3s ease;
 }
 
 .add-box button:hover {
-    background-color: #2c4dbd;
+    background-color: var(--blue-shade);
 }
 
 .add-box h1 {

@@ -1,11 +1,11 @@
 .lds-dual-ring {
-  display: none; /* Hide the spinner by default */
+  display: none;
   width: 64px;
   height: 64px;
   margin: 0 auto;
   border-radius: 50%;
   border: 6px solid rgba(0, 0, 0, 0.1);
-  border-top: 6px solid #3498db; /* Change the color of the spinner here */
+  border-top: 6px solid var(--blue);
   animation: spin 1s linear infinite;
 }
 

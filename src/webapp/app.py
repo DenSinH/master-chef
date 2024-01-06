@@ -346,8 +346,7 @@ def _parse_recipe_form(form: sanic.request.RequestParameters):
         },
         "thumbnail": str(form["thumbnail"][0]) if "thumbnail" in form else None
     }
-    from pprint import pprint
-    pprint(recipe)
+
     return recipe
 
 

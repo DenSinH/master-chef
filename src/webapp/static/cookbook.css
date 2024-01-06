@@ -88,19 +88,9 @@ h2.unmade {
     }
 }
 
-.recipe-item a {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 8px 16px;
-    background-color: #4CAF50;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-}
-
 .tag {
     display: inline-block;
-    background-color: #3357FF;
+    background-color: var(--blue);
     color: white;
     padding: 5px 10px;
     margin-right: 5px;
@@ -127,4 +117,92 @@ h2.unmade {
 .dropdown-container {
     font-size: 0.8em;
     font-size: 1em;
+}
+
+.tag.nl {
+    background-color: var(--orange);
+}
+
+.tag.en {
+    background-color: var(--blue);
+}
+
+.tag.chicken {
+    background-color: #FFB6C1;
+    color: black;
+}
+
+.tag.beef {
+    background-color: #8B4513;
+}
+
+.tag.pork {
+    background-color: #FF69B4;
+}
+
+.tag.fish {
+    background-color: #00BFFF;
+}
+
+.tag.seafood {
+    background-color: #8FBC8F;
+}
+
+.tag.vegetarian {
+    background-color: #228B22;
+}
+
+.tag.other {
+    background-color: #808080;
+}
+
+.tag.rice {
+    background-color: #F5F5DC;
+    color: black;
+}
+
+.tag.pasta {
+    background-color: #FFD700;
+    color: black;
+}
+
+.tag.potatoes {
+    background-color: #8B4513;
+}
+
+.tag.sweet-potatoes {
+    background-color: #FF6347;
+}
+
+.tag.bread {
+    background-color: #D2B48C;
+}
+
+.tag.wraps {
+    background-color: #FFDAB9;
+    color: black;
+}
+
+.tag.legumes {
+    background-color: #556B2F;
+}
+
+.tag.none {
+    background-color: #000000;
+}
+
+.tag.hot {
+    background-color: #FF0000;
+}
+
+.tag.cold {
+    background-color: #00BFFF;
+}
+
+.tag.room-temperature {
+    background-color: #8B4513;
+}
+
+.tag.any {
+    background-color: #808080;
 }

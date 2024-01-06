@@ -1,3 +1,12 @@
+:root {
+    --orange: #ff5f15;
+    --orange-shade: #cc4c11;
+    --blue: #3357FF;
+    --blue-shade: #2c4dbd;
+    --highlight: #adbbff;
+    --chicken:
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -59,8 +68,8 @@ header h1 {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background-color: #3357FF;
-    color: #FFFFFF;
+    background-color: var(--blue);
+    color: white;
     margin-left: 10px;
     cursor: pointer;
     transition: background-color 0.3s ease;
@@ -75,15 +84,15 @@ a.round-button {
 }
 
 .round-button:hover {
-    background-color: #2c4dbd;
+    background-color: var(--blue-shade);
 }
 
 .round-button.admin {
-    background-color: #ff5f15;
+    background-color: var(--orange);
 }
 
 .round-button.admin:hover {
-    background-color: #cc4c11;
+    background-color: var(--orange-shade);
 }
 
 h1 {

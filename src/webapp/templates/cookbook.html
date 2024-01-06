@@ -78,13 +78,44 @@
                 <img src="{{ recipe['thumbnail'] or '/static/spaghet.png' }}" onerror="this.onerror=null; this.src='/static/spaghet.png'" alt="Recipe 1" loading="lazy">
             </div>
             <h2 class="searchable {{ collection }}">{{ recipe["name"].title() }}</h2>
-            {%- if recipe["tags"] is defined and recipe["tags"]|length > 0 -%}
+
+            {%- set meta = recipe.get("meta", {}) -%}
             <div class="tags">
-                {%- for tag in recipe["tags"] -%}
-                <span class="tag searchable">{{ tag|lower }}</span>
-                {%- endfor -%}
+                {%- if meta.get("language") -%}
+                    <span class="tag searchable {{ meta.get('language') }}">
+                        {{ LANGUAGES[meta.get("language")]|capitalize }}
+                    </span>
+                {%- endif -%}
+                {%- if meta.get("cuisine", "other") != "other" -%}
+                    <span class="tag searchable">
+                        {{ meta.get("cuisine")|capitalize }}
+                    </span>
+                {%- endif -%}
+                <span class="tag searchable {{ meta.get('meat_type', ['other'])[0] }}">
+                    {%- if meta.get("meat_type", ["other"])[0] == "other" -%}
+                        Other/mixed meat
+                    {%- else -%}
+                        {{ '/'.join(meta.get("meat_type"))|capitalize }}
+                    {%- endif -%}
+                </span>
+                {%- if meta.get("carb_type", ["other"])[0] != "none" -%}
+                <span class="tag searchable {{ meta.get('carb_type', ['other'])[0]|replace(' ', '-') }}">
+                    {%- if meta.get("carb_type", ["other"])[0] == "other" -%}
+                        Other carbs
+                    {%- else -%}
+                        {{ '/'.join(meta.get("carb_type"))|capitalize }}
+                    {%- endif -%}
+                </span>
+                {%- endif -%}
+                <span class="tag searchable {{ meta.get('temperature', 'any')|replace(' ', '-') }}">
+                    {%- if meta.get("temperature", "any") == "any" -%}
+                        Any temperature
+                    {%- else -%}
+                        {{ meta.get("temperature")|capitalize }}
+                    {%- endif -%}
+                </span>
             </div>
-            {%- endif -%}
+
             <div class="recipe-info">
                 {%- if recipe.get("time") is not none -%}
                 <p><i class="fas fa-clock"></i> <span class="info-item">{{ recipe["time"] }} minutes</span></p>

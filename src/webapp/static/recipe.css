@@ -59,7 +59,7 @@ h1.unmade {
 
 .ingredients tr.active,
 .instructions li.active {
-    background-color: #adbbff;
+    background-color: var(--highlight);
 }
 
 .ingredients {
