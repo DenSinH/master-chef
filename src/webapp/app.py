@@ -73,7 +73,6 @@ async def index(request: Request):
 @app.get("/collection/<collection:str>")
 @app.ext.template("cookbook.html")
 async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLECTION):
-    print("collection", collection)
     recipes = await cookbook.get_recipes(collection)
 
     ordered = OrderedDict(
