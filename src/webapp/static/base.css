@@ -19,9 +19,18 @@ header .header {
     display: flex;
 }
 
+.all-buttons {
+    display: flex;
+}
+
 @media only screen and (max-width: 600px) {
     header {
         flex-direction: column;
+    }
+
+    .all-buttons {
+        flex-direction: column;
+        align-items: center;
     }
 }
 

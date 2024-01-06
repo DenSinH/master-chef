@@ -20,27 +20,29 @@
             <img id="icon" src="/static/icon.png" alt="icon" {% if collection != 'recipes' %}onclick="window.location.href='{{ url_for('index') }}'" {% endif %}>
             <h1 class="{{ collection }}">Merel's Kitchen</h1>
         </div>
-        {%- if authenticated -%}
-        <div class="buttons">
-            <a href="{{ url_for('usage') }}" class="round-button admin"><i class="fas fa-chart-bar"></i></a>
-            <a href="{{ url_for('add_recipe_url_form', collection=collection) }}" class="round-button admin"><i class="fas fa-link"></i></a>
-            <a href="{{ url_for('add_recipe_text_form', collection=collection) }}" class="round-button admin"><i class="fas fa-align-left"></i></a>
-            <a href="{{ url_for('add_recipe_form_form', collection=collection) }}" class="round-button admin"><i class="fas fa-edit"></i></a>
-        </div>
-        {%- endif -%}
-        <div class="buttons">
-            {%- if not authenticated -%}
-            <a href="{{ url_for('login_form', redirect=url_for('collection', collection=collection)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
+        <div class="all-buttons">
+            {%- if authenticated -%}
+            <div class="buttons">
+                <a href="{{ url_for('usage') }}" class="round-button admin"><i class="fas fa-chart-bar"></i></a>
+                <a href="{{ url_for('add_recipe_url_form', collection=collection) }}" class="round-button admin"><i class="fas fa-link"></i></a>
+                <a href="{{ url_for('add_recipe_text_form', collection=collection) }}" class="round-button admin"><i class="fas fa-align-left"></i></a>
+                <a href="{{ url_for('add_recipe_form_form', collection=collection) }}" class="round-button admin"><i class="fas fa-edit"></i></a>
+            </div>
             {%- endif -%}
-            <a href="{{ url_for('about') }}" class="round-button"><i class="fas fa-user"></i></a>
-            {%- if collection == 'unmade' -%}
-            <a href="{{ url_for('collection', collection='recipes') }}" class="round-button"><i class="fas fa-utensils"></i></a>
-            {%- else -%}
-            <a href="{{ url_for('collection', collection='unmade') }}" class="round-button"><i class="fas fa-question"></i></a>
-            {%- endif -%}
-            {%- if recipes|length -%}
-            <span onclick="random_recipe()" class="round-button"><i class="fas fa-random"></i></span>
-            {%- endif -%}
+            <div class="buttons">
+                {%- if not authenticated -%}
+                <a href="{{ url_for('login_form', redirect=url_for('collection', collection=collection)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
+                {%- endif -%}
+                <a href="{{ url_for('about') }}" class="round-button"><i class="fas fa-user"></i></a>
+                {%- if collection == 'unmade' -%}
+                <a href="{{ url_for('collection', collection='recipes') }}" class="round-button"><i class="fas fa-utensils"></i></a>
+                {%- else -%}
+                <a href="{{ url_for('collection', collection='unmade') }}" class="round-button"><i class="fas fa-question"></i></a>
+                {%- endif -%}
+                {%- if recipes|length -%}
+                <span onclick="random_recipe()" class="round-button"><i class="fas fa-random"></i></span>
+                {%- endif -%}
+            </div>
         </div>
     </header>
 
