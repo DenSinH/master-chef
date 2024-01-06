@@ -52,5 +52,6 @@ CUISINE_TYPES = [
 TEMPERATURE_TYPES = [
     "hot",
     "cold",
-    "room temperature"
+    "room temperature",
+    "any"
 ]

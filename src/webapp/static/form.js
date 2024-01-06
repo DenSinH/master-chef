@@ -230,4 +230,23 @@ $(document).ready(function () {
     $("#image-upload").click(function() {
         $("#image-upload-input").click();
     });
+
+    $(".double-select select:first-child").change(function() {
+        let sibling = $(this).parent().find("select:nth-child(2)");
+        if (this.value === "other" || this.value === "none" ||
+            this.value === sibling.val()) {
+            sibling.val("");
+        }
+    });
+
+    $(".double-select select:nth-child(2)").change(function() {
+        let sibling = $(this).parent().find("select:first-child");
+        if (this.value === sibling.val()) {
+            $(this).val("");
+        }
+        else if ($(this).val() && (sibling.val() === "other" || sibling.val() === "none")) {
+            sibling.val($(this).val());
+            $(this).val("");
+        }
+    });
 });

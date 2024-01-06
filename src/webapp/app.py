@@ -31,6 +31,16 @@ def _strftimestamp(timestamp):
 
 
 app.ext.templating.environment.filters["strftimestamp"] = _strftimestamp
+app.ext.templating.environment.globals["CUISINE_TYPES"] = cookbook.CUISINE_TYPES
+app.ext.templating.environment.globals["MEAL_TYPES"] = cookbook.MEAL_TYPES
+app.ext.templating.environment.globals["MEAT_TYPES"] = cookbook.MEAT_TYPES
+app.ext.templating.environment.globals["CARB_TYPES"] = cookbook.CARB_TYPES
+app.ext.templating.environment.globals["TEMPERATURE_TYPES"] = cookbook.TEMPERATURE_TYPES
+app.ext.templating.environment.globals["LANGUAGES"] = {
+    "nl": "Nederlands",
+    "en": "English"
+}
+
 app.config.SECRET = os.environ.get("SECRET", os.environ["PASSWORD"])
 app.static("/static", "./static")
 initialize(
@@ -123,6 +133,7 @@ async def recipe(request: Request, collection: str, id: str):
     )
 
     response.add_cookie("last-recipe", id)
+    response.add_cookie("last-collection", collection)
 
     return response
 
@@ -325,9 +336,18 @@ def _parse_recipe_form(form: sanic.request.RequestParameters):
         "remarks": form["remarks"][0] if "remarks" in form else None,
         "nutrition": nutrition,
         "preparation": form.getlist("preparation", []),
-        "tags": form.getlist("tag", []),
+        "meta": {
+            "language": form["language"][0] if "language" in form else None,
+            "meal_type": form["meal_type"][0] if "meal_type" in form else None,
+            "cuisine": form["cuisine"][0] if "cuisine" in form else None,
+            "meat_type": [meat for meat in form["meat_type"] if meat] if "meat_type" in form else None,
+            "carb_type": [carb for carb in form["carb_type"] if carb] if "carb_type" in form else None,
+            "temperature": form["temperature"][0] if "cuisine" in form else None,
+        },
         "thumbnail": str(form["thumbnail"][0]) if "thumbnail" in form else None
     }
+    from pprint import pprint
+    pprint(recipe)
     return recipe
 
 

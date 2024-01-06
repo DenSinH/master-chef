@@ -5,6 +5,8 @@ from sanic_jwt import exceptions
 from sanic_jwt import Responses
 from sanic_jwt.responses import COOKIE_OPTIONS
 
+from cookbook import DEFAULT_COLLECTION
+
 from dotenv import load_dotenv; load_dotenv()
 import os
 
@@ -54,10 +56,11 @@ class JwtResonses(Responses):
         # special case for recipe page, as it has a template parameter
         if redirect == "recipe":
             last_recipe = request.cookies.get("last-recipe", None)
+            last_collection = request.cookies.get("last-collection", DEFAULT_COLLECTION)
             if last_recipe is None:
-                redirect = "/"
+                redirect = request.app.url_for("collection", collection=last_collection)
             else:
-                redirect = request.app.url_for("recipe", id=last_recipe)
+                redirect = request.app.url_for("recipe", id=last_recipe, collection=last_collection)
         response = sanic.redirect(redirect)
 
         if config.cookie_set():

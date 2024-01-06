@@ -51,7 +51,8 @@ form button[type="submit"] {
 
 input[type="number"],
 input[type="text"],
-textarea {
+textarea,
+select {
     font-family: Arial, sans-serif;
 }
 
@@ -61,6 +62,22 @@ input[type="text"] {
     border-radius: 5px;
     border: 1px solid #ccc;
     padding: 8px;
+}
+
+select {
+    height: 40px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+
+.double-select {
+    display: flex;
+    align-items: stretch;
+}
+
+.double-select select {
+    flex: 1;
 }
 
 textarea {

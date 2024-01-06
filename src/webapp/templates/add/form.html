@@ -109,21 +109,111 @@
                 </div>
             </div>
 
-            <div class="form-field">
-                <label>Tags:</label>
-                <input type="text" name="tag" placeholder="Tag 1" value="{{ recipe.get('tags', [])[0] }}">
+            {%- set meta = recipe.get("meta", {}) -%}
+            <div class="form-field form-field-local">
+                <label>Language</label>
+                <select name="language">
+                    {%- if not meta.get("language") -%}
+                    <option selected value=""></option>
+                    {%- else -%}
+                    <option value=""></option>
+                    {%- endif -%}
+                    {%- for option, name in LANGUAGES.items() -%}
+                    {%- if meta.get("language") == option -%}
+                        <option selected value="{{ option }}">{{ name }}</option>
+                    {%- else -%}
+                        <option value="{{ option }}">{{ name }}</option>
+                    {%- endif -%}
+                    {%- endfor -%}
+                </select>
             </div>
-            <div class="form-field">
-                <input type="text" name="tag" placeholder="Tag 2" value="{{ recipe.get('tags', [])[1] }}">
+            <div class="form-field form-field-local">
+                <label>Meal type</label>
+                <select name="meal_type">
+                    {%- for meal_type in MEAL_TYPES -%}
+                    {%- if meal_type == meta.get("meal_type", "other") -%}
+                        <option selected value="{{ meal_type }}">{{ meal_type|capitalize }}</option>
+                    {%- else -%}
+                        <option value="{{ meal_type }}">{{ meal_type|capitalize }}</option>
+                    {%- endif -%}
+                    {%- endfor -%}
+                </select>
             </div>
-            <div class="form-field">
-                <input type="text" name="tag" placeholder="Tag 3" value="{{ recipe.get('tags', [])[2] }}">
+            <div class="form-field form-field-local">
+                <label>Cuisine</label>
+                <select name="cuisine">
+                    {%- for cuisine in CUISINE_TYPES -%}
+                    {%- if cuisine == meta.get("cuisine", "other") -%}
+                        <option selected value="{{ cuisine }}">{{ cuisine|capitalize }}</option>
+                    {%- else -%}
+                        <option value="{{ cuisine }}">{{ cuisine|capitalize }}</option>
+                    {%- endif -%}
+                    {%- endfor -%}
+                </select>
             </div>
-            <div class="form-field">
-                <input type="text" name="tag" placeholder="Tag 4" value="{{ recipe.get('tags', [])[3] }}">
+            <div class="form-field form-field-local">
+                <label>Meat type</label>
+                <div class="double-select">
+                    <select name="meat_type">
+                        {%- for meat in MEAT_TYPES -%}
+                        {%- if meat == meta.get("meat_type", ["other"])[0] -%}
+                            <option selected value="{{ meat }}">{{ meat|capitalize }}</option>
+                        {%- else -%}
+                            <option value="{{ meat }}">{{ meat|capitalize }}</option>
+                        {%- endif -%}
+                        {%- endfor -%}
+                    </select>
+                    <select name="meat_type">
+                        <option selected value=""></option>
+                        {%- for meat in MEAT_TYPES -%}
+                            {%- if meat != 'other'-%}
+                                {%- if meat == meta.get("meat_type", ["other", None])[1] -%}
+                                    <option selected value="{{ meat }}">{{ meat|capitalize }}</option>
+                                {%- else -%}
+                                    <option value="{{ meat }}">{{ meat|capitalize }}</option>
+                                {%- endif -%}
+                            {%- endif -%}
+                        {%- endfor -%}
+                    </select>
+                </div>
             </div>
-            <div class="form-field">
-                <input type="text" name="tag" placeholder="Tag 5" value="{{ recipe.get('tags', [])[4] }}">
+            <div class="form-field form-field-local">
+                <label>Carb type</label>
+                <div class="double-select">
+                    <select name="carb_type">
+                        {%- for carb in CARB_TYPES -%}
+                        {%- if carb == meta.get("carb_type", ["other"])[0] -%}
+                            <option selected value="{{ carb }}">{{ carb|capitalize }}</option>
+                        {%- else -%}
+                            <option value="{{ carb }}">{{ carb|capitalize }}</option>
+                        {%- endif -%}
+                        {%- endfor -%}
+                    </select>
+                    <select name="carb_type">
+                        <option selected value=""></option>
+                        {%- for carb in CARB_TYPES -%}
+                            {%- if carb != 'other' and carb != 'none' -%}
+                                {%- if carb == meta.get("carb_types", ["other", None])[1] -%}
+                                    <option selected value="{{ carb }}">{{ carb|capitalize }}</option>
+                                {%- else -%}
+                                    <option value="{{ carb }}">{{ carb|capitalize }}</option>
+                                {%- endif -%}
+                            {%- endif -%}
+                        {%- endfor -%}
+                    </select>
+                </div>
+            </div>
+            <div class="form-field form-field-local">
+                <label>Temperature</label>
+                <select name="temperature">
+                    {%- for temp in TEMPERATURE_TYPES -%}
+                        {%- if temp == meta.get("temperature", "any") -%}
+                            <option selected value="{{ temp }}">{{ temp|capitalize }}</option>
+                        {%- else -%}
+                            <option value="{{ temp }}">{{ temp|capitalize }}</option>
+                        {%- endif -%}
+                    {%- endfor -%}
+                </select>
             </div>
 
             <div class="form-field">
