@@ -16,7 +16,9 @@ from .meta import *
 from .thumbnail import get_thumbnail
 
 
-openai.api_key = os.environ["OPENAI_API_KEY"]
+client = openai.AsyncOpenAI(
+    api_key=os.environ["OPENAI_API_KEY"]
+)
 
 
 def _get_headers(url):
@@ -179,16 +181,12 @@ async def translate_url(url):
 async def _chatgpt_json_and_fix(messages, fix):
     for i in range(1 + MAX_RETRIES):
         try:
-            chat_completion = await openai.ChatCompletion.acreate(
+            chat_completion = await client.chat.completions.create(
                 model=MODEL, messages=messages, temperature=0.2
             )
-        except openai.error.ServiceUnavailableError:
-            # todo: openai.error.ServiceUnavailableError: The server is overloaded or not ready yet.
-            # try again later
-            raise
-        except openai.error.InvalidRequestError:
-            # openai.error.InvalidRequestError: This model's maximum context length is 4097 tokens. However, your messages resulted in 4119 tokens. Please reduce the length of the messages.
-            # try using text or increase model size
+        except openai.BadRequestError as e:
+            if e.code == "context_length_exceeded":
+                raise
             raise
         reply = chat_completion.choices[0].message.content
         try:

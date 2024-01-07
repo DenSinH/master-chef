@@ -1,13 +1,13 @@
 aiohttp>=3.9.0
 beautifulsoup4==4.12.2
 Jinja2==3.1.2
-openai==0.27.8
+openai==1.6.1
 PyJWT==2.8.0
 python-dotenv==1.0.0
 requests==2.31.0
-sanic==23.3.0
-sanic-ext==23.3.0
+sanic==23.12.0
+sanic-ext==23.12.0
 sanic-jwt==1.8.0
-sanic-routing==22.8.0
+sanic-routing==23.12.0
 htmlmin==0.1.12
 tldextract==5.1.1
