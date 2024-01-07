@@ -45,7 +45,7 @@ def _get_headers(url):
 
 
 MAX_RETRIES = 1
-MODEL = "gpt-3.5-turbo"
+MODEL = "gpt-3.5-turbo-1106"
 PROMPT = """
 The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text from the webpage.
 The recipe contains information on the ingredients, the preparation and possibly nutritional information.
@@ -182,7 +182,10 @@ async def _chatgpt_json_and_fix(messages, fix):
     for i in range(1 + MAX_RETRIES):
         try:
             chat_completion = await client.chat.completions.create(
-                model=MODEL, messages=messages, temperature=0.2
+                model=MODEL,
+                messages=messages,
+                response_format={"type": "json_object"},
+                temperature=0.2,
             )
         except openai.BadRequestError as e:
             if e.code == "context_length_exceeded":
@@ -202,7 +205,7 @@ async def _chatgpt_json_and_fix(messages, fix):
 async def translate_page(text, url=None, thumbnail=None):
     print(f"Converting with ChatGPT ({MODEL})")
     messages = [
-        {"role": "system", "content": "You are a helpful assistant that converts recipies into JSON format."},
+        {"role": "system", "content": "You are a helpful assistant that converts recipes into JSON format."},
         {"role": "user", "content": PROMPT.format(text=text)}
     ]
 
@@ -211,7 +214,7 @@ async def translate_page(text, url=None, thumbnail=None):
     messages.append({"role": "user", "content": META_PROMPT})
     try:
         _, meta = await _chatgpt_json_and_fix(messages, fix_meta)
-    except:
+    except Exception as e:
         meta = {}
     fixed["meta"] = meta
 
