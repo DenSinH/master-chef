@@ -91,6 +91,11 @@
                         {{ meta.get("cuisine")|capitalize }}
                     </span>
                 {%- endif -%}
+                {%- if meta.get("meal_type", "other") != "other" -%}
+                    <span class="tag searchable">
+                        {{ meta.get("meal_type")|capitalize }}
+                    </span>
+                {%- endif -%}
                 <span class="tag searchable {{ meta.get('meat_type', ['other'])[0] }}">
                     {%- if meta.get("meat_type", ["other"])[0] == "other" -%}
                         Other/mixed meat
