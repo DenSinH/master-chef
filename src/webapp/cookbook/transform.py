@@ -54,7 +54,8 @@ Convert the recipe to a JSON object with the following keys:
 "ingredients": a list of dictionaries, with keys "ingredient", mapping to the name of the ingredient, and "amount" which is a string containing the amount of this ingredient needed including the unit, or 
                a null value if no specific amount is given.
                For example, the ingredient "one onion" should yield {{'amount': '1', 'ingredient': 'onion'}}, and the ingredient "zout" should yield {{'amount': null, 'ingredient': 'zout'}}
-               and the ingredient "1el Komijn" should yield {{'amount': '1 el', 'ingredient': 'Komijn'}}, and "400gr tomaat" should yield {{'amount': '400 gr', 'ingredient': 'tomaat'}}.
+               and the ingredient "1el Komijn" should yield {{'amount': '1 el', 'ingredient': 'Komijn'}}, and "400gr tomaat" should yield {{'amount': '400 gr', 'ingredient': 'tomaat'}}
+               and "1 packet of noodles" should yield {{'amount': '1 packet', 'ingredient': 'noodles'}}.
 "preparation": a list of strings containing the steps of the recipe.
 "nutrition": null if there is no nutritional information in the recipe, or a list of dictionaries containing the keys "group", with the type
 of nutrional information, and "amount": with the amount of this group that is contained in the recipe, as a string including the unit, so
@@ -65,7 +66,7 @@ of nutrional information, and "amount": with the amount of this group that is co
         if it takes long or short to make, whether it is especially high or low in certain nutritional groups, tags like that. Make
         sure the strings are in English.
 
-Keep the language the same, except in the tags, and preferably do not change anything about the text in the recipe at all.
+Keep the language the same, and do not change anything about the text in the recipe at all.
 Only output the JSON object, and nothing else. You can do this!
 Here comes the text:
 
@@ -159,33 +160,48 @@ def fix_meta(_meta):
     return meta
 
 
+def _get_tiktok_text(soup):
+    data = soup.find("script", {"id": "__UNIVERSAL_DATA_FOR_REHYDRATION__"})
+    json_data = json.loads(data.contents[0])
+    return json_data["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["desc"]
+
+
+def _get_html_text(soup):
+    # remove comment sections from website
+    COMMENTS = ["comment", "opmerking"]
+    for attr in ["class", "id"]:
+        for element in soup.find_all(attrs={attr: re.compile(fr".*({'|'.join(COMMENTS)}).*", flags=re.IGNORECASE)}):
+            element.decompose()
+
+    text = re.sub(r"(\n\s*)+", "\n", soup.text)
+    return text
+
+
 async def translate_url(url):
     print(f"Retrieving url {url}")
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False), headers=_get_headers(url)) as session:
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False), headers=_get_headers(url)) as session:
         res = await session.get(url)
         if not res.ok:
             raise CookbookError(f"Could not get the specified url, status code {res.status}")
         soup = BeautifulSoup(await res.text(), features="html.parser")
-
-        # remove comment sections from website
-        COMMENTS = ["comment", "opmerking"]
-        for attr in ["class", "id"]:
-            for element in soup.find_all(attrs={attr: re.compile(fr".*({'|'.join(COMMENTS)}).*", flags=re.IGNORECASE)}):
-                element.decompose()
-
-        text = re.sub(r"(\n\s*)+", "\n", soup.text)
+        domain = tld.extract(url).domain.lower()
+        if domain == "tiktok":
+            text = _get_tiktok_text(soup)
+        else:
+            text = _get_html_text(soup)
         recipe = await translate_page(text, url=url, thumbnail=get_thumbnail(soup))
         return recipe
 
 
-async def _chatgpt_json_and_fix(messages, fix):
+async def _chatgpt_json_and_fix(messages, fix, temperature=0.2, **kwargs):
     for i in range(1 + MAX_RETRIES):
         try:
             chat_completion = await client.chat.completions.create(
                 model=MODEL,
                 messages=messages,
                 response_format={"type": "json_object"},
-                temperature=0.2,
+                temperature=temperature,
+                **kwargs
             )
         except openai.BadRequestError as e:
             if e.code == "context_length_exceeded":
@@ -205,7 +221,7 @@ async def _chatgpt_json_and_fix(messages, fix):
 async def translate_page(text, url=None, thumbnail=None):
     print(f"Converting with ChatGPT ({MODEL})")
     messages = [
-        {"role": "system", "content": "You are a helpful assistant that converts recipes into JSON format."},
+        {"role": "system", "content": "You are a helpful AI cook that converts recipes into JSON objects."},
         {"role": "user", "content": PROMPT.format(text=text)}
     ]
 
@@ -213,7 +229,8 @@ async def translate_page(text, url=None, thumbnail=None):
     messages.append({"role": "assistant", "content": reply})
     messages.append({"role": "user", "content": META_PROMPT})
     try:
-        _, meta = await _chatgpt_json_and_fix(messages, fix_meta)
+        # higher temperature for interpreting the recipe for tags
+        _, meta = await _chatgpt_json_and_fix(messages, fix_meta, temperature=0.7)
     except Exception as e:
         meta = {}
     fixed["meta"] = meta
@@ -225,7 +242,8 @@ async def translate_page(text, url=None, thumbnail=None):
 
 
 if __name__ == '__main__':
+    import asyncio
     from pprint import pprint
 
-    recipe = translate_url("https://15gram.be/recepten/wraps-kip-tikka-masala")
+    recipe = asyncio.run(translate_url("https://www.tiktok.com/t/ZT8VYSJYd/"))
     pprint(recipe)
