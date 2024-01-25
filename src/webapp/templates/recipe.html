@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 
+{%- set meta = recipe.get("meta", {}) -%}
+{%- set english = meta.get("language", "en") == "en" -%}
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -103,8 +106,7 @@
             </div>
             {%- endif -%}
         </div>
-
-        <h2>Ingredients</h2>
+        <h2>{{ 'Ingredients' if english else 'Ingredienten'}} </h2>
         {%- if recipe.get("people") is not none -%}
         <div class="ingredient-conversion">
             <div class="people">
@@ -129,7 +131,7 @@
             {%- endfor -%}
         </table>
 
-        <h2>Instructions</h2>
+        <h2>{{ 'Instructions' if english else 'Instructies' }}</h2>
         <ol class="instructions">
             {%- for step in recipe["preparation"] -%}
             <li>{{ step }}</li>
@@ -138,7 +140,7 @@
 
         {%- if recipe.get("remarks") is not none -%}
         {%- if recipe["remarks"].strip() -%}
-        <h2>Remarks</h2>
+        <h2>{{ 'Remarks' if english else 'Opmerkingen' }}</h2>
         <p class="remarks">
             {{ recipe["remarks"]|capitalize }}
         </p>
@@ -146,7 +148,7 @@
         {%- endif -%}
 
         {%- if recipe.get("nutrition") is not none -%}
-        <h2>Nutrition</h2>
+        <h2>{{ 'Nutrition' if english else 'Voedingswaarden' }}</h2>
         <table class="nutrition">
             {%- for group in recipe["nutrition"] -%}
             <tr><td>{{ group["group"]|capitalize }}</td><td>{{ group["amount"] }}</td></tr>
