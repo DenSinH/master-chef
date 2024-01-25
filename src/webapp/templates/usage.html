@@ -1,16 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
+{% set english = True %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends "base.html" %}
+
+{% block head %}
     <title>OpenAI Usage</title>
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon"/>
-    <link rel="stylesheet" href="/static/base.css">
     <link rel="stylesheet" href="/static/usage.css">
     <link rel="stylesheet" href="/static/dropdown.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="/static/dropdown.js" defer></script>
     <script>
         function set_data(usage) {
@@ -44,9 +39,9 @@
             // update_date("{{ today }}");
         });
     </script>
-</head>
+{% endblock head %}
 
-<body>
+{% block body %}
     <div class="container">
         <header>
             <div class="header">
@@ -86,6 +81,4 @@
             </table>
         </div>
     </div>
-</body>
-
-</html>
+{% endblock body %}

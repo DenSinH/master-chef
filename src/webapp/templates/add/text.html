@@ -1,18 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
+{% set english = True %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends "base.html" %}
+
+{% block head %}
     <title>Add Recipe</title>
-    <link rel="stylesheet" href="/static/base.css">
     <link rel="stylesheet" href="/static/add.css">
     <link rel="stylesheet" href="/static/forms.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-</head>
+{% endblock head %}
 
-<body>
+{% block body %}
     <div class="add-container">
         <div class="add-box">
             <h1>Add via text</h1>
@@ -24,6 +20,4 @@
         </div>
     </div>
     <script src="/static/spinner.js"></script>
-</body>
-
-</html>
+{% endblock body %}
