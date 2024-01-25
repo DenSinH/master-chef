@@ -55,16 +55,15 @@ Convert the recipe to a JSON object with the following keys:
                a null value if no specific amount is given.
                For example, the ingredient "one onion" should yield {{'amount': '1', 'ingredient': 'onion'}}, and the ingredient "zout" should yield {{'amount': null, 'ingredient': 'zout'}}
                and the ingredient "1el Komijn" should yield {{'amount': '1 el', 'ingredient': 'Komijn'}}, and "400gr tomaat" should yield {{'amount': '400 gr', 'ingredient': 'tomaat'}}
-               and "1 packet of noodles" should yield {{'amount': '1 packet', 'ingredient': 'noodles'}}.
-"preparation": a list of strings containing the steps of the recipe.
+               and "1 packet of noodles" should yield {{'amount': '1 packet', 'ingredient': 'noodles'}}. If no amount is specified in a separate ingredients section,
+               infer the "amount" from the recipe if it is mentioned there.
+"preparation": a list of strings containing the steps of the recipe. Split the steps from the original recipe up into multiple steps
+               if they are more than 2 or 3 sentences.
 "nutrition": null if there is no nutritional information in the recipe, or a list of dictionaries containing the keys "group", with the type
 of nutrional information, and "amount": with the amount of this group that is contained in the recipe, as a string including the unit, so
 "Fats 12gr" should yield {{'group': 'fats', 'amount': '12 gr'}}.
 "people": the amount of people that can be fed from this meal as an integer, in case this information is present, otherwise null
 "time": the time that this recipe takes to make in minutes as an integer, in case this information is present, otherwise null
-"tags": interpret the recipe, and generate a list of at most 5 English strings that describe this recipe. For example, what the main ingredient is,
-        if it takes long or short to make, whether it is especially high or low in certain nutritional groups, tags like that. Make
-        sure the strings are in English.
 
 Keep the language the same, and do not change anything about the text in the recipe at all.
 Only output the JSON object, and nothing else. You can do this!
@@ -193,7 +192,7 @@ async def translate_url(url):
         return recipe
 
 
-async def _chatgpt_json_and_fix(messages, fix, temperature=0.2, **kwargs):
+async def _chatgpt_json_and_fix(messages, fix, temperature=0.7, **kwargs):
     for i in range(1 + MAX_RETRIES):
         try:
             chat_completion = await client.chat.completions.create(
@@ -225,7 +224,7 @@ async def translate_page(text, url=None, thumbnail=None):
         {"role": "user", "content": PROMPT.format(text=text)}
     ]
 
-    reply, fixed = await _chatgpt_json_and_fix(messages, fix_recipe)
+    reply, fixed = await _chatgpt_json_and_fix(messages, fix_recipe, temperature=0.7)
     messages.append({"role": "assistant", "content": reply})
     messages.append({"role": "user", "content": META_PROMPT})
     try:
