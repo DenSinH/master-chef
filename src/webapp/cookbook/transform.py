@@ -55,7 +55,7 @@ Convert the recipe to a JSON object with the following keys:
                a null value if no specific amount is given.
                For example, the ingredient "one onion" should yield {{'amount': '1', 'ingredient': 'onion'}}, and the ingredient "zout" should yield {{'amount': null, 'ingredient': 'zout'}}
                and the ingredient "1el Komijn" should yield {{'amount': '1 el', 'ingredient': 'Komijn'}}, and "400gr tomaat" should yield {{'amount': '400 gr', 'ingredient': 'tomaat'}}
-               and "1 packet of noodles" should yield {{'amount': '1 packet', 'ingredient': 'noodles'}}. If no amount is specified in a separate ingredients section,
+               and "packet of noodles" should yield {{'amount': '1 packet', 'ingredient': 'noodles'}}. If no amount is specified in a separate ingredients section,
                infer the "amount" from the recipe if it is mentioned there.
 "preparation": a list of strings containing the steps of the recipe. Split the steps from the original recipe up into multiple steps
                if they are more than 2 or 3 sentences.
