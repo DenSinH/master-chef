@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
 
 {%- set meta = recipe.get("meta", {}) -%}
 {%- set english = meta.get("language", "en") == "en" -%}
+
+<html lang="{{ 'en' if english else 'nl' }}">
 
 <head>
     <meta charset="UTF-8">
@@ -78,42 +79,42 @@
 
         {%- if recipe.get("url") is not none -%}
         <div class="recipe-info">
-            <a class="original-url" href="{{ recipe['url'] }}" target="_blank">original recipe</a>
+            <a class="original-url" href="{{ recipe['url'] }}" target="_blank">{{ 'original recipe' if english else 'origineel recept' }}</a>
         </div>
         {%- endif -%}
 
         <div class="recipe-info">
             {%- if recipe.get("time") is not none -%}
             <div class="recipe-info-detail">
-                <i class="fas fa-clock"></i> <span class="info-item">{{ recipe["time"] }} minutes</span>
+                <i class="fas fa-clock"></i> <span class="info-item">{{ recipe["time"] }} {{ 'minutes' if english else 'minuten' }}</span>
             </div>
             {%- endif -%}
             {%- if recipe.get("people") is not none -%}
             <div class="recipe-info-detail">
-                <i class="fas fa-users"></i> <span class="info-item">Serves {{ recipe["people"] }}</span>
+                <i class="fas fa-users"></i> <span class="info-item">{{ recipe["people"] }} {{ 'servings' if english else 'porties' }} </span>
             </div>
             {%- endif -%}
         </div>
         <div class="recipe-info">
             {%- if recipe.get("date_created") is not none -%}
             <div class="recipe-info-detail">
-                <i class="fas fa-calendar-plus"></i> <span class="info-item">Added {{ recipe["date_created"]|strftimestamp }}</span>
+                <i class="fas fa-calendar-plus"></i> <span class="info-item">{{ 'Added' if english else 'Toegevoegd' }} {{ recipe["date_created"]|strftimestamp }}</span>
             </div>
             {%- endif -%}
             {%- if recipe.get("date_updated") is not none -%}
             <div class="recipe-info-detail">
-                <i class="fas fa-calendar-check"></i> <span class="info-item">Updated {{ recipe["date_updated"]|strftimestamp }}</span>
+                <i class="fas fa-calendar-check"></i> <span class="info-item">{{ 'Updated' if english else 'Geüpdatet' }} {{ recipe["date_updated"]|strftimestamp }}</span>
             </div>
             {%- endif -%}
         </div>
-        <h2>{{ 'Ingredients' if english else 'Ingredienten'}} </h2>
+        <h2>{{ 'Ingredients' if english else 'Ingrediënten'}} </h2>
         {%- if recipe.get("people") is not none -%}
         <div class="ingredient-conversion">
             <div class="people">
                 <div id="people-amount" data-base="{{ recipe['people'] }}">
                     {{ recipe['people'] }}
                 </div>
-                <div class="people-text">People</div></div>
+                <div class="people-text">{{ 'People' if english else 'Personen' }}</div></div>
             <div class="buttons">
                 <div id="decr-people" class="round-button"><i class="fas fa-minus"></i></div>
                 <div id="incr-people" class="round-button"><i class="fas fa-plus"></i></div>
