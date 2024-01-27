@@ -15,7 +15,7 @@ services:
       PORT: 5000
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.drlingo-web.rule=Host(`chef2.dennishilhorst.nl`)"
-      - "traefik.http.routers.drlingo-web.entrypoints=websecure"
-      - "traefik.http.routers.drlingo-web.tls.certresolver=myresolver"
-      - "traefik.http.services.drlingo-web.loadbalancer.server.port=5000"
+      - "traefik.http.routers.chef-web.rule=Host(`chef.dennishilhorst.nl`)"
+      - "traefik.http.routers.chef-web.entrypoints=websecure"
+      - "traefik.http.routers.chef-web.tls.certresolver=myresolver"
+      - "traefik.http.services.chef-web.loadbalancer.server.port=5000"
