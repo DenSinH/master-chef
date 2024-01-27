@@ -14,6 +14,9 @@ from minifyloader import MinifyingFileSystemLoader
 from imgupload import upload_imgur
 
 import cookbook
+from contextvars import ContextVar
+from sqlalchemy import select
+import data
 
 from dotenv import load_dotenv; load_dotenv()
 import os
@@ -54,9 +57,36 @@ initialize(
     responses_class=JwtResonses,
     expiration_delta=60 * 60
 )
+Session = data.init_app(app)
+_base_model_session_ctx = ContextVar("session")
+
+
+@app.middleware("request")
+async def inject_session(request):
+    request.ctx.session = Session()
+    request.ctx.session_ctx_token = _base_model_session_ctx.set(request.ctx.session)
+
+
+@app.middleware("response")
+async def close_session(request, response):
+    if hasattr(request.ctx, "session_ctx_token"):
+        _base_model_session_ctx.reset(request.ctx.session_ctx_token)
+        await request.ctx.session.close()
 
 
 """ UNPROTECTED ACCESS """
+
+
+@app.get("/testing")
+async def test(request: Request):
+    session = request.ctx.session
+    async with session.begin():
+        result = await session.execute(select(data.Views))
+        views = result.scalars().all()
+
+    return sanic.json({
+        "views_data": [view.to_dict() for view in views]
+    })
 
 
 @app.exception(NotFound)
