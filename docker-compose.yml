@@ -10,6 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
   web:
     build: .
+    pull_policy: build
     depends_on:
       - db
     environment:
