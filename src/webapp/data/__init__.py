@@ -1,2 +1,2 @@
 from .models import Views
-from .init import init_app
+from .init import init_db, Session

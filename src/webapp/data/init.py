@@ -10,15 +10,12 @@ import os
 
 load_dotenv()
 
-print(os.environ["DATABASE_URL"])
 engine = create_async_engine(os.environ["DATABASE_URL"], echo=True)
+Session = sessionmaker(bind=engine, class_=AsyncSession)
 
 
-async def _init_app(app: Sanic):
+async def init_db(app: Sanic, loop):
+    print("Initializing DB")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    return sessionmaker(bind=engine, class_=AsyncSession)
 
-
-def init_app(app: Sanic):
-    return asyncio.run(_init_app(app))
