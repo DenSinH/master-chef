@@ -122,6 +122,9 @@
             </div>
 
             <div class="recipe-info">
+                {%- if viewcount.get(recipe_id) is not none -%}
+                <p><i class="fas fa-eye"></i> <span class="info-item">{{ viewcount.get(recipe_id) }} views</span></p>
+                {%- endif -%}
                 {%- if recipe.get("time") is not none -%}
                 <p><i class="fas fa-clock"></i> <span class="info-item">{{ recipe["time"] }} minutes</span></p>
                 {%- endif -%}

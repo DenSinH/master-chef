@@ -84,6 +84,9 @@
         {%- endif -%}
 
         <div class="recipe-info">
+            <div class="recipe-info-detail">
+                <i class="fas fa-eye"></i> <span class="info-item">{{ viewcount }} {{ 'views' if english else 'keer bekeken' }}</span>
+            </div>
             {%- if recipe.get("time") is not none -%}
             <div class="recipe-info-detail">
                 <i class="fas fa-clock"></i> <span class="info-item">{{ recipe["time"] }} {{ 'minutes' if english else 'minuten' }}</span>

@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
-import asyncpg
 
 Base = declarative_base()
 
@@ -8,9 +7,8 @@ Base = declarative_base()
 class Views(Base):
     __tablename__ = 'views'
 
-    id = Column(Integer, primary_key=True)
-    recipe_collection = Column(String, nullable=False)
-    recipe_id = Column(String, nullable=False)
+    recipe_collection = Column(String, primary_key=True)
+    recipe_id = Column(String, primary_key=True)
     viewcount = Column(Integer, nullable=False, default=0)
 
     def __repr__(self):

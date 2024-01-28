@@ -1,7 +1,6 @@
 from sanic import Sanic
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-import asyncio
 
 from .models import Base
 
@@ -10,7 +9,7 @@ import os
 
 load_dotenv()
 
-engine = create_async_engine(os.environ["DATABASE_URL"], echo=True)
+engine = create_async_engine(os.environ["DATABASE_URL"])
 Session = sessionmaker(bind=engine, class_=AsyncSession)
 
 

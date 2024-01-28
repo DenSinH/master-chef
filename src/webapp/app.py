@@ -9,13 +9,14 @@ from sanic import Request
 from sanic_ext import render
 from sanic.exceptions import NotFound
 from sanic_jwt import initialize, protected
+from sanic_session import Session
 from auth import authenticate, JwtResonses
 from minifyloader import MinifyingFileSystemLoader
 from imgupload import upload_imgur
 
 import cookbook
-from sqlalchemy import select
 import data
+import data.views as views
 
 from dotenv import load_dotenv; load_dotenv()
 import os
@@ -56,21 +57,11 @@ initialize(
     responses_class=JwtResonses,
     expiration_delta=60 * 60
 )
+_session = Session(app)
 app.before_server_start(data.init_db)
 
 
 """ UNPROTECTED ACCESS """
-
-
-@app.get("/testing")
-async def test(request: Request):
-    async with data.Session() as session:
-        result = await session.execute(select(data.Views))
-        views = result.scalars().all()
-
-    return sanic.json({
-        "views_data": [view.to_dict() for view in views]
-    })
 
 
 @app.exception(NotFound)
@@ -106,11 +97,13 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
             reverse=True
         )
     )
+    viewcount = await views.get_viewcount(collection)
     return {
         "collection": collection,
         "collections": cookbook.COLLECTIONS,
         "recipes": ordered,
-        "authenticated": await app.ctx.auth.is_authenticated(request)
+        "authenticated": await app.ctx.auth.is_authenticated(request),
+        "viewcount": viewcount,
     }
 
 
@@ -136,13 +129,31 @@ async def recipe(request: Request, collection: str, id: str):
     if id not in recipes:
         raise NotFound("No such recipe exists on this website")
 
+    session = request.ctx.session
+    if "views" not in session:
+        session["views"] = {}
+    session_views = session["views"]
+
+    viewcount = None
+    if collection in session_views:
+        if id in session_views[collection]:
+            viewcount = await views.get_viewcount_single(collection, id)
+        else:
+            session_views[collection].append(id)
+    else:
+        session_views[collection] = [id]
+
+    if viewcount is None:
+        viewcount = await views.incr_viewcount(collection, id)
+
     response = await render(
         "recipe.html",
         context={
             "collection": collection,
             "recipe": recipes[id],
             "recipe_id": id,
-            "authenticated": await app.ctx.auth.is_authenticated(request)
+            "authenticated": await app.ctx.auth.is_authenticated(request),
+            "viewcount": viewcount
         }
     )
 
@@ -229,6 +240,7 @@ async def delete_recipe(request: Request, collection: str, id: str):
         raise NotFound("No such recipe exists on this website")
 
     await cookbook.delete_recipe(collection, id)
+    await views.delete_viewcount(collection, id)
     return sanic.empty()
 
 
@@ -376,8 +388,9 @@ async def add_recipe_form(request: Request, collection: str):
 @protected()
 async def move_recipe(request: Request, collectionfrom: str, collectionto: str, id: str):
     recipe = await cookbook.delete_recipe(collectionfrom, id)
-    id = await cookbook.add_recipe(collectionto, recipe)
-    return sanic.json({"redirect": app.url_for("recipe", id=id, collection=collectionto)})
+    idto = await cookbook.add_recipe(collectionto, recipe)
+    await views.move_viewcount(collectionfrom, collectionto, id, idto)
+    return sanic.json({"redirect": app.url_for("recipe", id=idto, collection=collectionto)})
 
 
 if __name__ == '__main__':
