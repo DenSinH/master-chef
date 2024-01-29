@@ -134,7 +134,7 @@
             </div>
 
             {%- if recipe["ingredients"] is defined and recipe["ingredients"]|length > 0 -%}
-            <span class="hidden advanced-searchable">
+            <span class="hidden searchable">
                 {%- for ingredient in recipe["ingredients"] -%}
                 {{ ingredient["ingredient"]|lower }}
                 {% endfor %}

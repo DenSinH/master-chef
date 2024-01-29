@@ -28,24 +28,34 @@ $(document).ready(function () {
     const recipeItems = $('.recipe-item');
 
     searchBar.on('input', function () {
-        let searchTerm = $(this).val().toLowerCase().trim();
-        const advanced = searchTerm.startsWith("advanced:");
-        if (advanced) {
-            searchTerm = searchTerm.replace("advanced:", "").trim();
-        }
+        const searchTerm = $(this).val().toLowerCase().trim();
+        const searchWords = searchTerm.split(/\s+/);
         numPages = 1;
 
         if (searchTerm) {
             searching = true;
             recipeItems.each(function () {
                 const item = $(this);
-                let searchable = item.find('.searchable').text().toLowerCase();
-                const advancedSearchable = item.find('.advanced-searchable').text().toLowerCase();
-                if (advanced) {
-                    searchable += " " + advancedSearchable;
-                }
+                const searchableWords = item.find('.searchable').text().toLowerCase().split(/\s+/);
+                console.log('Search action')
+                console.log(searchWords);
+                console.log(searchableWords);
 
-                if (searchable.includes(searchTerm)) {
+                // Calculate similarity score based on Jaccard index
+                const intersection = searchWords.filter(word =>
+                    searchableWords.some(searchableWord =>
+                        searchableWord.includes(word)
+                    )
+                );
+                const similarityScore = intersection.length / searchWords.length;
+                console.log(intersection);
+                console.log(similarityScore);
+
+                // Customize the threshold based on your needs
+                const threshold = 0.5;
+
+                // Consider it a match if the similarity score is above the threshold
+                if (similarityScore > threshold) {
                     item.addClass("search-result");
                 } else {
                     item.removeClass("search-result");
