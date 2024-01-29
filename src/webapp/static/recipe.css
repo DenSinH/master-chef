@@ -62,9 +62,14 @@ h1.unmade {
     background-color: var(--highlight);
 }
 
+.ingredients-wrapper {
+    overflow-x: auto;
+}
+
 .ingredients {
     margin-left: 20px !important;  /* this is to make sure the bullet point shows up in the right position */
     border-spacing: 0;
+    white-space: nowrap;
 }
 
 .ingredients td {
