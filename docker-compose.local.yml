@@ -4,10 +4,13 @@ services:
     image: postgres
     volumes:
       - dbdata:/var/lib/postgresql/data
+    hostname: chefdb
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - pgnetwork
   web:
     build: .
     depends_on:
@@ -27,5 +30,10 @@ services:
       PYTHONUNBUFFERED: 1
     ports:
       - '80:5000'
+    networks:
+      - pgnetwork
 volumes:
   dbdata:
+networks:
+  pgnetwork:
+    driver: bridge
