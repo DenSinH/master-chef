@@ -2,3 +2,4 @@ from .cookbook import get_recipes, add_recipe, update_recipe, delete_recipe, DEF
 from .transform import translate_url, translate_page
 from .usage import get_usage
 from .meta import *
+from .title import generate_title

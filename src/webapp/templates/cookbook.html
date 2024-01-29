@@ -18,7 +18,7 @@
     <header>
         <div class="header">
             <img id="icon" src="/static/icon.png" alt="icon" {% if collection != 'recipes' %}onclick="window.location.href='{{ url_for('index') }}'" {% endif %}>
-            <h1 class="{{ collection }}">Merel's Kitchen</h1>
+            <h1 class="{{ collection }}">{{ title }}</h1>
         </div>
         <div class="all-buttons">
             {%- if authenticated -%}
