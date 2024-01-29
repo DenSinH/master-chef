@@ -1,5 +1,11 @@
 function random_recipe() {
-    let recipes = $("a.recipe-item");
+    let recipes;
+    if (searching) {
+        recipes = $("a.recipe-item.search-result");
+    }
+    else {
+        recipes = $("a.recipe-item");
+    }
     let randomIndex = Math.floor(Math.random() * recipes.length);
     recipes[randomIndex].click();
 }
@@ -37,9 +43,6 @@ $(document).ready(function () {
             recipeItems.each(function () {
                 const item = $(this);
                 const searchableWords = item.find('.searchable').text().toLowerCase().split(/\s+/);
-                console.log('Search action')
-                console.log(searchWords);
-                console.log(searchableWords);
 
                 // Calculate similarity score based on Jaccard index
                 const intersection = searchWords.filter(word =>
@@ -48,8 +51,6 @@ $(document).ready(function () {
                     )
                 );
                 const similarityScore = intersection.length / searchWords.length;
-                console.log(intersection);
-                console.log(similarityScore);
 
                 // Customize the threshold based on your needs
                 const threshold = 0.5;
