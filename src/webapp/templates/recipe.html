@@ -56,7 +56,7 @@
                 <h1 class="{{ collection }}">{{ recipe["name"].title() }}</h1>
             </div>
             <div class="buttons">
-                {%- if authenticated -%}
+                {%- if is_admin -%}
                 {%- if collection == 'unmade' -%}
                     <a onclick="make_recipe()" class="round-button admin"><i class="fas fa-exchange-alt"></i></a>
                 {%- endif -%}

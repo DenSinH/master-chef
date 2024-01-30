@@ -8,9 +8,9 @@ from sanic import Sanic
 from sanic import Request
 from sanic_ext import render
 from sanic.exceptions import NotFound
-from sanic_jwt import initialize, protected
+from sanic_jwt import initialize, protected, scoped
 from sanic_session import Session
-from auth import authenticate, JwtResonses
+from auth import authenticate, extend_scopes, JwtResonses, validate_scopes
 from minifyloader import MinifyingFileSystemLoader
 from imgupload import upload_imgur
 
@@ -55,7 +55,10 @@ initialize(
     login_redirect_url="/login",
     secret=app.config.SECRET,
     responses_class=JwtResonses,
-    expiration_delta=60 * 60
+    expiration_delta=60 * 60,
+    algorithm="HS256",
+    add_scopes_to_payload=extend_scopes,
+    scope_enabled=True,
 )
 _session = Session(app)
 app.before_server_start(data.init_db)
@@ -98,11 +101,12 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
         )
     )
     viewcount = await views.get_viewcount(collection)
+    is_admin = await validate_scopes(request, "admin")
     return {
         "collection": collection,
         "collections": cookbook.COLLECTIONS,
         "recipes": ordered,
-        "authenticated": await app.ctx.auth.is_authenticated(request),
+        "is_admin": is_admin,
         "viewcount": viewcount,
         "title": cookbook.generate_title()
     }
@@ -147,13 +151,15 @@ async def recipe(request: Request, collection: str, id: str):
     if viewcount is None:
         viewcount = await views.incr_viewcount(collection, id)
 
+    is_admin = await validate_scopes(request, "admin")
+    test = await app.ctx.auth.extract_user_id(request)
     response = await render(
         "recipe.html",
         context={
             "collection": collection,
             "recipe": recipes[id],
             "recipe_id": id,
-            "authenticated": await app.ctx.auth.is_authenticated(request),
+            "is_admin": is_admin,
             "viewcount": viewcount
         }
     )
@@ -174,6 +180,7 @@ async def _recipe(request: Request, collection: str, id: str, name: str):
 
 @app.get("/get-usage")
 @protected()
+@scoped("admin")
 async def get_usage(request: Request):
     date = request.args.get("date")
     try:
@@ -188,6 +195,7 @@ async def get_usage(request: Request):
 @app.get("/usage")
 @app.ext.template("usage.html")
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/usage"))
+@scoped("admin")
 async def usage(request: Request):
     today = datetime.date.today()
     dates = set()
@@ -211,6 +219,7 @@ async def usage(request: Request):
 @app.ext.template("add/form.html")
 # recipe id is obtained from last visited recipe page in cookies
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="recipe"))
+@scoped("admin")
 async def update_recipe_form(request: Request, collection: str, id: str):
     recipes = await cookbook.get_recipes(collection)
     if id not in recipes:
@@ -225,6 +234,7 @@ async def update_recipe_form(request: Request, collection: str, id: str):
 
 @app.post("/recipe/<collection:str>/<id>/update")
 @protected()
+@scoped("admin")
 async def update_recipe(request: Request, collection: str, id: str):
     recipe = _parse_recipe_form(request.form)
     await cookbook.update_recipe(collection, id, recipe)
@@ -235,6 +245,7 @@ async def update_recipe(request: Request, collection: str, id: str):
 # todo: fix login redirect to recipe page
 @app.post("/recipe/<collection:str>/<id>/delete")
 @protected()
+@scoped("admin")
 async def delete_recipe(request: Request, collection: str, id: str):
     recipes = await cookbook.get_recipes(collection)
     if id not in recipes:
@@ -248,6 +259,7 @@ async def delete_recipe(request: Request, collection: str, id: str):
 @app.get("/collection/<collection:str>/add/url")
 @app.ext.template("add/url.html")
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/url"))
+@scoped("admin")
 async def add_recipe_url_form(request: Request, collection: str):
     return {
         "collection": collection,
@@ -257,6 +269,7 @@ async def add_recipe_url_form(request: Request, collection: str):
 
 @app.post("/collection/<collection:str>/add/url")
 @protected()
+@scoped("admin")
 async def add_recipe_url(request: Request, collection: str):
     url = request.form["url"][0]
     try:
@@ -278,6 +291,7 @@ async def add_recipe_url(request: Request, collection: str):
 @app.get("/collection/<collection:str>/add/text")
 @app.ext.template("add/text.html")
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/text"))
+@scoped("admin")
 async def add_recipe_text_form(request: Request, collection: str):
     return {
         "collection": collection,
@@ -288,6 +302,7 @@ async def add_recipe_text_form(request: Request, collection: str):
 @app.post("/collection/<collection:str>/add/text")
 @app.ext.template("add/form.html")
 @protected()
+@scoped("admin")
 async def add_recipe_text(request: Request, collection: str):
     recipe = await cookbook.translate_page(request.form["text"][0])
     return {
@@ -300,6 +315,7 @@ async def add_recipe_text(request: Request, collection: str):
 
 @app.post("/add/upload-image")
 @protected()
+@scoped("admin")
 async def upload_image(request: Request):
     link = None
     for name, file in request.files.items():
@@ -318,6 +334,7 @@ async def upload_image(request: Request):
 @app.get("/collection/<collection:str>/add/form")
 @app.ext.template("add/form.html")
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/form"))
+@scoped("admin")
 async def add_recipe_form_form(request: Request, collection: str):
     return {
         "collection": collection,
@@ -379,6 +396,7 @@ def _parse_recipe_form(form: sanic.request.RequestParameters):
 
 @app.post("/collection/<collection:str>/add/form")
 @protected()
+@scoped("admin")
 async def add_recipe_form(request: Request, collection: str):
     recipe = _parse_recipe_form(request.form)
     id = await cookbook.add_recipe(collection, recipe)
@@ -387,6 +405,7 @@ async def add_recipe_form(request: Request, collection: str):
 
 @app.post("/move/<collectionfrom:str>/<collectionto:str>/<id>")
 @protected()
+@scoped("admin")
 async def move_recipe(request: Request, collectionfrom: str, collectionto: str, id: str):
     recipe = await cookbook.delete_recipe(collectionfrom, id)
     idto = await cookbook.add_recipe(collectionto, recipe)
