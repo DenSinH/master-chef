@@ -9,8 +9,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     pull_policy: build
-    ports:
-      - 3856:5432
+    hostname: chef-db
+    networks:
+      - pgadmin-net
+      - local-net
   web:
     build: .
     pull_policy: build
@@ -28,6 +30,8 @@ services:
       IMGUR_REFRESH_TOKEN: ${IMGUR_REFRESH_TOKEN}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       PORT: 5000
+    networks:
+      - local-net
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.chef-web.rule=Host(`chef.dennishilhorst.nl`)"
@@ -36,3 +40,7 @@ services:
       - "traefik.http.services.chef-web.loadbalancer.server.port=5000"
 volumes:
   dbdata:
+networks:
+  pgadmin-net:
+    external: true
+  local-net:
