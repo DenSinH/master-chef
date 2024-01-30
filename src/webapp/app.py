@@ -104,6 +104,7 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
         "recipes": ordered,
         "authenticated": await app.ctx.auth.is_authenticated(request),
         "viewcount": viewcount,
+        "title": cookbook.generate_title()
     }
 
 

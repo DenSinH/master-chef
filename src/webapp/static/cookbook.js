@@ -1,5 +1,11 @@
 function random_recipe() {
-    let recipes = $("a.recipe-item");
+    let recipes;
+    if (searching) {
+        recipes = $("a.recipe-item.search-result");
+    }
+    else {
+        recipes = $("a.recipe-item");
+    }
     let randomIndex = Math.floor(Math.random() * recipes.length);
     recipes[randomIndex].click();
 }
@@ -28,24 +34,29 @@ $(document).ready(function () {
     const recipeItems = $('.recipe-item');
 
     searchBar.on('input', function () {
-        let searchTerm = $(this).val().toLowerCase().trim();
-        const advanced = searchTerm.startsWith("advanced:");
-        if (advanced) {
-            searchTerm = searchTerm.replace("advanced:", "").trim();
-        }
+        const searchTerm = $(this).val().toLowerCase().trim();
+        const searchWords = searchTerm.split(/\s+/);
         numPages = 1;
 
         if (searchTerm) {
             searching = true;
             recipeItems.each(function () {
                 const item = $(this);
-                let searchable = item.find('.searchable').text().toLowerCase();
-                const advancedSearchable = item.find('.advanced-searchable').text().toLowerCase();
-                if (advanced) {
-                    searchable += " " + advancedSearchable;
-                }
+                const searchableWords = item.find('.searchable').text().toLowerCase().split(/\s+/);
 
-                if (searchable.includes(searchTerm)) {
+                // Calculate similarity score based on Jaccard index
+                const intersection = searchWords.filter(word =>
+                    searchableWords.some(searchableWord =>
+                        searchableWord.includes(word)
+                    )
+                );
+                const similarityScore = intersection.length / searchWords.length;
+
+                // Customize the threshold based on your needs
+                const threshold = 0.5;
+
+                // Consider it a match if the similarity score is above the threshold
+                if (similarityScore > threshold) {
                     item.addClass("search-result");
                 } else {
                     item.removeClass("search-result");

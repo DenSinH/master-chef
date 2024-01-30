@@ -85,7 +85,13 @@
 
         <div class="recipe-info">
             <div class="recipe-info-detail">
-                <i class="fas fa-eye"></i> <span class="info-item">{{ viewcount }} {{ 'views' if english else 'keer bekeken' }}</span>
+                <i class="fas fa-eye"></i> <span class="info-item">{{ viewcount }}
+                {% if english -%}
+                    {{ 'views' if viewcount != 1 else 'view' }}
+                {%- else -%}
+                    keer bekeken
+                {%- endif -%}
+            </span>
             </div>
             {%- if recipe.get("time") is not none -%}
             <div class="recipe-info-detail">
@@ -124,16 +130,18 @@
             </div>
         </div>
         {%- endif -%}
-        <table class="ingredients">
-            {%- for ingredient in recipe["ingredients"] -%}
-            <tr class="ingredient">
-                <td class="ingredient-amount" data-base="{{ (ingredient['amount'] or '&nbsp')|capitalize|safe }}">
-                    {{ (ingredient["amount"] or "&nbsp")|capitalize|safe }}
-                </td>
-                <td>{{ ingredient["ingredient"]|capitalize }}</td>
-            </tr>
-            {%- endfor -%}
-        </table>
+        <div class="ingredients-wrapper">
+            <table class="ingredients">
+                {%- for ingredient in recipe["ingredients"] -%}
+                <tr class="ingredient">
+                    <td class="ingredient-amount" data-base="{{ (ingredient['amount'] or '&nbsp')|capitalize|safe }}">
+                        {{ (ingredient["amount"] or "&nbsp")|capitalize|safe }}
+                    </td>
+                    <td>{{ ingredient["ingredient"]|capitalize }}</td>
+                </tr>
+                {%- endfor -%}
+            </table>
+        </div>
 
         <h2>{{ 'Instructions' if english else 'Instructies' }}</h2>
         <ol class="instructions">
