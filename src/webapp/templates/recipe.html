@@ -1,22 +1,15 @@
-<!DOCTYPE html>
+{% set english = True %}
 
 {%- set meta = recipe.get("meta", {}) -%}
 {%- set english = meta.get("language", "en") == "en" -%}
 
-<html lang="{{ 'en' if english else 'nl' }}">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block head %}
     <meta property="og:image" itemprop="image primaryImageOfPage" content="{{ recipe['thumbnail'] or '/static/spaghet.png' }}">
     <title>{{ recipe["name"].title() }}</title>
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon"/>
-    <link rel="stylesheet" href="/static/base.css">
     <link rel="stylesheet" href="/static/recipe.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <script src="/static/base.js"></script>
     <script src="/static/recipe.js"></script>
     <script>
         function delete_recipe() {
@@ -53,9 +46,9 @@
             }
         }
     </script>
-</head>
+{% endblock head %}
 
-<body>
+{% block body %}
     <div class="recipe-details">
         <header>
             <div class="header">
@@ -168,6 +161,4 @@
         </table>
         {%- endif -%}
     </div>
-</body>
-
-</html>
+{% endblock body %}
