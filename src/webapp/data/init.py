@@ -1,16 +1,7 @@
 from sanic import Sanic
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 
-from .models import Base
-
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-engine = create_async_engine(os.environ["DATABASE_URL"])
-Session = sessionmaker(bind=engine, class_=AsyncSession)
+from .base import Base, engine
+from .users import register_user, UserExistsException
 
 
 async def init_db(app: Sanic, loop):
@@ -18,3 +9,7 @@ async def init_db(app: Sanic, loop):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+    try:
+        await register_user("Test User", "test@example.com", "password")
+    except UserExistsException:
+        print("Test user already created")

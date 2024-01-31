@@ -6,6 +6,8 @@ from sanic_jwt import Responses
 from sanic_jwt.responses import COOKIE_OPTIONS
 from sanic_jwt.validators import validate_scopes as _validate_scopes
 
+from data import users
+
 from cookbook import DEFAULT_COLLECTION
 
 from dotenv import load_dotenv; load_dotenv()
@@ -27,19 +29,21 @@ def _set_cookie(response, key, value, config, force_httponly=None):
 
 async def authenticate(request, *args, **kwargs):
     email = request.form.get("email")
+    password = request.form.get("password")
     if email.endswith("@dennishilhorst.nl"):
-        if request.form.get("password") != os.environ.get("PASSWORD"):
-            raise exceptions.AuthenticationFailed("Invalid password.")
+        if password != os.environ.get("PASSWORD"):
+            raise exceptions.AuthenticationFailed("Invalid admin password")
         return {
             "user_id": email,
             "scopes": ["admin", "user"]
         }
 
-    # todo: could add user data if we have multiple users
-    return {
-        "user_id": email,
-        "scopes": ["user"]
-    }
+    if await users.login_user(email, password):
+        return {
+            "user_id": email,
+            "scopes": ["user"]
+        }
+    raise exceptions.AuthenticationFailed("Invalid password")
 
 
 async def extend_scopes(user, *args, **kwargs):

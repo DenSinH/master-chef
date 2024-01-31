@@ -15,7 +15,7 @@ from minifyloader import MinifyingFileSystemLoader
 from imgupload import upload_imgur
 
 import cookbook
-import data
+from data import init_db
 import data.views as views
 
 from dotenv import load_dotenv; load_dotenv()
@@ -61,7 +61,7 @@ initialize(
     scope_enabled=True,
 )
 _session = Session(app)
-app.before_server_start(data.init_db)
+app.before_server_start(init_db)
 
 
 """ UNPROTECTED ACCESS """
@@ -411,6 +411,105 @@ async def move_recipe(request: Request, collectionfrom: str, collectionto: str, 
     idto = await cookbook.add_recipe(collectionto, recipe)
     await views.move_viewcount(collectionfrom, collectionto, id, idto)
     return sanic.json({"redirect": app.url_for("recipe", id=idto, collection=collectionto)})
+
+
+""" DATA MANAGEMENT """
+from data.models import *
+import data
+from sqlalchemy import select
+
+TABLES = {
+    "users": User,
+    "comments": Comment
+}
+
+
+def to_dict(row):
+    return {
+        col.name: getattr(row, col.name)
+        for col in row.__table__.columns
+    }
+
+
+def col_type(col):
+    if isinstance(col.type, Boolean):
+        return "boolean"
+    if isinstance(col.type, Integer):
+        return "integer"
+    return "string"
+
+
+@app.route("/manage/<table_name>")
+@app.ext.template("/manage/table.html")
+async def manage(request, table_name):
+    return {
+        "columns": list([col.name for col in TABLES[table_name].__table__.columns]),
+        "column_types": {
+            col.name: col_type(col)
+            for col in TABLES[table_name].__table__.columns
+        },
+        "table_name": table_name
+    }
+
+
+@app.get("/api/<table_name>")
+async def api_get_all(request, table_name):
+    async with data.Session() as session:
+        table_class = TABLES[table_name]
+        result = await session.execute(select(table_class))
+        return sanic.json({"data": [to_dict(row) for row in result.scalars().all()]})
+
+
+@app.get("/api/<table_name>/<id>")
+async def api_get_one(request, table_name, id: int):
+    async with data.Session() as session:
+        table_class = TABLES[table_name]
+        result = await session.execute(select(table_class).where(table_class.id == id))
+        obj = result.scalar()
+        if obj:
+            return sanic.json({"data": to_dict(obj)})
+        else:
+            return sanic.json({"error": "Not found"}, status=404)
+
+
+@app.post("/api/<table_name>")
+async def api_create(request: Request, table_name):
+    async with data.Session() as session:
+        table_class = TABLES[table_name]
+        obj = table_class(**request.json)
+        session.add(obj)
+        await session.commit()
+        return sanic.json({"data": to_dict(obj)})
+
+
+@app.put("/api/<table_name>/<id>")
+async def api_update(request, table_name, id: int):
+    async with data.Session() as session:
+        table_class = TABLES[table_name]
+        result = await session.execute(select(table_class).where(table_class.id == id))
+        obj = result.scalar()
+
+        if obj:
+            for key, value in request.json.items():
+                setattr(obj, key, value)
+            await session.commit()
+            return sanic.json({"data": to_dict(obj)})
+        else:
+            return sanic.json({"error": "Not found"}, status=404)
+
+
+@app.delete("/api/<table_name>/<id>")
+async def api_delete(request, table_name, id: int):
+    async with data.Session() as session:
+        table_class = TABLES[table_name]
+        result = await session.execute(select(table_class).where(table_class.id == id))
+        obj = result.scalar()
+        if obj:
+            await session.delete(obj)
+            await session.commit()
+            return sanic.json({"message": "Deleted successfully"})
+        else:
+            return sanic.json({"error": "Not found"}, status=404)
 
 
 if __name__ == '__main__':
