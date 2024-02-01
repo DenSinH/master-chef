@@ -133,3 +133,42 @@ a.original-url:hover {
         max-width: 100%;
     }
 }
+
+.review {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.reviewer-name {
+    font-weight: bold;
+}
+
+.star-rating {
+    color: #ddd;
+    cursor: pointer;
+}
+
+.star-rating .selected {
+    color: black;
+}
+
+.user-review .star-rating:hover {
+    text-shadow: 0 0 10px black;
+}
+
+.user-review {
+    display: flex;
+    align-items: center;
+}
+
+.user-review .user-review-content {
+    flex: 1;
+}
+
+.editable-review {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px 0;
+    outline: none;
+}

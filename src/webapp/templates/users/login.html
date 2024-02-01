@@ -4,7 +4,7 @@
 
 {% block head %}
     <title>Login</title>
-    <link rel="stylesheet" href="static/login.css">
+    <link rel="stylesheet" href="static/box.css">
     <style>
         a {
             display: block;
@@ -13,16 +13,17 @@
 {% endblock head %}
 
 {% block body %}
-    <div class="login-container">
-        <div class="login-box">
+    <div class="center-container">
+        <div class="center-box centering">
             <div class="header">
                 <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
                 <h1>Login</h1>
             </div>
-            <form action="/login?redirect={{ redirect }}" method="post">
-                <input type="text" id="email" name="email" placeholder="Email" required>
+            <div id="errors"></div>
+            <form id="loginForm" action="/login?redirect={{ redirect }}" method="post">
+                <input type="text" id="username" name="username" placeholder="Username" pattern="\s*\w{3,}.*" required>
                 <input type="password" id="password" name="password" placeholder="Password" required>
-                <button type="submit">Login</button>
+                <button type="button" onclick="submitForm()">Login</button>
             </form>
             <a href="{{ url_for('register') }}">No account? Register here!</a>
             <a id="forgot-password" href="#">Forgot your password?</a>
@@ -30,11 +31,41 @@
     </div>
 
     <script>
+        function submitForm() {
+            $.ajax({
+                type: "POST",
+                url: $("#loginForm").attr("action"),
+                data: $("#loginForm").serialize(),
+                success: function(response) {
+                    try {
+                        window.location.href = response.redirect;
+                    } catch (e) {
+                        window.location.href = '{{ url_for('index') }}'
+                    }
+                },
+                error: function(xhr, status, error) {
+                    if (xhr.status === 401) {
+                        // Authentication failed
+                        try {
+                            var errorResponse = JSON.parse(xhr.responseText);
+                            $("#errors").html(`<p>${errorResponse.error}</p>`);
+                        } catch (e) {
+                            console.error("Error parsing JSON response:", e);
+                            $("#errorContainer").html("<p>Server error</p>");
+                        }
+                    }
+                    else {
+                        $("#errorContainer").html("<p>Server error</p>");
+                    }
+                }
+            });
+        }
+
         $("#forgot-password").on("click", function(event) {
             event.preventDefault();
-            let parameterValue = $("#email").val();
+            let parameterValue = $("#username").val();
             if (parameterValue) {
-                $(this).attr("href", "{{ url_for('forgot_password') }}?email=" + encodeURIComponent(parameterValue));
+                $(this).attr("href", "{{ url_for('forgot_password') }}?username=" + encodeURIComponent(parameterValue));
                 window.location.href = $(this).attr("href");
             }
         });

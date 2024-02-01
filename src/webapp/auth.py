@@ -1,7 +1,6 @@
 import sanic
-import sanic_jwt.exceptions
 from sanic import Request
-from sanic_jwt import exceptions
+import sanic_jwt
 from sanic_jwt import Responses
 from sanic_jwt.responses import COOKIE_OPTIONS
 from sanic_jwt.validators import validate_scopes as _validate_scopes
@@ -12,6 +11,10 @@ from cookbook import DEFAULT_COLLECTION
 
 from dotenv import load_dotenv; load_dotenv()
 import os
+
+
+class CookbookAuthFailed(Exception):
+    pass
 
 
 def _set_cookie(response, key, value, config, force_httponly=None):
@@ -28,22 +31,18 @@ def _set_cookie(response, key, value, config, force_httponly=None):
 
 
 async def authenticate(request, *args, **kwargs):
-    email = request.form.get("email")
+    username = request.form.get("username").strip()
     password = request.form.get("password")
-    if email.endswith("@dennishilhorst.nl"):
-        if password != os.environ.get("PASSWORD"):
-            raise exceptions.AuthenticationFailed("Invalid admin password")
-        return {
-            "user_id": email,
-            "scopes": ["admin", "user"]
-        }
 
-    if await users.login_user(email, password):
+    if await users.login_user(username, password):
+        scopes = ["user"]
+        if username == os.environ.get("ADMIN_USER", "admin"):
+            scopes.append("admin")
         return {
-            "user_id": email,
-            "scopes": ["user"]
+            "user_id": username,
+            "scopes": scopes
         }
-    raise exceptions.AuthenticationFailed("Invalid password or unverified user")
+    raise CookbookAuthFailed("Invalid password")
 
 
 async def extend_scopes(user, *args, **kwargs):
@@ -89,7 +88,7 @@ class JwtResonses(Responses):
                 redirect = request.app.url_for("collection", collection=last_collection)
             else:
                 redirect = request.app.url_for("recipe", id=last_recipe, collection=last_collection)
-        response = sanic.redirect(redirect)
+        response = sanic.json({"redirect": redirect})
 
         if config.cookie_set():
             key = config.cookie_access_token_name()

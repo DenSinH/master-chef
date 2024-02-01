@@ -19,81 +19,63 @@ class RegistrationError(Exception):
     pass
 
 
-class UnverifiedUserError(Exception):
-    pass
-
-
-async def _get_user(session, email):
+async def _get_user(session, username):
+    username = username.strip()
     result = await session.execute(
-        select(User).where(User.user_email == email)
+        select(User).where(User.username == username)
     )
     return result.scalar()
 
 
-async def _login_user(session, email, password):
-    user = await _get_user(session, email)
+async def _login_user(session, username, password):
+    username = username.strip()
+    user = await _get_user(session, username)
     if user is None:
         return None
-    if not user.user_verified:
-        raise UnverifiedUserError()
-    if user.user_password == sha256(password.encode()).hexdigest():
+    if user.password == sha256(password.encode()).hexdigest():
         return user
     return None
 
 
-async def get_user(email):
+async def get_user(username):
+    username = username.strip()
     async with Session() as session:
-        return await _get_user(session, email)
+        return await _get_user(session, username.strip())
 
 
-async def login_user(email, password):
+async def login_user(username, password):
+    username = username.strip()
     async with Session() as session:
-        return (await _login_user(session, email, password)) is not None
+        return (await _login_user(session, username, password)) is not None
 
 
 def _generate_secret():
     return ''.join(random.choice(string.ascii_letters) for i in range(30))
 
 
-async def register_user(name, email, password):
+async def register_user(username, password, force_verified=False):
+    username = username.strip()
     async with Session() as session:
-        user = await _get_user(session, email)
+        user = await _get_user(session, username)
         if user is not None:
-            if user.user_verified:
-                raise UserExistsException(email)
-            else:
-                await session.delete(user)
+            raise UserExistsException(username)
 
-        secret = _generate_secret()
         session.add(
             User(
-                user_email=email,
-                user_password=sha256(password.encode()).hexdigest(),
-                user_name=name,
-                user_verification_secret=secret,
-                user_verification_sent=datetime.datetime.now(),
+                username=username,
+                password=sha256(password.encode()).hexdigest(),
+                date_registered=datetime.datetime.now(),
+                verified=force_verified
             )
         )
         await session.commit()
-    return secret
 
 
-async def validate_user(email, secret):
+async def update_user_password(username, password, newpassword):
+    username = username.strip()
     async with Session() as session:
-        user = await _get_user(session, email)
-        if user.user_verification_secret != secret:
-            raise RegistrationError("Wrong secret!")
-        if datetime.datetime.now() - user.user_verification_sent > datetime.timedelta(hours=1):
-            raise RegistrationError("Took too long!")
-        user.user_verified = True
-        user.user_verification_secret = None
-        await session.commit()
-
-
-async def update_user_password(email, password):
-    async with Session() as session:
-        user = await _login_user(session, email, password)
+        user = await _login_user(session, username, password)
         if user is None:
             raise InvalidPasswordException()
-        user.user_password = sha256(password.encode()).hexdigest()
+        user.password = sha256(newpassword.encode()).hexdigest()
         await session.commit()

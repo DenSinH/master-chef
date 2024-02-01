@@ -4,17 +4,17 @@
 
 {% block head %}
     <title>Register</title>
-    <link rel="stylesheet" href="static/login.css">
+    <link rel="stylesheet" href="static/box.css">
 {% endblock head %}
 
 {% block body %}
-    <div class="login-container">
-        <div class="login-box">
+    <div class="center-container">
+        <div class="center-box centering">
             <div class="header">
                 <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
                 <h1>Registered!</h1>
             </div>
-            <p>Your account has been registered, please wait for Dennis to verify your account!</p>
+            <p>Hi {{ username }}! Your account has been registered!</p>
         </div>
     </div>
 {% endblock body %}

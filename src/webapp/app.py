@@ -10,7 +10,7 @@ from sanic_ext import render
 from sanic.exceptions import NotFound
 from sanic_jwt import initialize, protected, scoped
 from sanic_session import Session
-from auth import authenticate, extend_scopes, JwtResonses, validate_scopes
+from auth import authenticate, extend_scopes, JwtResonses, validate_scopes, CookbookAuthFailed
 from minifyloader import MinifyingFileSystemLoader
 from imgupload import upload_imgur
 
@@ -18,7 +18,6 @@ import cookbook
 from data import init_db
 import data.views as views
 import data.users as users
-from verify import verify_email
 
 from dotenv import load_dotenv; load_dotenv()
 import os
@@ -68,31 +67,43 @@ _session = Session(app)
 app.before_server_start(init_db)
 
 
+async def _get_username(request: Request):
+    try:
+        return await app.ctx.auth.extract_user_id(request)
+    except AttributeError:
+        return None
+
+
 """ UNPROTECTED ACCESS """
 
 
 @app.exception(NotFound)
+@app.ext.template("sorry.html")
 async def notfound(request: Request, exc):
-    return sanic.html(f"""
-    <h2>Resource not found:</h2>
-    <p>{' '.join(exc.args)}</p>
-    """)
-
-
-@app.exception(users.UnverifiedUserError)
-@app.ext.template("users/please_wait.html")
-async def unverified_user(request: Request, exc):
     return {
-        "message": "Please wait for Dennis to verify your account."
+        "title": "Resource not found",
+        "message": f"<p>{' '.join(exc.args)}</p>"
     }
+
+
+@app.exception(CookbookAuthFailed)
+async def auth_failed(request: Request, exc):
+    return sanic.json({
+        "error": str(exc)
+    }, 401)
 
 
 @app.exception(Exception)
 async def exception(request: Request, exc):
-    return sanic.html(f"""
-    <p>An exception occurred: </p>
-    <pre>{traceback.format_exc()}</pre>
-    """, 500)
+    return await render(
+        "sorry.html",
+        500,
+        context={
+            "title": "Whoops!",
+            "message": "<p>An error occurred:</p>"
+                       f"<pre>{traceback.format_exc()}</pre>"
+        }
+    )
 
 
 @app.get("/")
@@ -115,6 +126,13 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
     viewcount = await views.get_viewcount(collection)
     is_admin = await validate_scopes(request, "admin")
     is_user = await validate_scopes(request, "user")
+    username = await _get_username(request)
+
+    if username is not None:
+        title = f"{username}'s Kitchen"
+    else:
+        title = cookbook.generate_title()
+
     return {
         "collection": collection,
         "collections": cookbook.COLLECTIONS,
@@ -122,7 +140,7 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
         "is_admin": is_admin,
         "is_user": is_user,
         "viewcount": viewcount,
-        "title": cookbook.generate_title()
+        "title": title
     }
 
 
@@ -150,46 +168,49 @@ async def register_form(request: Request):
 
 @app.post("/register")
 async def register(request: Request):
-    email = request.form.get("email")
-    if not email:
-        raise users.RegistrationError("Email must be specified")
-    name = request.form.get("name").strip()
-    if not name:
-        raise users.RegistrationError("Must specify a name")
+    username = request.form.get("username").strip()
+    if not username:
+        return sanic.json({
+            "error": "Username must be specified"
+        }, 400)
+    if len(username) < 3:
+        return sanic.json({
+            "error": "Username must be at least 3 characters long"
+        }, 400)
     password = request.form.get("password")
     if not password or len(password) < 6:
-        raise users.RegistrationError("Password must be at least length 6")
-    secret = await users.register_user(name, email, password)
-    # verification_url = app.url_for("validate", email=email, secret=secret, _external=True, _host="localhost")
-    return sanic.redirect(app.url_for("registered"))
+        return sanic.json({
+            "error": "Password must be at least of length 6"
+        }, 400)
+    try:
+        await users.register_user(username, password)
+    except users.UserExistsException as e:
+        return sanic.json({
+            "error": "Username already exists"
+        }, 400)
 
 
-@app.get("/validate")
-async def validate(request: Request):
-    email = dict(request.query_args).get("email")
-    secret = dict(request.query_args).get("secret")
-    # todo: fix email sending
-    # await users.validate_user(email, secret)
-    return sanic.redirect(app.url_for("login_form"))
+    return sanic.json({"redirect": app.url_for("registered")})
 
 
 @app.get("/forgot-password")
 async def forgot_password(request: Request):
-    email = dict(request.query_args).get("email")
-    user = await users.get_user(email)
+    username = dict(request.query_args).get("username")
+    user = await users.get_user(username)
     if user is None:
         return sanic.redirect("login")
     if user.user_password is not None:
-        return render(
-            "users/please_wait.html",
+        return await render(
+            "sorry.html",
             context={
-                "message": "Please ask for Dennis to clear your password so you can reset it."
+                "title": "Please wait...",
+                "message": "<p>Please ask for Dennis to clear your password so you can reset it.</p>"
             }
         )
-    return render(
+    return await render(
         "users/forgot.html",
         context={
-            "email": email
+            "username": username
         }
     )
 
@@ -212,7 +233,10 @@ async def update_password(request: Request):
 @app.get("/registered")
 @app.ext.template("users/registered.html")
 async def registered(request: Request):
-    return {}
+    username = (await _get_username(request)) or "there"
+    return {
+        "username": username
+    }
 
 
 @app.get("/logout")
@@ -247,11 +271,7 @@ async def recipe(request: Request, collection: str, id: str):
 
     is_admin = await validate_scopes(request, "admin")
     is_user = await validate_scopes(request, "user")
-    try:
-        user_id = await app.ctx.auth.extract_user_id(request)
-    except AttributeError:
-        # no payload
-        user_id = None
+    user_id = await _get_username(request)
 
     response = await render(
         "recipe.html",
@@ -277,6 +297,15 @@ async def _recipe(request: Request, collection: str, id: str, name: str):
 
 
 """ PROTECTED ACCESS """
+
+
+@app.post("/comment/<collection>/<id>")
+@protected()
+@scoped("user")
+async def post_comment(request: Request, collection, id):
+    user_id = await app.ctx.auth.extract_user_id(request)
+    print(user_id)
+    return sanic.empty()
 
 
 @app.get("/get-usage")
@@ -316,7 +345,7 @@ async def usage(request: Request):
     }
 
 
-@app.get("/recipe//<collection:str>/<id>/update")
+@app.get("/recipe/<collection:str>/<id>/update")
 @app.ext.template("add/form.html")
 # recipe id is obtained from last visited recipe page in cookies
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="recipe"))

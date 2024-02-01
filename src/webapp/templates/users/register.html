@@ -4,22 +4,47 @@
 
 {% block head %}
     <title>Register</title>
-    <link rel="stylesheet" href="static/login.css">
+    <link rel="stylesheet" href="static/box.css">
 {% endblock head %}
 
 {% block body %}
-    <div class="login-container">
-        <div class="login-box">
+    <div class="center-container login-container">
+        <div class="center-box centering">
             <div class="header">
                 <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
                 <h1>Register</h1>
             </div>
-            <form action="{{ url_for('register') }}" method="post">
-                <input type="email" id="email" name="email" placeholder="Email" required>
-                <input type="text" id="name" name="name" placeholder="Name" pattern="\s*\w{2+}.*" required>
+            <div id="errors"></div>
+            <form id="registerForm" action="{{ url_for('register') }}" method="post">
+                <input type="text" id="username" name="username" placeholder="Username" pattern="\s*\w{3,}.*" required>
                 <input type="password" id="password" name="password" placeholder="Password" required>
-                <button type="submit">Login</button>
+                <button type="button" onclick="submitForm()">Register</button>
             </form>
         </div>
     </div>
+    <script>
+        function submitForm() {
+            $.ajax({
+                type: "POST",
+                url: $("#registerForm").attr("action"),
+                data: $("#registerForm").serialize(),
+                success: function(response) {
+                    try {
+                        window.location.href = response.redirect;
+                    } catch (e) {
+                        window.location.href = '{{ url_for('index') }}'
+                    }
+                },
+                error: function(xhr, status, error) {
+                    try {
+                        var errorResponse = JSON.parse(xhr.responseText);
+                        $("#errors").html(`<p>${errorResponse.error}</p>`);
+                    } catch (e) {
+                        console.error("Error parsing JSON response:", e);
+                        $("#errorContainer").html("<p>Server error</p>");
+                    }
+                }
+            });
+        }
+    </script>
 {% endblock body %}

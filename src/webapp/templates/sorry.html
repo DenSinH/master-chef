@@ -3,7 +3,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-    <title>Forgot Password</title>
+    <title>{{ title|title }}</title>
     <link rel="stylesheet" href="static/login.css">
 {% endblock head %}
 
@@ -12,9 +12,9 @@
         <div class="login-box">
             <div class="header">
                 <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
-                <h1>Please Wait...</h1>
+                <h1>{{ title|title }}</h1>
             </div>
-            <p>{{ message }}</p>
+            {{ message|safe }}
         </div>
     </div>
 {% endblock body %}

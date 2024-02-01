@@ -163,6 +163,78 @@
         </table>
         {%- endif -%}
 
-        <h2>{{ 'Comments' if english else 'Reacties' }}</h2>
+        <h2>{{ 'Reviews' if english else 'Beoordelingen' }}</h2>
+        {%- if is_user -%}
+        <div class="user-review">
+            <div class="user-review-content">
+                <div id="userRating" class="star-rating" data-rating="0">
+                    <span>&#9733;</span>
+                    <span>&#9733;</span>
+                    <span>&#9733;</span>
+                    <span>&#9733;</span>
+                    <span>&#9733;</span>
+                </div>
+                <div class="editable-review" contenteditable="true" id="userReview" role="textbox" aria-multiline="true" placeholder="Write your review here..."></div>
+            </div>
+            <div class="user-review-submit">
+                <button onclick="submitReview()" class="round-button"><i class="fas fa-upload"></i></button>
+            </div>
+        </div>
+        {%- endif -%}
+
+        <div class="review">
+            <p class="reviewer-name">John Doe</p>
+            <p class="star-rating">
+                <span class="selected">&#9733;</span>
+                <span class="selected">&#9733;</span>
+                <span class="selected">&#9733;</span>
+                <span class="selected">&#9733;</span>
+                <span>&#9733;</span>
+            </p>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eget sapien ac velit feugiat tristique ut nec ligula. In hac habitasse platea dictumst. Sed nec tortor vel nisl ullamcorper bibendum. Praesent volutpat justo eu erat aliquam dapibus.</p>
+        </div>
+
+        {%- if is_user -%}
+        <script>
+            // Update the rating display based on the selected stars
+            function updateRating(stars) {
+                $('#userRating span').removeClass('selected');
+                $('#userRating span:lt(' + stars + ')').addClass('selected');
+                $('#userRating').attr('data-rating', stars);
+            }
+
+            // Handle star clicks for user rating
+            $('#userRating span').on('click', function() {
+                let stars = $(this).index() + 1;
+                updateRating(stars);
+            });
+
+            function submitReview() {
+                let userReviewContent = $('#userReview').text();
+                let selectedRating = $('#userRating').attr('data-rating');
+                if (selectedRating === 0) {
+                    alert("You must give at least 1 star");
+                    return;
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    url: '{{ url_for('post_comment', collection=collection, id=recipe_id) }}',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        rating: selectedRating,
+                        reviewContent: userReviewContent
+                    }),
+                    success: function(response) {
+                        console.log('Review submitted successfully:', response);
+                        // You can add further actions based on the response from the server
+                    },
+                    error: function(error) {
+                        console.error('Error submitting review:', error);
+                    }
+                });
+            }
+        </script>
+        {%- endif -%}
     </div>
 {% endblock body %}
