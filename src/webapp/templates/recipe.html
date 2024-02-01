@@ -166,26 +166,30 @@
 
         <h2>{{ 'Reviews' if english else 'Beoordelingen' }}</h2>
         {%- if is_user -%}
-        <p class="reviewer-name">Your Review:</p>
-        <div class="user-review">
-            <div class="user-review-content">
-                {% set user_rating = user_comment.rating if user_comment is not none else 0 %}
-                <div id="userRating" class="star-rating" data-rating="{{ user_rating }}">
-                    {% for i in range(user_rating) %}
-                    <span class="selected">&#9733;</span>
-                    {% endfor %}
-                    {% for i in range(5 - user_rating) %}
-                    <span>&#9733;</span>
-                    {% endfor %}
+        <div class="review">
+            <p class="user-reviewer-name reviewer-name">Your Review:</p>
+            <div id="errors"></div>
+            <div class="user-review">
+                <div class="user-review-content">
+                    {% set user_rating = user_comment.rating if user_comment is not none else 0 %}
+                    <div id="userRating" class="star-rating" data-rating="{{ user_rating }}">
+                        {% for i in range(user_rating) %}
+                        <span class="selected">&#9733;</span>
+                        {% endfor %}
+                        {% for i in range(5 - user_rating) %}
+                        <span>&#9733;</span>
+                        {% endfor %}
+                    </div>
+                    <div class="editable-review" contenteditable="true" id="userReview" role="textbox" aria-multiline="true" placeholder="Write your review here...">
+                        {%- if user_comment is not none -%}
+                            {{ user_comment.text }}
+                        {%- endif -%}
+                    </div>
                 </div>
-                <div class="editable-review" contenteditable="true" id="userReview" role="textbox" aria-multiline="true" placeholder="Write your review here...">
-                    {% if user_comment is not none %}
-                        {{ user_comment.text }}
-                    {% endif %}
+                <div class="user-review-controls">
+                    <span onclick="submitReview()" class="round-button"><i class="fas fa-comment"></i></span>
+                    <span onclick="deleteReview()" class="round-button"><i class="fas fa-trash"></i></span>
                 </div>
-            </div>
-            <div class="user-review-submit">
-                <span onclick="submitReview()" class="round-button"><i class="fas fa-comment"></i></span>
             </div>
         </div>
         {%- endif -%}
@@ -209,7 +213,6 @@
 
         {%- if is_user -%}
         <script>
-            // Update the rating display based on the selected stars
             function updateRating(stars) {
                 $('#userRating span').removeClass('selected');
                 $('#userRating span:lt(' + stars + ')').addClass('selected');
@@ -239,11 +242,38 @@
                         text: userReviewContent
                     }),
                     success: function(response) {
-                        console.log('Review submitted successfully:', response);
-                        // You can add further actions based on the response from the server
+                        show_popup('Comment posted!');
                     },
                     error: function(error) {
-                        console.error('Error submitting review:', error);
+                        try {
+                            var errorResponse = JSON.parse(xhr.responseText);
+                            $("#errors").html(`<p>${errorResponse.error}</p>`);
+                        } catch (e) {
+                            console.error("Error parsing JSON response:", e);
+                            show_popup('There was a problem posting your review...');
+                        }
+                    }
+                });
+            }
+
+            function deleteReview() {
+                $.ajax({
+                    type: 'DELETE',
+                    url: '{{ url_for('delete_comment', collection=collection, id=recipe_id) }}',
+                    contentType: 'application/json',
+                    success: function(response) {
+                        updateRating(0);
+                        $('#userReview').text('');
+                        show_popup('Comment deleted!');
+                    },
+                    error: function(error) {
+                        try {
+                            var errorResponse = JSON.parse(xhr.responseText);
+                            $("#errors").html(`<p>${errorResponse.error}</p>`);
+                        } catch (e) {
+                            console.error("Error parsing JSON response:", e);
+                            show_popup('There was a problem deleting your review...');
+                        }
                     }
                 });
             }

@@ -3,6 +3,7 @@ import datetime
 import aiohttp
 from aiohttp.client_exceptions import ClientResponseError
 import traceback
+import re
 import sanic
 from sanic import Sanic
 from sanic import Request
@@ -324,7 +325,7 @@ async def post_comment(request: Request, collection, id):
     user = await users.get_user(username)
     if user is None:
         return sanic.json({"error": "Unknown user"}, 400)
-    text = request.json.get("text").strip()
+    text = re.sub(r"\s+", " ", request.json.get("text").strip())
     if len(text) > 500:
         return sanic.json({"error": "Review should be < 500 characters"}, 400)
     rating = request.json.get("rating")
@@ -332,6 +333,20 @@ async def post_comment(request: Request, collection, id):
         return sanic.json({"error": "Rating should be between 1 and 5"}, 400)
 
     await comments.add_comment(collection, id, user.id, text, rating)
+
+    return sanic.empty()
+
+
+@app.delete("/comment/<collection>/<id>")
+@protected()
+@scoped("user")
+async def delete_comment(request: Request, collection, id):
+    username = await app.ctx.auth.extract_user_id(request)
+    user = await users.get_user(username)
+    if user is None:
+        return sanic.json({"error": "Unknown user"}, 400)
+
+    await comments.delete_comment(collection, id, user.id)
 
     return sanic.empty()
 

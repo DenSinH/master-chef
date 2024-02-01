@@ -144,9 +144,12 @@ a.original-url:hover {
     font-weight: bold;
 }
 
+user-reviewer-name.reviewer-name {
+    margin-bottom: 0;
+}
+
 .star-rating {
     color: #ddd;
-    cursor: pointer;
     font-size: 1.5em;
 }
 
@@ -156,12 +159,12 @@ a.original-url:hover {
 
 .user-review .star-rating:hover {
     text-shadow: 0 0 10px black;
+    cursor: pointer;
 }
 
 .user-review {
     display: flex;
     align-items: center;
-    padding: 10px;
 }
 
 .user-review .user-review-content {
@@ -172,6 +175,15 @@ a.original-url:hover {
     border: 1px solid #ddd;
     padding: 10px;
     margin: 10px 0;
-    margin-left: -10px;
     outline: none;
+    white-space: pre-wrap;
+}
+
+.user-review-controls {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-review-controls .round-button {
+    margin-bottom: 10px;
 }

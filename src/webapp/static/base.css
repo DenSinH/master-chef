@@ -107,3 +107,7 @@ h1 {
 .warning {
     color: red;
 }
+
+#errors {
+    color: red;
+}
