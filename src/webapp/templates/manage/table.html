@@ -46,7 +46,7 @@
 {% block body %}
     <header>
         <div class="header">
-            <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('collection', collection=collection) }}'">
+            <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
             <h1>{{ table_name.capitalize() }}</h1>
         </div>
     </header>
@@ -98,7 +98,7 @@
                 {% for column in columns %}
                     cell = document.createElement("td");
                     {% if column != "id" %}
-                        cell.innerHTML = `<div contenteditable="true" id="${item.id}_{{column}}" onclick="startEditing(event)">${item['{{column}}']}</div>`;
+                        cell.innerHTML = `<div contenteditable="true" id="${item.id}_{{column}}" onclick="startEditing(event)">${(item['{{column}}'] == null) ? '' : item['{{column}}']}</div>`;
                     {% else %}
                         cell.innerHTML = `<div id="${item.id}_{{column}}">${item['{{column}}']}</div>`;
                     {% endif %}
@@ -177,10 +177,21 @@
 
         // Function to parse values based on column data type
         function parseValue(value, dataType) {
-            if (dataType === 'integer') {
+            if (dataType === 'intnull') {
+                return parseInt(value, 10) || null;
+            } else if (dataType === 'integer') {
                 return parseInt(value, 10) || 0;
             } else if (dataType === 'boolean') {
                 return value.toLowerCase() === 'true';
+            } else if (dataType === 'datetimenull') {
+                if (!value) {
+                    return null;
+                }
+                return Date.parse(value + 'Z') || null;
+            } else if (dataType == 'datetime') {
+                return Date.parse(value + 'Z');
+            } else if (dataType == 'stringnull') {
+                return value || null;
             } else {
                 return value;
             }

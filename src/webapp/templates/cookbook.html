@@ -26,8 +26,10 @@
             </div>
             {%- endif -%}
             <div class="buttons">
-                {%- if not is_admin -%}
+                {%- if not is_admin and not is_user -%}
                 <a href="{{ url_for('login_form', redirect=url_for('collection', collection=collection)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
+                {%- else -%}
+                <a href="{{ url_for('logout') }}" class="round-button"><i class="fas fa-sign-out-alt"></i></a>
                 {%- endif -%}
                 <a href="{{ url_for('about') }}" class="round-button"><i class="fas fa-user"></i></a>
                 {%- if collection == 'unmade' -%}

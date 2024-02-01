@@ -17,6 +17,7 @@ from imgupload import upload_imgur
 import cookbook
 from data import init_db
 import data.views as views
+import data.users as users
 
 from dotenv import load_dotenv; load_dotenv()
 import os
@@ -46,11 +47,13 @@ app.ext.templating.environment.globals["LANGUAGES"] = {
 
 app.config.SECRET = os.environ.get("SECRET", os.environ["PASSWORD"])
 app.static("/static", "./static")
+
+JWT_TOKEN_NAME = "jwt_access_token"
 initialize(
     app,
     authenticate=authenticate,
     cookie_set=True,
-    cookie_access_token_name="jwt_access_token",
+    cookie_access_token_name=JWT_TOKEN_NAME,
     url_prefix="/login",  # post to authenticate function from .auth
     login_redirect_url="/login",
     secret=app.config.SECRET,
@@ -80,7 +83,7 @@ async def exception(request: Request, exc):
     return sanic.html(f"""
     <p>An exception occurred: </p>
     <pre>{traceback.format_exc()}</pre>
-    """)
+    """, 500)
 
 
 @app.get("/")
@@ -102,11 +105,13 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
     )
     viewcount = await views.get_viewcount(collection)
     is_admin = await validate_scopes(request, "admin")
+    is_user = await validate_scopes(request, "user")
     return {
         "collection": collection,
         "collections": cookbook.COLLECTIONS,
         "recipes": ordered,
         "is_admin": is_admin,
+        "is_user": is_user,
         "viewcount": viewcount,
         "title": cookbook.generate_title()
     }
@@ -126,6 +131,50 @@ async def login_form(request: Request):
     return {
         "redirect": dict(request.query_args).get("redirect", "/")
     }
+
+
+@app.get("/register")
+@app.ext.template("register.html")
+async def register_form(request: Request):
+    return {}
+
+
+@app.post("/register")
+async def register(request: Request):
+    email = request.form.get("email")
+    if not email:
+        raise users.RegistrationError("Email must be specified")
+    name = request.form.get("name")
+    if not name:
+        raise users.RegistrationError("Must specify a name")
+    password = request.form.get("password")
+    if not password or len(password) < 6:
+        raise users.RegistrationError("Password must be at least length 6")
+    secret = await users.register_user(name, email, password)
+    verification_url = app.url_for("validate", email=email, secret=secret)
+    print(verification_url)
+    return sanic.redirect(app.url_for("registered"))
+
+
+@app.get("/validate")
+async def validate(request: Request):
+    email = dict(request.query_args).get("email")
+    secret = dict(request.query_args).get("secret")
+    await users.validate_user(email, secret)
+    return sanic.redirect(app.url_for("login_form"))
+
+
+@app.get("/registered")
+@app.ext.template("registered.html")
+async def registered(request: Request):
+    return {}
+
+
+@app.get("/logout")
+async def logout(request: Request):
+    response = sanic.redirect(request.app.url_for("index"))
+    response.cookies.delete_cookie(JWT_TOKEN_NAME)
+    return response
 
 
 @app.get("/recipe/<collection:str>/<id>")
@@ -152,7 +201,13 @@ async def recipe(request: Request, collection: str, id: str):
         viewcount = await views.incr_viewcount(collection, id)
 
     is_admin = await validate_scopes(request, "admin")
-    test = await app.ctx.auth.extract_user_id(request)
+    is_user = await validate_scopes(request, "user")
+    try:
+        user_id = await app.ctx.auth.extract_user_id(request)
+    except AttributeError:
+        # no payload
+        user_id = None
+
     response = await render(
         "recipe.html",
         context={
@@ -160,6 +215,7 @@ async def recipe(request: Request, collection: str, id: str):
             "recipe": recipes[id],
             "recipe_id": id,
             "is_admin": is_admin,
+            "is_user": is_user,
             "viewcount": viewcount
         }
     )
@@ -424,9 +480,15 @@ TABLES = {
 }
 
 
+def convert_field(field):
+    if isinstance(field, (datetime.datetime, datetime.date)):
+        return str(field)
+    return field
+
+
 def to_dict(row):
     return {
-        col.name: getattr(row, col.name)
+        col.name: convert_field(getattr(row, col.name))
         for col in row.__table__.columns
     }
 
@@ -435,7 +497,15 @@ def col_type(col):
     if isinstance(col.type, Boolean):
         return "boolean"
     if isinstance(col.type, Integer):
+        if col.nullable:
+            return "intnull"
         return "integer"
+    if isinstance(col.type, DateTime):
+        if col.nullable:
+            return "datetimenull"
+        return "datetime"
+    if col.nullable:
+        return "stringnull"
     return "string"
 
 
@@ -476,10 +546,16 @@ async def api_get_one(request, table_name, id: int):
 async def api_create(request: Request, table_name):
     async with data.Session() as session:
         table_class = TABLES[table_name]
-        obj = table_class(**request.json)
+        obj_data = request.json
+        for col, val in obj_data.items():
+            if isinstance(table_class.__table__.columns[col], (DateTime,)):
+                if isinstance(val, (int, float)):
+                    obj_data[col] = datetime.datetime.utcfromtimestamp(val / 1000)
+        obj = table_class(**obj_data)
         session.add(obj)
+        res_data = to_dict(obj)
         await session.commit()
-        return sanic.json({"data": to_dict(obj)})
+        return sanic.json({"data": res_data})
 
 
 @app.put("/api/<table_name>/<id>")
@@ -491,9 +567,13 @@ async def api_update(request, table_name, id: int):
 
         if obj:
             for key, value in request.json.items():
+                if isinstance(table_class.__table__.columns[key].type, (DateTime,)):
+                    if isinstance(value, (int, float)):
+                        value = datetime.datetime.utcfromtimestamp(value / 1000)
                 setattr(obj, key, value)
+            res_data = to_dict(obj)
             await session.commit()
-            return sanic.json({"data": to_dict(obj)})
+            return sanic.json({"data": res_data})
         else:
             return sanic.json({"error": "Not found"}, status=404)
 

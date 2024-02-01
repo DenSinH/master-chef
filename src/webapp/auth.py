@@ -53,7 +53,7 @@ async def extend_scopes(user, *args, **kwargs):
 async def validate_scopes(request: Request, scopes):
     return await _validate_scopes(
         request,
-        "admin",
+        scopes,
         await request.app.ctx.auth.extract_scopes(request),
         override=request.app.ctx.auth.override_scope_validator,
         destructure=request.app.ctx.auth.destructure_scopes,
