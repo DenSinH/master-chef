@@ -1,3 +1,5 @@
+import sanic
+
 from .models import User
 from .base import Session
 from hashlib import sha256
@@ -71,11 +73,12 @@ async def register_user(username, password, force_verified=False):
         await session.commit()
 
 
-async def update_user_password(username, password, newpassword):
+async def update_user_password(username, newpassword):
     username = username.strip()
     async with Session() as session:
-        user = await _login_user(session, username, password)
+        user = await _get_user(session, username)
         if user is None:
-            raise InvalidPasswordException()
+            raise sanic.NotFound()
+
         user.password = sha256(newpassword.encode()).hexdigest()
         await session.commit()

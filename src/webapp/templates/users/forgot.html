@@ -14,11 +14,37 @@
                 <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
                 <h1>Forgot Password</h1>
             </div>
-            <form action="{{ url_for('update_password', username=username) }}" method="post">
+            <div id="errors"></div>
+            <form id="forgotForm" action="{{ url_for('update_password', username=username) }}" method="post">
                 <input type="text" id="username" name="username" value="{{ username }}" disabled>
                 <input type="password" id="password" name="password" placeholder="Password" required>
-                <button type="submit">Update</button>
+                <button type="button" onclick="submitForm()">Update</button>
             </form>
         </div>
     </div>
+    <script>
+        function submitForm() {
+            $.ajax({
+                type: "POST",
+                url: $("#forgotForm").attr("action"),
+                data: $("#forgotForm").serialize(),
+                success: function(response) {
+                    try {
+                        window.location.href = response.redirect;
+                    } catch (e) {
+                        window.location.href = '{{ url_for('index') }}'
+                    }
+                },
+                error: function(xhr, status, error) {
+                    try {
+                        var errorResponse = JSON.parse(xhr.responseText);
+                        $("#errors").html(`<p>${errorResponse.error}</p>`);
+                    } catch (e) {
+                        console.error("Error parsing JSON response:", e);
+                        $("#errorContainer").html("<p>Server error</p>");
+                    }
+                }
+            });
+        }
+    </script>
 {% endblock body %}

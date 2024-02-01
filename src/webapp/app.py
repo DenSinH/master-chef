@@ -199,12 +199,13 @@ async def forgot_password(request: Request):
     user = await users.get_user(username)
     if user is None:
         return sanic.redirect("login")
-    if user.user_password is not None:
+    if user.password is not None:
         return await render(
             "sorry.html",
             context={
                 "title": "Please wait...",
-                "message": "<p>Please ask for Dennis to clear your password so you can reset it.</p>"
+                "message": "<p>Please ask for Dennis to clear your password so you can reset it.</p>",
+                "centering": True
             }
         )
     return await render(
@@ -217,17 +218,18 @@ async def forgot_password(request: Request):
 
 @app.post("/forgot-password")
 async def update_password(request: Request):
-    email = dict(request.query_args).get("email")
-    user = await users.get_user(email)
+    username = dict(request.query_args).get("username")
+    user = await users.get_user(username)
     if user is None:
-        return sanic.redirect("login")
-    if user.user_password is not None:
-        return sanic.redirect(app.url_for("forgot_password", email=email))
+        return sanic.json({"error": "This user does not exist, are you sure you entered the right name before hitting 'Forgot password'"}, 400)
+    if user.password is not None:
+        return sanic.redirect(app.url_for("forgot_password", username=username))
 
-    password = request.form.get("password")
-    if not password or len(password) < 6:
-        raise users.RegistrationError("Password must be at least length 6")
-    await users.update_user_password(email, password)
+    newpassword = request.form.get("password")
+    if not newpassword or len(newpassword) < 6:
+        return sanic.json({"error": "Password must be at least length 6"}, 400)
+    await users.update_user_password(username, newpassword)
+    return sanic.json({"redirect": app.url_for("login_form")})
 
 
 @app.get("/registered")
