@@ -11,6 +11,8 @@ function show_popup(message) {
     popup.style.padding = '10px 20px';
     popup.style.borderRadius = '5px';
     popup.style.zIndex = '9999';
+    popup.style.textAlign = 'center';
+    popup.style.maxWidth = '80vw';
 
     document.body.appendChild(popup);
 

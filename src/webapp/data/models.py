@@ -41,3 +41,12 @@ class Comment(Base):
 
     def __repr__(self):
         return f"<Comment({self.recipe_collection}/{self.recipe_id} {self.text} [{self.user_id}])>"
+
+
+class Save(Base):
+    __tablename__ = 'saves'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, primary_key=True)
+    recipe_collection = Column(String, primary_key=True)
+    recipe_id = Column(String, primary_key=True)

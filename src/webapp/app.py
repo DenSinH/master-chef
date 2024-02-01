@@ -5,6 +5,7 @@ from aiohttp.client_exceptions import ClientResponseError
 import traceback
 import re
 import sanic
+import asyncio
 from sanic import Sanic
 from sanic import Request
 from sanic_ext import render
@@ -20,6 +21,7 @@ from data import init_db
 import data.views as views
 import data.users as users
 import data.comments as comments
+import data.saves as saves
 
 from dotenv import load_dotenv; load_dotenv()
 import os
@@ -125,10 +127,12 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
             reverse=True
         )
     )
-    viewcount = await views.get_viewcount(collection)
-    is_admin = await validate_scopes(request, "admin")
-    is_user = await validate_scopes(request, "user")
-    username = await _get_username(request)
+    viewcount, is_admin, is_user, username = await asyncio.gather(
+        views.get_viewcount(collection),
+        validate_scopes(request, "admin"),
+        validate_scopes(request, "user"),
+        _get_username(request)
+    )
 
     if username is not None:
         title = f"{username}'s Kitchen"
@@ -273,9 +277,11 @@ async def recipe(request: Request, collection: str, id: str):
     if viewcount is None:
         viewcount = await views.incr_viewcount(collection, id)
 
-    is_admin = await validate_scopes(request, "admin")
-    is_user = await validate_scopes(request, "user")
-    username = await _get_username(request)
+    is_admin, is_user, username = await asyncio.gather(
+        validate_scopes(request, "admin"),
+        validate_scopes(request, "user"),
+        _get_username(request)
+    )
     if username is not None:
         requser = await users.get_user(username)
     else:
@@ -315,6 +321,44 @@ async def _recipe(request: Request, collection: str, id: str, name: str):
 
 
 """ PROTECTED ACCESS """
+
+
+@app.get("/saves/<collection>")
+@protected()
+@scoped("user")
+async def get_saves(request: Request, collection):
+    username = await app.ctx.auth.extract_user_id(request)
+    user = await users.get_user(username)
+    if user is None:
+        return sanic.json({"error": "Unknown user"}, 400)
+
+    return sanic.json({
+        "saves": await saves.get_saves(user.id, collection)
+    })
+
+
+@app.post("/save/<collection>/<id>")
+@protected()
+@scoped("user")
+async def post_save(request: Request, collection, id):
+    username = await app.ctx.auth.extract_user_id(request)
+    user = await users.get_user(username)
+    if user is None:
+        return sanic.json({"error": "Unknown user"}, 400)
+    await saves.add_save(user.id, collection, id)
+    return sanic.empty()
+
+
+@app.delete("/save/<collection>/<id>")
+@protected()
+@scoped("user")
+async def delete_save(request: Request, collection, id):
+    username = await app.ctx.auth.extract_user_id(request)
+    user = await users.get_user(username)
+    if user is None:
+        return sanic.json({"error": "Unknown user"}, 400)
+    await saves.delete_save(user.id, collection, id)
+    return sanic.empty()
 
 
 @app.post("/comment/<collection>/<id>")
@@ -424,8 +468,12 @@ async def delete_recipe(request: Request, collection: str, id: str):
     if id not in recipes:
         raise NotFound("No such recipe exists on this website")
 
-    await cookbook.delete_recipe(collection, id)
-    await views.delete_viewcount(collection, id)
+    await asyncio.gather(
+        cookbook.delete_recipe(collection, id),
+        views.delete_viewcount(collection, id),
+        comments.delete_comments(collection, id),
+        saves.delete_saves(collection, id),
+    )
     return sanic.empty()
 
 
@@ -582,8 +630,11 @@ async def add_recipe_form(request: Request, collection: str):
 async def move_recipe(request: Request, collectionfrom: str, collectionto: str, id: str):
     recipe = await cookbook.delete_recipe(collectionfrom, id)
     idto = await cookbook.add_recipe(collectionto, recipe)
-    await views.move_viewcount(collectionfrom, collectionto, id, idto)
-    await comments.move_comments(collectionfrom, collectionto, id, idto)
+    await asyncio.gather(
+        views.move_viewcount(collectionfrom, collectionto, id, idto),
+        comments.move_comments(collectionfrom, collectionto, id, idto),
+        saves.move_saves(collectionfrom, collectionto, id, idto)
+    )
     return sanic.json({"redirect": app.url_for("recipe", id=idto, collection=collectionto)})
 
 
@@ -594,7 +645,8 @@ from sqlalchemy import select
 
 TABLES = {
     "users": User,
-    "comments": Comment
+    "comments": Comment,
+    "saves": Save
 }
 
 

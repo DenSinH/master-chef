@@ -16,5 +16,6 @@ async def init_db(app: Sanic, loop):
 
     try:
         await register_user(os.environ.get("ADMIN_USER", "admin"), os.environ["PASSWORD"], force_verified=True)
+        print("Admin user created")
     except UserExistsException:
-        print("Test user already created")
+        print("Admin user already exists")

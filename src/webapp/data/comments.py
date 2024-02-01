@@ -58,6 +58,17 @@ async def delete_comment(collection, recipe_id, user_id):
         await session.commit()
 
 
+async def delete_comments(collection, recipe_id):
+    async with Session() as session:
+        await session.execute(
+            delete(Comment).where(and_(
+                Comment.recipe_collection == collection,
+                Comment.recipe_id == recipe_id
+            ))
+        )
+        await session.commit()
+
+
 async def move_comments(collectionfrom, collectionto, idfrom, idto):
     async with Session() as session:
         await session.execute(

@@ -17,18 +17,6 @@
             <h1 class="{{ collection }}">{{ title }}</h1>
         </div>
         <div class="all-buttons">
-            {%- if is_admin -%}
-            <div class="buttons">
-                <a href="{{ url_for('manage', table_name='users') }}" class="round-button admin"><i class="fas fa-users"></i></a>
-                <a href="{{ url_for('manage', table_name='comments') }}" class="round-button admin"><i class="fas fa-comments"></i></a>
-            </div>
-            <div class="buttons">
-                <a href="{{ url_for('usage') }}" class="round-button admin"><i class="fas fa-chart-bar"></i></a>
-                <a href="{{ url_for('add_recipe_url_form', collection=collection) }}" class="round-button admin"><i class="fas fa-link"></i></a>
-                <a href="{{ url_for('add_recipe_text_form', collection=collection) }}" class="round-button admin"><i class="fas fa-align-left"></i></a>
-                <a href="{{ url_for('add_recipe_form_form', collection=collection) }}" class="round-button admin"><i class="fas fa-edit"></i></a>
-            </div>
-            {%- endif -%}
             <div class="buttons">
                 {%- if not is_admin and not is_user -%}
                 <a href="{{ url_for('login_form', redirect=url_for('collection', collection=collection)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
@@ -44,9 +32,27 @@
                 {%- if recipes|length -%}
                 <span onclick="random_recipe()" class="round-button"><i class="fas fa-random"></i></span>
                 {%- endif -%}
+                {%- if is_user -%}
+                <span onclick="toggleOnlySaved()" class="round-button"><i class="fas fa-heart"></i></span>
+                {%- endif -%}
             </div>
         </div>
     </header>
+
+    {%- if is_admin -%}
+    <div class="admin-buttons">
+        <div class="buttons">
+            <a href="{{ url_for('manage', table_name='users') }}" class="round-button admin"><i class="fas fa-users"></i></a>
+            <a href="{{ url_for('manage', table_name='comments') }}" class="round-button admin"><i class="fas fa-comments"></i></a>
+        </div>
+        <div class="buttons">
+            <a href="{{ url_for('usage') }}" class="round-button admin"><i class="fas fa-chart-bar"></i></a>
+            <a href="{{ url_for('add_recipe_url_form', collection=collection) }}" class="round-button admin"><i class="fas fa-link"></i></a>
+            <a href="{{ url_for('add_recipe_text_form', collection=collection) }}" class="round-button admin"><i class="fas fa-align-left"></i></a>
+            <a href="{{ url_for('add_recipe_form_form', collection=collection) }}" class="round-button admin"><i class="fas fa-edit"></i></a>
+        </div>
+    </div>
+    {%- endif -%}
 
     <div class="search-bar-container">
         <input type="search" id="searchBar" placeholder="Search {{ recipes|length }} recipes">
@@ -75,10 +81,17 @@
                 data-name="{{ recipe.get('name', '').lower() }}"
                 data-created="{{ recipe.get('date_created', 0) }}"
                 data-updated="{{ recipe.get('date_updated', 0) }}"
+                id="recipe{{ recipe_id }}"
         >
             <div class="thumbnail-wrapper">
                 <img src="{{ recipe['thumbnail'] or '/static/spaghet.png' }}" onerror="this.onerror=null; this.src='/static/spaghet.png'" alt="Recipe 1" loading="lazy">
             </div>
+            {% if is_user or is_admin %}
+            <div class="save-icon hidden" onclick="toggleSave(event, '{{ collection }}', '{{ recipe_id }}')">
+                <i class="far fa-heart"></i>
+                <i class="fas fa-heart"></i>
+            </div>
+            {% endif %}
             <h2 class="searchable {{ collection }}">{{ recipe["name"].title() }}</h2>
 
             {%- set meta = recipe.get("meta", {}) -%}
@@ -148,4 +161,5 @@
     </div>
 
     <script src="/static/cookbook.js"></script>
+    <script>getSaved('{{ collection }}');</script>
 {% endblock body %}
