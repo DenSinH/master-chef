@@ -18,6 +18,7 @@ import cookbook
 from data import init_db
 import data.views as views
 import data.users as users
+from verify import verify_email
 
 from dotenv import load_dotenv; load_dotenv()
 import os
@@ -144,15 +145,14 @@ async def register(request: Request):
     email = request.form.get("email")
     if not email:
         raise users.RegistrationError("Email must be specified")
-    name = request.form.get("name")
+    name = request.form.get("name").strip()
     if not name:
         raise users.RegistrationError("Must specify a name")
     password = request.form.get("password")
     if not password or len(password) < 6:
         raise users.RegistrationError("Password must be at least length 6")
     secret = await users.register_user(name, email, password)
-    verification_url = app.url_for("validate", email=email, secret=secret)
-    print(verification_url)
+    verification_url = app.url_for("validate", email=email, secret=secret, _external=True, _host="localhost")
     return sanic.redirect(app.url_for("registered"))
 
 
@@ -160,7 +160,8 @@ async def register(request: Request):
 async def validate(request: Request):
     email = dict(request.query_args).get("email")
     secret = dict(request.query_args).get("secret")
-    await users.validate_user(email, secret)
+    # todo: fix email sending
+    # await users.validate_user(email, secret)
     return sanic.redirect(app.url_for("login_form"))
 
 

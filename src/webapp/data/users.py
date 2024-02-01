@@ -29,7 +29,9 @@ async def _get_user(session, email):
 async def _login_user(session, email, password):
     user = await _get_user(session, email)
     if user is None:
-        return False
+        return None
+    if not user.user_verified:
+        return None
     if user.user_password == sha256(password.encode()).hexdigest():
         return user
     return None
@@ -48,7 +50,11 @@ async def register_user(name, email, password):
     async with Session() as session:
         user = await _get_user(session, email)
         if user is not None:
-            raise UserExistsException(email)
+            if user.user_verified:
+                raise UserExistsException(email)
+            else:
+                await session.delete(user)
+
         secret = _generate_secret()
         session.add(
             User(
@@ -68,6 +74,8 @@ async def validate_user(email, secret):
         user = await _get_user(session, email)
         if user.user_verification_secret != secret:
             raise RegistrationError("Wrong secret!")
+        if datetime.datetime.now() - user.user_verification_sent > datetime.timedelta(hours=1):
+            raise RegistrationError("Took too long!")
         user.user_verified = True
         user.user_verification_secret = None
         await session.commit()

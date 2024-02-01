@@ -43,7 +43,7 @@ async def authenticate(request, *args, **kwargs):
             "user_id": email,
             "scopes": ["user"]
         }
-    raise exceptions.AuthenticationFailed("Invalid password")
+    raise exceptions.AuthenticationFailed("Invalid password or unverified user")
 
 
 async def extend_scopes(user, *args, **kwargs):
