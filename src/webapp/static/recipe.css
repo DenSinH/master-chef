@@ -135,9 +135,17 @@ a.original-url:hover {
 }
 
 .review {
+    position: relative;
     border: 1px solid #ddd;
     padding: 10px;
     margin: 10px 0;
+}
+
+.review .review-date {
+    position: absolute;
+    right: 30px;
+    top: 10px;
+    color: #ccc;
 }
 
 .reviewer-name {

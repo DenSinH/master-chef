@@ -197,6 +197,11 @@
         {% for comment, user in comments_users %}
         <div class="review">
             <p class="reviewer-name">{{ user.username if user.verified else 'Unverified User' }}</p>
+            {% if comment.date_edited is not none %}
+            <p class="review-date">Edited {{ comment.date_edited.strftime('%Y-%m-%d %H:%M') }}</p>
+            {% else %}
+            <p class="review-date">{{ comment.date_posted.strftime('%Y-%m-%d %H:%M') }}</p>
+            {% endif %}
             <p class="star-rating">
                 {% for i in range(comment.rating) %}
                 <span class="selected">&#9733;</span>

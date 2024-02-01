@@ -16,8 +16,9 @@ function show_popup(message) {
 
     document.body.appendChild(popup);
 
-    // Hide the message after 3 seconds (adjust as needed)
-    setTimeout(() => {
-        document.body.removeChild(popup);
-    }, 2000);
+    setTimeout(function() {
+        $(popup).fadeOut(1000, function() {
+            $(this).remove();
+        });
+    }, 1000);
 }
