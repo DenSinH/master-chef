@@ -18,6 +18,7 @@ import cookbook
 from data import init_db
 import data.views as views
 import data.users as users
+import data.comments as comments
 
 from dotenv import load_dotenv; load_dotenv()
 import os
@@ -273,7 +274,19 @@ async def recipe(request: Request, collection: str, id: str):
 
     is_admin = await validate_scopes(request, "admin")
     is_user = await validate_scopes(request, "user")
-    user_id = await _get_username(request)
+    username = await _get_username(request)
+    if username is not None:
+        requser = await users.get_user(username)
+    else:
+        requser = None
+
+    comments_users = []
+    user_comment = None
+    for comment, user in await comments.get_comments(collection, id):
+        if requser is not None and user.id == requser.id:
+            user_comment = comment
+        else:
+            comments_users.append((comment, user))
 
     response = await render(
         "recipe.html",
@@ -283,6 +296,8 @@ async def recipe(request: Request, collection: str, id: str):
             "recipe_id": id,
             "is_admin": is_admin,
             "is_user": is_user,
+            "user_comment": user_comment,
+            "comments_users": comments_users,
             "viewcount": viewcount
         }
     )
@@ -305,8 +320,19 @@ async def _recipe(request: Request, collection: str, id: str, name: str):
 @protected()
 @scoped("user")
 async def post_comment(request: Request, collection, id):
-    user_id = await app.ctx.auth.extract_user_id(request)
-    print(user_id)
+    username = await app.ctx.auth.extract_user_id(request)
+    user = await users.get_user(username)
+    if user is None:
+        return sanic.json({"error": "Unknown user"}, 400)
+    text = request.json.get("text").strip()
+    if len(text) > 500:
+        return sanic.json({"error": "Review should be < 500 characters"}, 400)
+    rating = request.json.get("rating")
+    if rating is None or not (1 <= rating <= 5):
+        return sanic.json({"error": "Rating should be between 1 and 5"}, 400)
+
+    await comments.add_comment(collection, id, user.id, text, rating)
+
     return sanic.empty()
 
 
@@ -542,6 +568,7 @@ async def move_recipe(request: Request, collectionfrom: str, collectionto: str, 
     recipe = await cookbook.delete_recipe(collectionfrom, id)
     idto = await cookbook.add_recipe(collectionto, recipe)
     await views.move_viewcount(collectionfrom, collectionto, id, idto)
+    await comments.move_comments(collectionfrom, collectionto, id, idto)
     return sanic.json({"redirect": app.url_for("recipe", id=idto, collection=collectionto)})
 
 
@@ -587,6 +614,8 @@ def col_type(col):
 
 @app.route("/manage/<table_name>")
 @app.ext.template("/manage/table.html")
+@protected()
+@scoped("admin")
 async def manage(request, table_name):
     return {
         "columns": list([col.name for col in TABLES[table_name].__table__.columns]),
@@ -599,6 +628,8 @@ async def manage(request, table_name):
 
 
 @app.get("/api/<table_name>")
+@protected()
+@scoped("admin")
 async def api_get_all(request, table_name):
     async with data.Session() as session:
         table_class = TABLES[table_name]
@@ -607,6 +638,8 @@ async def api_get_all(request, table_name):
 
 
 @app.get("/api/<table_name>/<id>")
+@protected()
+@scoped("admin")
 async def api_get_one(request, table_name, id: int):
     async with data.Session() as session:
         table_class = TABLES[table_name]
@@ -619,6 +652,8 @@ async def api_get_one(request, table_name, id: int):
 
 
 @app.post("/api/<table_name>")
+@protected()
+@scoped("admin")
 async def api_create(request: Request, table_name):
     async with data.Session() as session:
         table_class = TABLES[table_name]
@@ -635,6 +670,8 @@ async def api_create(request: Request, table_name):
 
 
 @app.put("/api/<table_name>/<id>")
+@protected()
+@scoped("admin")
 async def api_update(request, table_name, id: int):
     async with data.Session() as session:
         table_class = TABLES[table_name]
@@ -655,6 +692,8 @@ async def api_update(request, table_name, id: int):
 
 
 @app.delete("/api/<table_name>/<id>")
+@protected()
+@scoped("admin")
 async def api_delete(request, table_name, id: int):
     async with data.Session() as session:
         table_class = TABLES[table_name]

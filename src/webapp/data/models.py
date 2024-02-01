@@ -24,7 +24,7 @@ class User(Base):
     date_registered = Column(DateTime)
 
     def __repr__(self):
-        return f"<User({self.user_email}: {self.user_name}" + (" [WL]>" if self.user_whitelisted else ")>")
+        return f"<User({self.username}" + (" [V]>" if self.verified else ")>")
 
 
 class Comment(Base):
@@ -33,11 +33,11 @@ class Comment(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     recipe_collection = Column(String, primary_key=True)
     recipe_id = Column(String, primary_key=True)
-    user_id = Column(String, primary_key=True)
+    user_id = Column(Integer, primary_key=True)
     rating = Column(Integer, nullable=False)
     text = Column(String, nullable=True)
     date_posted = Column(DateTime)
     date_edited = Column(DateTime, nullable=True)
 
     def __repr__(self):
-        return f"<Comment({self.recipe_collection}/{self.recipe_id} {self.comment_text or self.comment_pending} [{self.user_id}])>"
+        return f"<Comment({self.recipe_collection}/{self.recipe_id} {self.text} [{self.user_id}])>"

@@ -64,7 +64,8 @@
                     <a onclick="delete_recipe()" class="round-button admin"><i class="fas fa-trash"></i></a>
                 {%- elif not is_user -%}
                 <a href="{{ url_for('login_form', redirect='recipe') }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
-                {%- else -%}
+                {%- endif -%}
+                {%- if is_admin or is_user -%}
                 <a href="{{ url_for('logout') }}" class="round-button"><i class="fas fa-sign-out-alt"></i></a>
                 {%- endif -%}
                 <a onclick="share_recipe()" class="round-button"><i class="fas fa-share"></i></a>
@@ -165,34 +166,46 @@
 
         <h2>{{ 'Reviews' if english else 'Beoordelingen' }}</h2>
         {%- if is_user -%}
+        <p class="reviewer-name">Your Review:</p>
         <div class="user-review">
             <div class="user-review-content">
-                <div id="userRating" class="star-rating" data-rating="0">
+                {% set user_rating = user_comment.rating if user_comment is not none else 0 %}
+                <div id="userRating" class="star-rating" data-rating="{{ user_rating }}">
+                    {% for i in range(user_rating) %}
+                    <span class="selected">&#9733;</span>
+                    {% endfor %}
+                    {% for i in range(5 - user_rating) %}
                     <span>&#9733;</span>
-                    <span>&#9733;</span>
-                    <span>&#9733;</span>
-                    <span>&#9733;</span>
-                    <span>&#9733;</span>
+                    {% endfor %}
                 </div>
-                <div class="editable-review" contenteditable="true" id="userReview" role="textbox" aria-multiline="true" placeholder="Write your review here..."></div>
+                <div class="editable-review" contenteditable="true" id="userReview" role="textbox" aria-multiline="true" placeholder="Write your review here...">
+                    {% if user_comment is not none %}
+                        {{ user_comment.text }}
+                    {% endif %}
+                </div>
             </div>
             <div class="user-review-submit">
-                <button onclick="submitReview()" class="round-button"><i class="fas fa-upload"></i></button>
+                <span onclick="submitReview()" class="round-button"><i class="fas fa-comment"></i></span>
             </div>
         </div>
         {%- endif -%}
 
+        {% for comment, user in comments_users %}
         <div class="review">
-            <p class="reviewer-name">John Doe</p>
+            <p class="reviewer-name">{{ user.username if user.verified else 'Unverified User' }}</p>
             <p class="star-rating">
+                {% for i in range(comment.rating) %}
                 <span class="selected">&#9733;</span>
-                <span class="selected">&#9733;</span>
-                <span class="selected">&#9733;</span>
-                <span class="selected">&#9733;</span>
+                {% endfor %}
+                {% for i in range(5 - comment.rating) %}
                 <span>&#9733;</span>
+                {% endfor %}
             </p>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eget sapien ac velit feugiat tristique ut nec ligula. In hac habitasse platea dictumst. Sed nec tortor vel nisl ullamcorper bibendum. Praesent volutpat justo eu erat aliquam dapibus.</p>
+            {% if user.verified %}
+            <p>{{ comment.text }}</p>
+            {% endif %}
         </div>
+        {% endfor %}
 
         {%- if is_user -%}
         <script>
@@ -211,7 +224,7 @@
 
             function submitReview() {
                 let userReviewContent = $('#userReview').text();
-                let selectedRating = $('#userRating').attr('data-rating');
+                let selectedRating = parseInt($('#userRating').attr('data-rating'));
                 if (selectedRating === 0) {
                     alert("You must give at least 1 star");
                     return;
@@ -223,7 +236,7 @@
                     contentType: 'application/json',
                     data: JSON.stringify({
                         rating: selectedRating,
-                        reviewContent: userReviewContent
+                        text: userReviewContent
                     }),
                     success: function(response) {
                         console.log('Review submitted successfully:', response);

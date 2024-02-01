@@ -19,6 +19,10 @@
         <div class="all-buttons">
             {%- if is_admin -%}
             <div class="buttons">
+                <a href="{{ url_for('manage', table_name='users') }}" class="round-button admin"><i class="fas fa-users"></i></a>
+                <a href="{{ url_for('manage', table_name='comments') }}" class="round-button admin"><i class="fas fa-comments"></i></a>
+            </div>
+            <div class="buttons">
                 <a href="{{ url_for('usage') }}" class="round-button admin"><i class="fas fa-chart-bar"></i></a>
                 <a href="{{ url_for('add_recipe_url_form', collection=collection) }}" class="round-button admin"><i class="fas fa-link"></i></a>
                 <a href="{{ url_for('add_recipe_text_form', collection=collection) }}" class="round-button admin"><i class="fas fa-align-left"></i></a>

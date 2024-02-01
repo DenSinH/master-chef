@@ -147,6 +147,7 @@ a.original-url:hover {
 .star-rating {
     color: #ddd;
     cursor: pointer;
+    font-size: 1.5em;
 }
 
 .star-rating .selected {
@@ -160,6 +161,7 @@ a.original-url:hover {
 .user-review {
     display: flex;
     align-items: center;
+    padding: 10px;
 }
 
 .user-review .user-review-content {
@@ -170,5 +172,6 @@ a.original-url:hover {
     border: 1px solid #ddd;
     padding: 10px;
     margin: 10px 0;
+    margin-left: -10px;
     outline: none;
 }
