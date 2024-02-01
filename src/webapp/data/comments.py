@@ -63,10 +63,11 @@ async def move_comments(collectionfrom, collectionto, idfrom, idto):
         await session.execute(
             update(Comment).where(and_(
                 Comment.recipe_collection == collectionfrom,
-                Comment.recipe_id == collectionto
+                Comment.recipe_id == idfrom
             ))
             .values(
                 recipe_collection=collectionto,
                 recipe_id=idto
             )
         )
+        await session.commit()
