@@ -161,5 +161,7 @@
     </div>
 
     <script src="/static/cookbook.js"></script>
+    {% if is_user %}
     <script>getSaved('{{ collection }}');</script>
+    {% endif %}
 {% endblock body %}
