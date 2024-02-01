@@ -289,11 +289,16 @@ async def recipe(request: Request, collection: str, id: str):
 
     comments_users = []
     user_comment = None
+    found_admin_comment = False
     for comment, user in await comments.get_comments(collection, id):
         if requser is not None and user.id == requser.id:
             user_comment = comment
         else:
-            comments_users.append((comment, user))
+            if user.username == os.environ.get("ADMIN_USER", "admin"):
+                comments_users.insert(0, (comment, user))
+                found_admin_comment = True
+            else:
+                comments_users.append((comment, user))
 
     response = await render(
         "recipe.html",
@@ -305,6 +310,7 @@ async def recipe(request: Request, collection: str, id: str):
             "is_user": is_user,
             "user_comment": user_comment,
             "comments_users": comments_users,
+            "found_admin_comment": found_admin_comment,
             "viewcount": viewcount
         }
     )

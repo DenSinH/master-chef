@@ -152,6 +152,11 @@ a.original-url:hover {
     font-weight: bold;
 }
 
+.reviewer-name.admin {
+    font-weight: bolder;
+    color: var(--blue);
+}
+
 user-reviewer-name.reviewer-name {
     margin-bottom: 0;
 }
