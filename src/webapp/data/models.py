@@ -19,7 +19,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_email = Column(String, primary_key=True)
-    user_password = Column(String)
+    user_password = Column(String, nullable=True)
     user_name = Column(String, nullable=True)
     user_verified = Column(Boolean, default=False)
     user_verification_secret = Column(String, nullable=True)

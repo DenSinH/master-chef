@@ -19,6 +19,10 @@ class RegistrationError(Exception):
     pass
 
 
+class UnverifiedUserError(Exception):
+    pass
+
+
 async def _get_user(session, email):
     result = await session.execute(
         select(User).where(User.user_email == email)
@@ -31,10 +35,15 @@ async def _login_user(session, email, password):
     if user is None:
         return None
     if not user.user_verified:
-        return None
+        raise UnverifiedUserError()
     if user.user_password == sha256(password.encode()).hexdigest():
         return user
     return None
+
+
+async def get_user(email):
+    async with Session() as session:
+        return await _get_user(session, email)
 
 
 async def login_user(email, password):

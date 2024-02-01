@@ -8,13 +8,12 @@
 {% endblock head %}
 
 {% block body %}
-    <div class="header">
-        <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
-        <h1>Register</h1>
-    </div>
     <div class="login-container">
         <div class="login-box">
-            <h1>Register</h1>
+            <div class="header">
+                <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
+                <h1>Register</h1>
+            </div>
             <form action="{{ url_for('register') }}" method="post">
                 <input type="email" id="email" name="email" placeholder="Email" required>
                 <input type="text" id="name" name="name" placeholder="Name" pattern="\s*\w{2+}.*" required>

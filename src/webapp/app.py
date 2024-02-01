@@ -79,6 +79,14 @@ async def notfound(request: Request, exc):
     """)
 
 
+@app.exception(users.UnverifiedUserError)
+@app.ext.template("users/please_wait.html")
+async def unverified_user(request: Request, exc):
+    return {
+        "message": "Please wait for Dennis to verify your account."
+    }
+
+
 @app.exception(Exception)
 async def exception(request: Request, exc):
     return sanic.html(f"""
@@ -127,7 +135,7 @@ async def about(request: Request):
 
 
 @app.get("/login")
-@app.ext.template("login.html")
+@app.ext.template("users/login.html")
 async def login_form(request: Request):
     return {
         "redirect": dict(request.query_args).get("redirect", "/")
@@ -135,7 +143,7 @@ async def login_form(request: Request):
 
 
 @app.get("/register")
-@app.ext.template("register.html")
+@app.ext.template("users/register.html")
 async def register_form(request: Request):
     return {}
 
@@ -152,7 +160,7 @@ async def register(request: Request):
     if not password or len(password) < 6:
         raise users.RegistrationError("Password must be at least length 6")
     secret = await users.register_user(name, email, password)
-    verification_url = app.url_for("validate", email=email, secret=secret, _external=True, _host="localhost")
+    # verification_url = app.url_for("validate", email=email, secret=secret, _external=True, _host="localhost")
     return sanic.redirect(app.url_for("registered"))
 
 
@@ -165,8 +173,44 @@ async def validate(request: Request):
     return sanic.redirect(app.url_for("login_form"))
 
 
+@app.get("/forgot-password")
+async def forgot_password(request: Request):
+    email = dict(request.query_args).get("email")
+    user = await users.get_user(email)
+    if user is None:
+        return sanic.redirect("login")
+    if user.user_password is not None:
+        return render(
+            "users/please_wait.html",
+            context={
+                "message": "Please ask for Dennis to clear your password so you can reset it."
+            }
+        )
+    return render(
+        "users/forgot.html",
+        context={
+            "email": email
+        }
+    )
+
+
+@app.post("/forgot-password")
+async def update_password(request: Request):
+    email = dict(request.query_args).get("email")
+    user = await users.get_user(email)
+    if user is None:
+        return sanic.redirect("login")
+    if user.user_password is not None:
+        return sanic.redirect(app.url_for("forgot_password", email=email))
+
+    password = request.form.get("password")
+    if not password or len(password) < 6:
+        raise users.RegistrationError("Password must be at least length 6")
+    await users.update_user_password(email, password)
+
+
 @app.get("/registered")
-@app.ext.template("registered.html")
+@app.ext.template("users/registered.html")
 async def registered(request: Request):
     return {}
 
