@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   db:
     image: postgres
@@ -41,6 +42,10 @@ services:
       - local-net
     ports:
       - '80:5000'
+    working_dir: /app/webapp
+    volumes:
+      - ./src/webapp:/app/webapp
+    entrypoint: ["python", "app.py", "--debug"]
 volumes:
   dbdata:
 networks:
