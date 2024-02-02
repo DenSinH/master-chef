@@ -22,6 +22,7 @@ import data.views as views
 import data.users as users
 import data.comments as comments
 import data.saves as saves
+from limiter import init_limiter, close_limiter, RateLimiter, TooManyRequests
 
 from dotenv import load_dotenv; load_dotenv()
 import os
@@ -70,6 +71,11 @@ initialize(
 _session = Session(app)
 app.before_server_start(init_db)
 
+# global rate limit of 5 requests per second
+app.ctx.global_limiter = RateLimiter(times=5, seconds=1)
+app.before_server_start(init_limiter)
+app.after_server_stop(close_limiter)
+
 
 async def _get_username(request: Request):
     try:
@@ -95,6 +101,13 @@ async def auth_failed(request: Request, exc):
     return sanic.json({
         "error": str(exc)
     }, 401)
+
+
+@app.exception(TooManyRequests)
+async def too_many_requests(request: Request, exc: TooManyRequests):
+    return sanic.json({
+        "error": "Too many requests"
+    }, exc.status_code)
 
 
 @app.exception(Exception)
@@ -188,13 +201,19 @@ async def register(request: Request):
         return sanic.json({
             "error": "Password must be at least of length 6"
         }, 400)
+    if (await users.get_user(username)) is not None:
+        return sanic.json({
+            "error": "Username already exists"
+        }, 400)
+
+    # rate limit after checks
+    await RateLimiter(times=1, hours=1)(request)
     try:
         await users.register_user(username, password)
     except users.UserExistsException as e:
         return sanic.json({
             "error": "Username already exists"
         }, 400)
-
 
     return sanic.json({"redirect": app.url_for("registered")})
 
@@ -222,7 +241,7 @@ async def forgot_password(request: Request):
     )
 
 
-@app.post("/forgot-password")
+@app.post("/forgot-password", ctx_limiter=RateLimiter(times=1, minutes=5))
 async def update_password(request: Request):
     username = dict(request.query_args).get("username")
     user = await users.get_user(username)
@@ -343,7 +362,7 @@ async def get_saves(request: Request, collection):
     })
 
 
-@app.post("/save/<collection>/<id>")
+@app.post("/save/<collection>/<id>", ctx_limiter=RateLimiter(times=1, seconds=1))
 @protected()
 @scoped("user")
 async def post_save(request: Request, collection, id):
@@ -355,7 +374,7 @@ async def post_save(request: Request, collection, id):
     return sanic.empty()
 
 
-@app.delete("/save/<collection>/<id>")
+@app.delete("/save/<collection>/<id>", ctx_limiter=RateLimiter(times=1, seconds=1))
 @protected()
 @scoped("user")
 async def delete_save(request: Request, collection, id):
@@ -367,7 +386,7 @@ async def delete_save(request: Request, collection, id):
     return sanic.empty()
 
 
-@app.post("/comment/<collection>/<id>")
+@app.post("/comment/<collection>/<id>", ctx_limiter=RateLimiter(times=5, minutes=1))
 @protected()
 @scoped("user")
 async def post_comment(request: Request, collection, id):
@@ -387,7 +406,7 @@ async def post_comment(request: Request, collection, id):
     return sanic.empty()
 
 
-@app.delete("/comment/<collection>/<id>")
+@app.delete("/comment/<collection>/<id>", ctx_limiter=RateLimiter(times=5, minutes=1))
 @protected()
 @scoped("user")
 async def delete_comment(request: Request, collection, id):

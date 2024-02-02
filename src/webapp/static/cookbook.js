@@ -96,7 +96,12 @@ function toggleSave(event, collection, recipeId) {
                 element.removeClass('saved');
             },
             error: function(xhr, status, error) {
-                show_message('Failed to unsave recipe, are you still logged in?')
+                if (xhr.status == 429) {
+                    show_popup('You are doing that too fast!');
+                }
+                else {
+                    show_popup('Failed to unsave recipe, are you still logged in?');
+                }
             }
         });
     }
@@ -109,7 +114,12 @@ function toggleSave(event, collection, recipeId) {
                 element.addClass('saved');
             },
             error: function(xhr, status, error) {
-                show_popup('Failed to save recipe, are you still logged in?')
+                if (xhr.status == 429) {
+                    show_popup('You are doing that too fast!');
+                }
+                else {
+                    show_popup('Failed to save recipe, are you still logged in?');
+                }
             }
         });
     }

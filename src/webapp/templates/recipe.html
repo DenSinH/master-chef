@@ -253,13 +253,18 @@
                     success: function(response) {
                         show_popup('Comment posted!');
                     },
-                    error: function(error) {
-                        try {
-                            var errorResponse = JSON.parse(xhr.responseText);
-                            $("#errors").html(`<p>${errorResponse.error}</p>`);
-                        } catch (e) {
-                            console.error("Error parsing JSON response:", e);
-                            show_popup('There was a problem posting your review...');
+                    error: function(xhr, status, error) {
+                        if (xhr.status == 429) {
+                            show_popup('You are doing that too fast! Try again later...');
+                        }
+                        else {
+                            try {
+                                var errorResponse = JSON.parse(xhr.responseText);
+                                $("#errors").html(`<p>${errorResponse.error}</p>`);
+                            } catch (e) {
+                                console.error("Error parsing JSON response:", e);
+                                show_popup('There was a problem posting your review...');
+                            }
                         }
                     }
                 });
@@ -276,12 +281,17 @@
                         show_popup('Comment deleted!');
                     },
                     error: function(error) {
-                        try {
-                            var errorResponse = JSON.parse(xhr.responseText);
-                            $("#errors").html(`<p>${errorResponse.error}</p>`);
-                        } catch (e) {
-                            console.error("Error parsing JSON response:", e);
-                            show_popup('There was a problem deleting your review...');
+                        if (xhr.status == 429) {
+                            show_popup('You are doing that too fast! Try again later...');
+                        }
+                        else {
+                            try {
+                                var errorResponse = JSON.parse(xhr.responseText);
+                                $("#errors").html(`<p>${errorResponse.error}</p>`);
+                            } catch (e) {
+                                console.error("Error parsing JSON response:", e);
+                                show_popup('There was a problem deleting your review...');
+                            }
                         }
                     }
                 });
