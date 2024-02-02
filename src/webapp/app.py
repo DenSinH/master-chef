@@ -354,21 +354,35 @@ async def _recipe(request: Request, collection: str, id: str, name: str):
 """ PROTECTED ACCESS """
 
 
-@app.get("/saves/<collection>")
+@app.get("/saved/<collection>")
 @protected()
 @scoped("user")
-async def get_saves(request: Request, collection):
+async def get_saved(request: Request, collection):
     username = await app.ctx.auth.extract_user_id(request)
     user = await users.get_user(username)
     if user is None:
         return sanic.json({"error": "Unknown user"}, 400)
 
     return sanic.json({
-        "saves": await saves.get_saves(user.id, collection)
+        "saves": await saves.get_saved(user.id, collection)
     })
 
 
-@app.post("/save/<collection>/<id>", ctx_limiter=RateLimiter(times=1, seconds=1))
+@app.get("/saved/<collection>/<recipe_id>")
+@protected()
+@scoped("user")
+async def get_saved_single(request: Request, collection, recipe_id):
+    username = await app.ctx.auth.extract_user_id(request)
+    user = await users.get_user(username)
+    if user is None:
+        return sanic.json({"error": "Unknown user"}, 400)
+
+    return sanic.json({
+        "saved": await saves.get_saved_single(user.id, collection, recipe_id)
+    })
+
+
+@app.post("/saved/<collection>/<id>", ctx_limiter=RateLimiter(times=1, seconds=1))
 @protected()
 @scoped("user")
 async def post_save(request: Request, collection, id):
@@ -380,7 +394,7 @@ async def post_save(request: Request, collection, id):
     return sanic.empty()
 
 
-@app.delete("/save/<collection>/<id>", ctx_limiter=RateLimiter(times=1, seconds=1))
+@app.delete("/saved/<collection>/<id>", ctx_limiter=RateLimiter(times=1, seconds=1))
 @protected()
 @scoped("user")
 async def delete_save(request: Request, collection, id):

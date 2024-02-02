@@ -18,11 +18,7 @@ async def init_limiter(app: Sanic, loop):
 
         if hasattr(request.route.ctx, "limiter"):
             limiter = request.route.ctx.limiter
-            if isinstance(limiter, list):
-                for l in limiter:
-                    await l(request)
-            else:
-                await limiter(request)
+            await limiter(request)
 
     await SanicLimiter.init(redis.from_url("redis://redis", port=6379, encoding="utf8"))
 

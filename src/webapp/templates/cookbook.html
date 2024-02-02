@@ -7,6 +7,9 @@
     <meta name="description" content="Personal cookbook website, used for saving, editing and sharing websites. By Dennis Hilhorst.">
     <link rel="stylesheet" href="/static/cookbook.css">
     <link rel="stylesheet" href="/static/dropdown.css">
+    {%- if is_user or is_admin -%}
+    <link rel="stylesheet" href="/static/likes.css">
+    {%- endif -%}
     <script src="/static/dropdown.js" defer></script>
 {% endblock head %}
 
@@ -41,23 +44,19 @@
 
     {%- if is_admin -%}
     <div class="admin-buttons">
-        <div class="buttons">
-            <a href="{{ url_for('manage', table_name='users') }}" class="round-button admin">
-                <i class="fas fa-users"></i>
-                {%- if unverified_users -%}
-                <span class="notify-bubble">{{ unverified_users }}</span>
-                {%- endif -%}
-            </a>
-            <a href="{{ url_for('manage', table_name='comments') }}" class="round-button admin">
-                <i class="fas fa-comments"></i>
-            </a>
-        </div>
-        <div class="buttons">
-            <a href="{{ url_for('usage') }}" class="round-button admin"><i class="fas fa-chart-bar"></i></a>
-            <a href="{{ url_for('add_recipe_url_form', collection=collection) }}" class="round-button admin"><i class="fas fa-link"></i></a>
-            <a href="{{ url_for('add_recipe_text_form', collection=collection) }}" class="round-button admin"><i class="fas fa-align-left"></i></a>
-            <a href="{{ url_for('add_recipe_form_form', collection=collection) }}" class="round-button admin"><i class="fas fa-edit"></i></a>
-        </div>
+        <a href="{{ url_for('manage', table_name='users') }}" class="round-button admin">
+            <i class="fas fa-users"></i>
+            {%- if unverified_users -%}
+            <span class="notify-bubble">{{ unverified_users }}</span>
+            {%- endif -%}
+        </a>
+        <a href="{{ url_for('manage', table_name='comments') }}" class="round-button admin">
+            <i class="fas fa-comments"></i>
+        </a>
+        <a href="{{ url_for('usage') }}" class="round-button admin"><i class="fas fa-chart-bar"></i></a>
+        <a href="{{ url_for('add_recipe_url_form', collection=collection) }}" class="round-button admin"><i class="fas fa-link"></i></a>
+        <a href="{{ url_for('add_recipe_text_form', collection=collection) }}" class="round-button admin"><i class="fas fa-align-left"></i></a>
+        <a href="{{ url_for('add_recipe_form_form', collection=collection) }}" class="round-button admin"><i class="fas fa-edit"></i></a>
     </div>
     {%- endif -%}
 
@@ -83,7 +82,7 @@
         {%- for recipe_id, recipe in recipes.items() -%}
         <a
                 href="{{ url_for('recipe', id=recipe_id, collection=collection) }}"
-                class="recipe-item"
+                class="recipe-item recipe-container"
                 style="display: none"
                 data-name="{{ recipe.get('name', '').lower() }}"
                 data-created="{{ recipe.get('date_created', 0) }}"
@@ -168,7 +167,8 @@
     </div>
 
     <script src="/static/cookbook.js"></script>
-    {% if is_user %}
+    {% if is_user or is_admin %}
+    <script src="/static/likes.js"></script>
     <script>getSaved('{{ collection }}');</script>
     {% endif %}
 {% endblock body %}

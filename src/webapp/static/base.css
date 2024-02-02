@@ -47,6 +47,10 @@ header .header {
         flex-direction: column;
         align-items: center;
     }
+
+    .admin-buttons {
+        justify-content: center;
+    }
 }
 
 header h1 {
