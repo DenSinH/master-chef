@@ -14,12 +14,19 @@ services:
     networks:
       - pgadmin-net
       - local-net
+  redis:
+    image: redis:latest
+    expose:
+      - '6379:6379'
+    networks:
+      - local-net
   web:
     build: .
     pull_policy: build
     restart: always
     depends_on:
       - db
+      - redis
     environment:
       GITHUB_RECIPES_READ_PAT_TOKEN: ${GITHUB_RECIPES_READ_PAT_TOKEN}
       GITHUB_RECIPES_WRITE_PAT_TOKEN: ${GITHUB_RECIPES_WRITE_PAT_TOKEN}
