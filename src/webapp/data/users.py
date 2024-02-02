@@ -3,7 +3,7 @@ import sanic
 from .models import User
 from .base import Session
 from hashlib import sha256
-from sqlalchemy import select, update, and_, delete
+from sqlalchemy import select, func
 import random
 import string
 import datetime
@@ -82,3 +82,11 @@ async def update_user_password(username, newpassword):
 
         user.password = sha256(newpassword.encode()).hexdigest()
         await session.commit()
+
+
+async def count_unverified():
+    async with Session() as session:
+        count = await session.execute(
+            select(func.count()).filter(User.verified == False)
+        )
+        return count.scalar()

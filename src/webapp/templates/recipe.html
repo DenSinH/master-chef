@@ -169,10 +169,11 @@
         <div class="review">
             <p class="user-reviewer-name reviewer-name">Your Review:</p>
             <div id="errors"></div>
+            {% set user_rating = user_comment.rating if user_comment is not none else 0 %}
+            {% set user_review = user_comment.text if user_comment is not none else '' %}
             <div class="user-review">
                 <div class="user-review-content">
-                    {% set user_rating = user_comment.rating if user_comment is not none else 0 %}
-                    <div id="userRating" class="star-rating" data-rating="{{ user_rating }}">
+                    <div id="userRating" class="star-rating" data-rating="{{ user_rating }}" data-last-rating="{{ user_rating }}">
                         {% for i in range(user_rating) %}
                         <span class="selected">&#9733;</span>
                         {% endfor %}
@@ -180,10 +181,15 @@
                         <span>&#9733;</span>
                         {% endfor %}
                     </div>
-                    <div class="editable-review" contenteditable="true" id="userReview" role="textbox" aria-multiline="true" placeholder="Write your review here...">
-                        {%- if user_comment is not none -%}
-                            {{ user_comment.text }}
-                        {%- endif -%}
+                    <div class="editable-review"
+                         contenteditable="true"
+                         id="userReview"
+                         role="textbox"
+                         aria-multiline="true"
+                         placeholder="Write your review here..."
+                         data-last-review="{{ user_review }}"
+                    >
+                        {{- user_review -}}
                     </div>
                 </div>
                 <div class="user-review-controls">
@@ -235,10 +241,17 @@
             });
 
             function submitReview() {
-                let userReviewContent = $('#userReview').text();
-                let selectedRating = parseInt($('#userRating').attr('data-rating'));
+                let userReview = $("#userReview");
+                let userReviewContent = userReview.text();
+                let userRating = $('#userRating');
+                let selectedRating = parseInt(userRating.attr('data-rating'));
                 if (selectedRating === 0) {
-                    alert("You must give at least 1 star");
+                    show_popup("You must give at least 1 star");
+                    return;
+                }
+
+                if (selectedRating == userRating.attr('data-last-rating') && userReviewContent == userReview.attr('data-last-review')) {
+                    show_popup('Comment posted!');
                     return;
                 }
 
@@ -251,6 +264,8 @@
                         text: userReviewContent
                     }),
                     success: function(response) {
+                        userRating.attr('data-last-rating', selectedRating);
+                        userReview.attr('data-last-review', userReviewContent);
                         show_popup('Comment posted!');
                     },
                     error: function(xhr, status, error) {
@@ -277,7 +292,9 @@
                     contentType: 'application/json',
                     success: function(response) {
                         updateRating(0);
+                        $('#userRating').attr('data-last-rating', 0);
                         $('#userReview').text('');
+                        $('#userReview').attr('data-last-review', '');
                         show_popup('Comment deleted!');
                     },
                     error: function(error) {

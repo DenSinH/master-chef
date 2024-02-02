@@ -42,8 +42,15 @@
     {%- if is_admin -%}
     <div class="admin-buttons">
         <div class="buttons">
-            <a href="{{ url_for('manage', table_name='users') }}" class="round-button admin"><i class="fas fa-users"></i></a>
-            <a href="{{ url_for('manage', table_name='comments') }}" class="round-button admin"><i class="fas fa-comments"></i></a>
+            <a href="{{ url_for('manage', table_name='users') }}" class="round-button admin">
+                <i class="fas fa-users"></i>
+                {%- if unverified_users -%}
+                <span class="notify-bubble">{{ unverified_users }}</span>
+                {%- endif -%}
+            </a>
+            <a href="{{ url_for('manage', table_name='comments') }}" class="round-button admin">
+                <i class="fas fa-comments"></i>
+            </a>
         </div>
         <div class="buttons">
             <a href="{{ url_for('usage') }}" class="round-button admin"><i class="fas fa-chart-bar"></i></a>

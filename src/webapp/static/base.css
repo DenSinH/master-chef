@@ -79,6 +79,22 @@ header h1 {
     margin-left: 10px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    position: relative;
+}
+
+.round-button .notify-bubble {
+    background: red;
+    border-radius: 20px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    font-size: small;
+    font-weight: bold;
 }
 
 a.round-button {

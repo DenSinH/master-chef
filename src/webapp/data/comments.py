@@ -1,6 +1,6 @@
 from .models import Comment, User
 from .base import Session
-from sqlalchemy import select, update, and_, delete
+from sqlalchemy import select, update, and_, delete, func
 import datetime
 
 
@@ -82,3 +82,11 @@ async def move_comments(collectionfrom, collectionto, idfrom, idto):
             )
         )
         await session.commit()
+
+
+async def count_comments(collection):
+    async with Session() as session:
+        count = await session.execute(
+            select(func.count()).filter(Comment.recipe_collection == collection)
+        )
+        return count.scalar()

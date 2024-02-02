@@ -42,7 +42,6 @@ class RateLimiter:
         identifier = self.identifier or SanicLimiter.identifier
         callback = self.callback or SanicLimiter.http_callback
         rate_key = await identifier(request)
-        print(rate_key, request.route.name)
         key = f"{SanicLimiter.prefix}:{rate_key}:{request.route.name}:{self.times}:{self.milliseconds}"
         try:
             pexpire = await self._check(key)

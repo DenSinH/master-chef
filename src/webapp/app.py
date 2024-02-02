@@ -152,6 +152,11 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
     else:
         title = cookbook.generate_title()
 
+    if is_admin:
+        unverified_users = await users.count_unverified()
+    else:
+        unverified_users = None
+
     return {
         "collection": collection,
         "collections": cookbook.COLLECTIONS,
@@ -159,7 +164,8 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
         "is_admin": is_admin,
         "is_user": is_user,
         "viewcount": viewcount,
-        "title": title
+        "unverified_users": unverified_users,
+        "title": title,
     }
 
 
