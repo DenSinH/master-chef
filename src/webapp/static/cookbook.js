@@ -9,7 +9,7 @@ function toggleOnlySaved() {
 }
 
 function get_active_recipes(ignoreSearch) {
-    let selector = "a.recipe-item";
+    let selector = ".recipe-item";
     if (searching && !ignoreSearch) {
         selector += ".search-result";
     }

@@ -80,8 +80,8 @@
 
     <div class="recipe-list">
         {%- for recipe_id, recipe in recipes.items() -%}
-        <a
-                href="{{ url_for('recipe', id=recipe_id, collection=collection) }}"
+        <div
+                onclick="window.location.href = '{{ url_for('recipe', id=recipe_id, collection=collection) }}'"
                 class="recipe-item recipe-container"
                 style="display: none"
                 data-name="{{ recipe.get('name', '').lower() }}"
@@ -162,7 +162,7 @@
                 {% endfor %}
             </span>
             {%- endif -%}
-        </a>
+        </div>
         {% endfor %}
     </div>
 

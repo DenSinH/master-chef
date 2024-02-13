@@ -35,6 +35,7 @@ function getSavedSingle(collection, recipeId) {
 
 function toggleSave(event, collection, recipeId) {
     event.preventDefault();
+    event.stopPropagation();
     let element = $(`#recipe${recipeId}`);
     if (element.hasClass('saved')) {
         $.ajax({
