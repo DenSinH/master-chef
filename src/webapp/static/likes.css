@@ -30,6 +30,8 @@
 
     .recipe-container:not(.saved) .save-icon:hover .fas {
         display: block;
+        color: #888;
+        transition: 0.3s;
     }
 
     .recipe-container:not(.saved) .save-icon:hover .far {

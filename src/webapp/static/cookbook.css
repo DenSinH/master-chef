@@ -44,8 +44,9 @@ h2.unmade {
 }
 
 @media (hover: hover) {
-    .recipe-item:hover {
+    .recipe-item:hover:not(:has(.save-icon:hover)) {
         background-color: #eee;
+        cursor: pointer;
     }
 }
 
