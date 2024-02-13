@@ -209,6 +209,7 @@
 
         // Function to parse values based on column data type
         function parseValue(value, dataType) {
+            value = value.trim();
             if (dataType === 'intnull') {
                 return parseInt(value, 10) || null;
             } else if (dataType === 'integer') {
@@ -221,7 +222,7 @@
                 }
                 return Date.parse(value + 'Z') || null;
             } else if (dataType == 'datetime') {
-                return Date.parse(value + 'Z');
+                return Date.parse(value.trim() + 'Z');
             } else if (dataType == 'stringnull') {
                 return value || null;
             } else {
