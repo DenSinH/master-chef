@@ -7,7 +7,7 @@
 
 {% block head %}
     <meta property="og:image" itemprop="image primaryImageOfPage" content="{{ recipe['thumbnail'] or '/static/spaghet.png' }}">
-    <title>{{ recipe["name"].title() }}</title>
+    <title>{{ recipe["name"]|capwords }}</title>
     <link rel="stylesheet" href="/static/recipe.css">
 
     <script src="/static/recipe.js"></script>
@@ -63,7 +63,7 @@
         <header>
             <div class="header">
                 <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('collection', collection=collection) }}'">
-                <h1 class="{{ collection }}">{{ recipe["name"].title() }}</h1>
+                <h1 class="{{ collection }}">{{ recipe["name"]|capwords }}</h1>
             </div>
             <div class="buttons">
                 {%- if is_admin -%}

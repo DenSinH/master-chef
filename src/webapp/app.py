@@ -4,6 +4,7 @@ import aiohttp
 from aiohttp.client_exceptions import ClientResponseError
 import traceback
 import re
+import string
 import sanic
 import asyncio
 from sanic import Sanic
@@ -39,7 +40,11 @@ def _strftimestamp(timestamp):
     return date.strftime("%Y-%m-%d")
 
 
+# 10MB max request size
+app.config.REQUEST_MAX_SIZE = 10000000
+
 app.ext.templating.environment.filters["strftimestamp"] = _strftimestamp
+app.ext.templating.environment.filters["capwords"] = string.capwords
 app.ext.templating.environment.globals["CUISINE_TYPES"] = cookbook.CUISINE_TYPES
 app.ext.templating.environment.globals["MEAL_TYPES"] = cookbook.MEAL_TYPES
 app.ext.templating.environment.globals["MEAT_TYPES"] = cookbook.MEAT_TYPES
@@ -201,6 +206,10 @@ async def register(request: Request):
     if len(username) < 3:
         return sanic.json({
             "error": "Username must be at least 3 characters long"
+        }, 400)
+    if len(username) > 50:
+        return sanic.json({
+            "error": "Username must be at most 50 characters long"
         }, 400)
     password = request.form.get("password")
     if not password or len(password) < 6:
