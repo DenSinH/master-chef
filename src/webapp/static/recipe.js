@@ -46,13 +46,13 @@ function reduce(numerator, denominator) {
 }
 
 function formatFrac(numerator, denominator) {
-	if (denominator === 1) {
+  if (denominator === 1) {
   	return String(numerator);
   }
   else if (numerator === denominator) {
   	return "1";
   }
-	else if (numerator < denominator) {
+  else if (numerator < denominator) {
     return numerator + "/" + denominator;
   }
   else {
@@ -87,7 +87,8 @@ function convert(amount, base, people) {
   const amtret = /^\D*(\d+)(?:\s*([\/\.,])\s*(\d+))?\D*$/i;
   // converted int
   if (Number.isInteger(amount)) {
-    return formatFrac(people * amount, base);
+    let reduced = reduce(people * amount, base);
+    return formatFrac(reduced[0], reduced[1]);
   }
   // converted float
   else if (typeof amount === "number" && !Number.isInteger(amount)) {
@@ -97,7 +98,8 @@ function convert(amount, base, people) {
   else if (specre.test(amount)) {
     // digits leftover in amount, do simple conversion
   	if (/\d/.test(amount)) {
-      let formatted = formatFrac(people, base);
+      let reduced = reduce(people, base);
+      let formatted = formatFrac(reduced[0], reduced[1]);
       if (formatted == 1) {
         return amount;
       }
