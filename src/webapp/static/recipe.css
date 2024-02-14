@@ -42,6 +42,10 @@ h1.unmade {
     max-width: 100%;
 }
 
+.recipe-container {
+    margin: 0 auto;
+}
+
 .recipe-details h2 {
     margin-top: 20px;
 }
