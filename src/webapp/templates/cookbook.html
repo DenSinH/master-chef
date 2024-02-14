@@ -82,7 +82,7 @@
         {%- for recipe_id, recipe in recipes.items() -%}
         <div
                 onclick="window.location.href = '{{ url_for('recipe', id=recipe_id, collection=collection) }}'"
-                class="recipe-item recipe-container"
+                class="recipe-item recipe-container unselectable"
                 style="display: none"
                 data-name="{{ recipe.get('name', '').lower() }}"
                 data-created="{{ recipe.get('date_created', 0) }}"
