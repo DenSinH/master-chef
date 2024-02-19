@@ -21,12 +21,7 @@
         </div>
         <div class="all-buttons">
             <div class="buttons">
-                {%- if not is_admin and not is_user -%}
-                <a href="{{ url_for('login_form', redirect=url_for('collection', collection=collection)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
-                {%- else -%}
-                <a href="{{ url_for('logout') }}" class="round-button"><i class="fas fa-sign-out-alt"></i></a>
-                {%- endif -%}
-                <a href="{{ url_for('about') }}" class="round-button"><i class="fas fa-user"></i></a>
+                <a href="{{ url_for('about') }}" class="round-button"><i class="fas fa-info"></i></a>
                 {%- if collection == 'unmade' -%}
                 <a href="{{ url_for('collection', collection='recipes') }}" class="round-button"><i class="fas fa-utensils"></i></a>
                 {%- else -%}
@@ -37,6 +32,11 @@
                 {%- endif -%}
                 {%- if is_user -%}
                 <span onclick="toggleOnlySaved()" class="round-button"><i class="fas fa-heart"></i></span>
+                {%- endif -%}
+                {%- if not is_admin and not is_user -%}
+                <a href="{{ url_for('login_form', redirect=url_for('collection', collection=collection)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
+                {%- else -%}
+                <a href="{{ url_for('logout') }}" class="round-button"><i class="fas fa-sign-out-alt"></i></a>
                 {%- endif -%}
             </div>
         </div>
