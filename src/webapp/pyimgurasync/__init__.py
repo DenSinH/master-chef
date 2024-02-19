@@ -715,10 +715,8 @@ class Imgur:
         return self.access_token
 
     async def _upload_image_data(self, data, title=None, description=None, album=None, anon=False):
-        payload = {'album_id': album, 'image': data,
-                   'title': title, 'description': description}
-
-        resp = await self._send_request(self._base_url + "/3/image", params=payload, method='POST', needs_auth=not anon)
+        payload = {'album_id': album, 'title': title, 'description': description}
+        resp = await self._send_request(self._base_url + "/3/image", params=payload, data=data, method='POST', needs_auth=not anon)
         # TEMPORARY HACK:
         # On 5-08-2013 I noticed Imgur now returned enough information from
         # this call to fully populate the Image object. However those variables
@@ -731,29 +729,4 @@ class Imgur:
         return Image(resp, self)
 
     async def upload_image_blob(self, blob, title=None, description=None, album=None, anon=False):
-        return await self._upload_image_data(b64encode(blob).decode("ascii"), title=title, description=description, album=album, anon=anon)
-
-    async def upload_image(self, path=None, url=None, title=None, description=None, album=None, anon=False):
-        """
-        Upload the image at either path or url.
-
-        :param path: The path to the image you want to upload.
-        :param url: The url to the image you want to upload.
-        :param title: The title the image will have when uploaded.
-        :param description: The description the image will have when uploaded.
-        :param album: The album the image will be added to when uploaded. Can
-            be either a Album object or it's id. Leave at None to upload
-            without adding to an Album, adding it later is possible.
-            Authentication as album owner is necessary to upload to an album
-            with this function.
-
-        :returns: An Image object representing the uploaded image.
-        """
-        if bool(path) == bool(url):
-            raise LookupError("Either path or url must be given.")
-        if path:
-            with open(path, 'rb') as image_file:
-                binary_data = image_file.read()
-                return await self.upload_image_blob(binary_data, title=title, description=description, album=album, anon=anon)
-        else:
-            return await self._upload_image_data(url, title=title, description=description, album=album, anon=anon)
+        return await self._upload_image_data(blob, title=title, description=description, album=album, anon=anon)

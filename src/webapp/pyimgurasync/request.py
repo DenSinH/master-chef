@@ -51,7 +51,7 @@ def to_imgur_format(params):
     return dict((k, convert_general(val)) for (k, val) in params.items())
 
 
-async def send_request(url, params=None, method='GET', data_field='data', authentication=None, verify=True):
+async def send_request(url, params=None, method='GET', data_field='data', authentication=None, verify=True, data=None):
     params = to_imgur_format(params)
     # We may need to add more elements to the header later. For now, it seems
     # the only thing in the header is the authentication
@@ -72,7 +72,10 @@ async def send_request(url, params=None, method='GET', data_field='data', authen
             if method == 'GET':
                 req = session.get(url, params=params, headers=headers, verify_ssl=verify)
             elif method == 'POST':
-                req = session.post(url, json=params, headers=headers, verify_ssl=verify)
+                if data is not None:
+                    req = session.post(url, data=data, headers=headers, verify_ssl=verify)
+                else:
+                    req = session.post(url, json=params, headers=headers, verify_ssl=verify)
             elif method == 'PUT':
                 req = session.put(url, json=params, headers=headers, verify_ssl=verify)
             elif method == 'DELETE':
