@@ -185,9 +185,11 @@
             <div id="errors"></div>
             {% set user_rating = user_comment.rating if user_comment is not none else 0 %}
             {% set user_review = user_comment.text if user_comment is not none else '' %}
+            {% set review_editing = 'editing' if not user_review else '' %}
+            {% set review_editable = 'true' if not user_review else 'false' %}
             <div class="user-review">
                 <div class="user-review-content">
-                    <div id="userRating" class="star-rating" data-rating="{{ user_rating }}" data-last-rating="{{ user_rating }}">
+                    <div id="userRating" class="star-rating {{ review_editing }}" data-rating="{{ user_rating }}" data-last-rating="{{ user_rating }}">
                         {% for i in range(user_rating) %}
                         <span class="selected">&#9733;</span>
                         {% endfor %}
@@ -195,19 +197,20 @@
                         <span>&#9733;</span>
                         {% endfor %}
                     </div>
-                    <div class="editable-review"
-                         contenteditable="true"
-                         id="userReview"
-                         role="textbox"
-                         aria-multiline="true"
-                         placeholder="Write your review here..."
-                         data-last-review="{{ user_review }}"
-                    >
-                        {{- user_review -}}
-                    </div>
+                        <div class="editable-review {{ review_editing }}"
+                             contenteditable="{{ review_editable }}"
+                             id="userReview"
+                             role="textbox"
+                             aria-multiline="true"
+                             placeholder="Write your review here..."
+                             data-last-review="{{ user_review }}"
+                        >
+                            {{- user_review -}}
+                        </div>
                 </div>
                 <div class="user-review-controls">
-                    <span onclick="submitReview()" class="round-button"><i class="fas fa-comment"></i></span>
+                    <span id="reviewSubmitButton" onclick="submitReview()" class="round-button {{ 'hidden' if user_review else '' }}"><i class="fas fa-comment"></i></span>
+                    <span id="reviewEditButton" onclick="editReview()" class="round-button {{ 'hidden' if not user_review else '' }}"><i class="fas fa-edit"></i></span>
                     <span onclick="deleteReview()" class="round-button"><i class="fas fa-trash"></i></span>
                 </div>
             </div>
@@ -242,6 +245,26 @@
 
         {%- if is_user -%}
         <script>
+            function editReview() {
+                let userReview = $("#userReview");
+                let userRating = $('#userRating');
+                userReview.prop('contenteditable', true);
+                userReview.addClass('editing');
+                userRating.addClass('editing');
+                $('#reviewSubmitButton').removeClass('hidden');
+                $('#reviewEditButton').addClass('hidden');
+            }
+
+            function stopEditReview() {
+                let userReview = $("#userReview");
+                let userRating = $('#userRating');
+                userReview.prop('contenteditable', false);
+                userReview.removeClass('editing');
+                userRating.removeClass('editing');
+                $('#reviewSubmitButton').addClass('hidden');
+                $('#reviewEditButton').removeClass('hidden');
+            }
+
             function updateRating(stars) {
                 $('#userRating span').removeClass('selected');
                 $('#userRating span:lt(' + stars + ')').addClass('selected');
@@ -250,8 +273,10 @@
 
             // Handle star clicks for user rating
             $('#userRating span').on('click', function() {
-                let stars = $(this).index() + 1;
-                updateRating(stars);
+                if ($('#userRating').hasClass('editing')) {
+                    let stars = $(this).index() + 1;
+                    updateRating(stars);
+                }
             });
 
             function submitReview() {
@@ -281,6 +306,7 @@
                         userRating.attr('data-last-rating', selectedRating);
                         userReview.attr('data-last-review', userReviewContent);
                         show_popup('Comment posted!');
+                        stopEditReview();
                     },
                     error: function(xhr, status, error) {
                         if (xhr.status == 429) {
@@ -310,6 +336,7 @@
                         $('#userReview').text('');
                         $('#userReview').attr('data-last-review', '');
                         show_popup('Comment deleted!');
+                        editReview();
                     },
                     error: function(error) {
                         if (xhr.status == 429) {

@@ -176,7 +176,7 @@ user-reviewer-name.reviewer-name {
     color: black;
 }
 
-.user-review .star-rating:hover {
+.user-review .star-rating.editing:hover {
     text-shadow: 0 0 10px black;
     cursor: pointer;
 }
@@ -190,8 +190,11 @@ user-reviewer-name.reviewer-name {
     flex: 1;
 }
 
-.editable-review {
+.editable-review.editing {
     border: 1px solid #ddd;
+}
+
+.editable-review {
     padding: 10px;
     margin: 10px 0;
     outline: none;
