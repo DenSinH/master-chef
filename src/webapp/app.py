@@ -600,8 +600,6 @@ async def upload_image(request: Request):
         try:
             link = await upload_imgur(file.body, title=file.name)
         except Exception as e:
-            import traceback
-            print(traceback.format_exc())
             raise e
         break
 
