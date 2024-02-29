@@ -178,7 +178,7 @@ def _get_html_text(soup):
 
 async def translate_url(url):
     print(f"Retrieving url {url}")
-    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False), headers=_get_headers(url)) as session:
+    async with aiohttp.ClientSession(headers=_get_headers(url)) as session:
         res = await session.get(url)
         if not res.ok:
             raise CookbookError(f"Could not get the specified url, status code {res.status}")
