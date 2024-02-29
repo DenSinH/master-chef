@@ -1,5 +1,4 @@
-{% set english = True %}
-
+{% from "tags.html" import tags %}
 {%- set meta = recipe.get("meta", {}) -%}
 {%- set english = meta.get("language", "en") == "en" -%}
 
@@ -9,6 +8,7 @@
     <meta property="og:image" itemprop="image primaryImageOfPage" content="{{ recipe['thumbnail'] or '/static/spaghet.png' }}">
     <title>{{ recipe["name"]|capwords }}</title>
     <link rel="stylesheet" href="/static/recipe.css">
+    {% include "tags.html" %}
 
     <script src="/static/recipe.js"></script>
     {%- if is_user or is_admin -%}
@@ -125,6 +125,9 @@
                 <i class="fas fa-calendar-check"></i> <span class="info-item">{{ 'Updated' if english else 'Geüpdatet' }} {{ recipe["date_updated"]|strftimestamp }}</span>
             </div>
             {%- endif -%}
+        </div>
+        <div class="recipe-info">
+            {{ tags(meta) }}
         </div>
         <h2>{{ 'Ingredients' if english else 'Ingrediënten'}} </h2>
         {%- if recipe.get("people") is not none -%}

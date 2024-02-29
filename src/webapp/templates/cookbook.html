@@ -1,4 +1,5 @@
 {% set english = True %}
+{% from "tags.html" import tags %}
 
 {% extends "base.html" %}
 
@@ -7,6 +8,9 @@
     <meta name="description" content="Personal cookbook website, used for saving, editing and sharing websites. By Dennis Hilhorst.">
     <link rel="stylesheet" href="/static/cookbook.css">
     <link rel="stylesheet" href="/static/dropdown.css">
+    {% include "tags.html" %}
+
+    <link rel="stylesheet" href="/static/tags.css">
     {%- if is_user or is_admin -%}
     <link rel="stylesheet" href="/static/likes.css">
     {%- endif -%}
@@ -101,46 +105,7 @@
             <h2 class="searchable {{ collection }}">{{ recipe["name"]|capwords }}</h2>
 
             {%- set meta = recipe.get("meta", {}) -%}
-            <div class="tags">
-                {%- if meta.get("language") -%}
-                    <span class="tag searchable {{ meta.get('language') }}">
-                        {{ LANGUAGES[meta.get("language")]|capitalize }}
-                    </span>
-                {%- endif -%}
-                {%- if meta.get("cuisine", "other") != "other" -%}
-                    <span class="tag searchable">
-                        {{ meta.get("cuisine")|capitalize }}
-                    </span>
-                {%- endif -%}
-                {%- if meta.get("meal_type", "other") != "other" -%}
-                    <span class="tag searchable">
-                        {{ meta.get("meal_type")|capitalize }}
-                    </span>
-                {%- endif -%}
-                <span class="tag searchable {{ meta.get('meat_type', ['other'])[0] }}">
-                    {%- if meta.get("meat_type", ["other"])[0] == "other" -%}
-                        Other/mixed meat
-                    {%- else -%}
-                        {{ '/'.join(meta.get("meat_type"))|capitalize }}
-                    {%- endif -%}
-                </span>
-                {%- if meta.get("carb_type", ["other"])[0] != "none" -%}
-                <span class="tag searchable {{ meta.get('carb_type', ['other'])[0]|replace(' ', '-') }}">
-                    {%- if meta.get("carb_type", ["other"])[0] == "other" -%}
-                        Other carbs
-                    {%- else -%}
-                        {{ '/'.join(meta.get("carb_type"))|capitalize }}
-                    {%- endif -%}
-                </span>
-                {%- endif -%}
-                <span class="tag searchable {{ meta.get('temperature', 'any')|replace(' ', '-') }}">
-                    {%- if meta.get("temperature", "any") == "any" -%}
-                        Any temperature
-                    {%- else -%}
-                        {{ meta.get("temperature")|capitalize }}
-                    {%- endif -%}
-                </span>
-            </div>
+            {{ tags(meta) }}
 
             <div class="recipe-info">
                 {%- set recipe_views = viewcount.get(recipe_id) -%}
