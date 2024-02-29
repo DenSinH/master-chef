@@ -167,7 +167,7 @@
         {%- if recipe["remarks"].strip() -%}
         <h2>{{ 'Remarks' if english else 'Opmerkingen' }}</h2>
         <p class="remarks">
-            {{ recipe["remarks"]|capitalize }}
+            {{ recipe["remarks"] }}
         </p>
         {%- endif -%}
         {%- endif -%}
