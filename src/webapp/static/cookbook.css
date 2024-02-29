@@ -214,6 +214,11 @@ h2.unmade {
     background-color: #556B2F;
 }
 
+.tag.noodles {
+    background-color: #FFFF66;
+    color: black;
+}
+
 .tag.none {
     background-color: #000000;
 }
