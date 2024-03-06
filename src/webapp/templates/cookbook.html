@@ -8,6 +8,7 @@
     <meta name="description" content="Personal cookbook website, used for saving, editing and sharing websites. By Dennis Hilhorst.">
     <link rel="stylesheet" href="/static/cookbook.css">
     <link rel="stylesheet" href="/static/dropdown.css">
+    <link rel="stylesheet" href="/static/messages.css">
     {% include "tags.html" %}
 
     <link rel="stylesheet" href="/static/tags.css">
@@ -15,6 +16,7 @@
     <link rel="stylesheet" href="/static/likes.css">
     {%- endif -%}
     <script src="/static/dropdown.js" defer></script>
+    <script src="/static/messages.js"></script>
 {% endblock head %}
 
 {% block body %}
@@ -64,6 +66,7 @@
     </div>
     {%- endif -%}
 
+    <main>
     <div class="search-bar-container">
         <input type="search" id="searchBar" placeholder="Search {{ recipes|length }} recipes">
         <div class="dropdown-container">
@@ -81,6 +84,8 @@
             </div>
         </div>
     </div>
+
+    {% include "messages.html" %}
 
     <div class="recipe-list">
         {%- for recipe_id, recipe in recipes.items() -%}
@@ -136,4 +141,5 @@
     <script src="/static/likes.js"></script>
     <script>getSaved('{{ collection }}');</script>
     {% endif %}
+    </main>
 {% endblock body %}

@@ -168,6 +168,8 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
         "recipes": ordered,
         "is_admin": is_admin,
         "is_user": is_user,
+        "username": username,
+        "latest": max(recipes, key=lambda recipe_id: recipes[recipe_id].get("date_created", 0), default=None),
         "viewcount": viewcount,
         "unverified_users": unverified_users,
         "title": title,
