@@ -126,6 +126,16 @@ h1 {
     text-align: center;
 }
 
+@media only screen and (max-width: 600px) {
+    h1 {
+        font-size: 7vw;
+    }
+
+    h2 {
+        font-size: 6vw;
+    }
+}
+
 .recipe-item .recipe-info .info-item {
     display: inline-block;
     margin-right: 10px;
