@@ -1,0 +1,24 @@
+{% set english = True %}
+
+{% extends "base.html" %}
+
+{% block head %}
+    <title>{{ title|title }}</title>
+    <link rel="stylesheet" href="static/box.css">
+{% endblock head %}
+
+{% block body %}
+    <div class="center-container">
+        {% if centering %}
+        <div class="center-box centering">
+        {% else %}
+        <div class="center-box">
+        {% endif %}
+            <div class="header">
+                <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
+                <h1>{{ title|title }}</h1>
+            </div>
+            {{ message|safe }}
+        </div>
+    </div>
+{% endblock body %}

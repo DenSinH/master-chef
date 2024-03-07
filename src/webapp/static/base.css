@@ -14,7 +14,7 @@ body {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 header {
@@ -32,6 +32,12 @@ header .header {
     display: flex;
 }
 
+.admin-buttons {
+    display: flex;
+    justify-content: right;
+    width: 100%;
+}
+
 @media only screen and (max-width: 600px) {
     header {
         flex-direction: column;
@@ -41,10 +47,14 @@ header .header {
         flex-direction: column;
         align-items: center;
     }
+
+    .admin-buttons {
+        justify-content: center;
+    }
 }
 
 header h1 {
-    margin: 0;
+    margin: auto;
     line-height: 50px;
 }
 
@@ -55,6 +65,7 @@ header h1 {
     cursor: pointer;
     margin-top: auto;
     margin-bottom: auto;
+    padding-bottom: 16px;
 }
 
 .buttons {
@@ -73,6 +84,22 @@ header h1 {
     margin-left: 10px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    position: relative;
+}
+
+.round-button .notify-bubble {
+    background: red;
+    border-radius: 20px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    font-size: small;
+    font-weight: bold;
 }
 
 a.round-button {
@@ -106,4 +133,17 @@ h1 {
 
 .warning {
     color: red;
+}
+
+#errors {
+    color: red;
+}
+
+.unselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }

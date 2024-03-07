@@ -1,0 +1,26 @@
+<div class="carousel-wrapper">
+    <div class="carousel-container">
+        <div class="carousel-inner">
+            <div class="message">
+            {% if not is_user %}
+                Have you registered an account yet?<br>
+                Make one <a href="{{ url_for('register') }}">here</a>
+            {% else %}
+                Welcome chef {{ username }}!
+            {% endif %}
+            </div>
+            {% if latest is not none %}
+            <div class="message">Check out the <a href="{{ url_for('recipe', id=latest, collection=collection) }}">latest recipe!</a></div>
+            {% endif %}
+            <div class="message">
+                Find
+                {% if collection == 'unmade' %}
+                tried and tested
+                {% else %}
+                unmade
+                {% endif %}
+                recipes with the <i class="fa fa-utensils"></i> button above!
+            </div>
+        </div>
+    </div>
+</div>

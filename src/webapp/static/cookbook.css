@@ -1,3 +1,7 @@
+main {
+    padding: 20px;
+}
+
 
 input[type="search"]::-webkit-search-cancel-button {
   -webkit-appearance: none;
@@ -28,7 +32,6 @@ h2.unmade {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
     gap: 20px;
-    padding: 20px;
     text-align: center;
 }
 
@@ -37,15 +40,17 @@ h2.unmade {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    text-decoration: none;
     color: inherit;
     border: 1px solid #ddd;
     border-radius: 5px;
     padding: 10px;
 }
 
-.recipe-item:hover {
-    background-color: #eee;
+@media (hover: hover) {
+    .recipe-item:hover:not(:has(.save-icon:hover)) {
+        background-color: #eee;
+        cursor: pointer;
+    }
 }
 
 .thumbnail-wrapper {
@@ -88,7 +93,6 @@ h2.unmade {
 @media only screen and (max-width: 600px) {
     .recipe-list {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        padding: 10px;
     }
 
     .search-bar-container {
@@ -110,21 +114,7 @@ h2.unmade {
     }
 }
 
-.tags {
-    margin: 5px 0;
-}
-
-.tag {
-    display: inline-block;
-    background-color: var(--blue);
-    color: white;
-    padding: 5px 10px;
-    margin: 2px 2px;
-    border-radius: 20px;
-}
-
 .search-bar-container {
-    padding: 20px;
     display: flex;
 }
 
@@ -139,96 +129,7 @@ h2.unmade {
     font-size: 1em;
 }
 
-
 .dropdown-container {
     font-size: 0.8em;
     font-size: 1em;
-}
-
-.tag.nl {
-    background-color: var(--orange);
-}
-
-.tag.en {
-    background-color: var(--blue);
-}
-
-.tag.chicken {
-    background-color: #FFB6C1;
-    color: black;
-}
-
-.tag.beef {
-    background-color: #8B4513;
-}
-
-.tag.pork {
-    background-color: #FF69B4;
-}
-
-.tag.fish {
-    background-color: #00BFFF;
-}
-
-.tag.seafood {
-    background-color: #8FBC8F;
-}
-
-.tag.vegetarian {
-    background-color: #228B22;
-}
-
-.tag.other {
-    background-color: #808080;
-}
-
-.tag.rice {
-    background-color: #F5F5DC;
-    color: black;
-}
-
-.tag.pasta {
-    background-color: #FFD700;
-    color: black;
-}
-
-.tag.potatoes {
-    background-color: #8B4513;
-}
-
-.tag.sweet-potatoes {
-    background-color: #FF6347;
-}
-
-.tag.bread {
-    background-color: #D2B48C;
-}
-
-.tag.wraps {
-    background-color: #FFDAB9;
-    color: black;
-}
-
-.tag.legumes {
-    background-color: #556B2F;
-}
-
-.tag.none {
-    background-color: #000000;
-}
-
-.tag.hot {
-    background-color: #FF0000;
-}
-
-.tag.cold {
-    background-color: #00BFFF;
-}
-
-.tag.room-temperature {
-    background-color: #8B4513;
-}
-
-.tag.any {
-    background-color: #808080;
 }

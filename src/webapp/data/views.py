@@ -1,5 +1,5 @@
 from .models import Views
-from .init import Session
+from .base import Session
 from sqlalchemy import select, update, and_, delete
 
 
@@ -16,13 +16,17 @@ async def get_viewcount(collection):
     }
 
 
+async def _get_viewcount(session, collection, recipe_id):
+    result = await session.execute(
+        select(Views) \
+            .where(and_(Views.recipe_collection == collection, Views.recipe_id == recipe_id))
+    )
+    return result.scalar()
+
+
 async def get_viewcount_single(collection, recipe_id):
     async with Session() as session:
-        result = await session.execute(
-            select(Views) \
-                .where(and_(Views.recipe_collection == collection, Views.recipe_id == recipe_id))
-        )
-        views = result.scalar()
+        views = await _get_viewcount(session, collection, recipe_id)
         if views is None:
             return 0
         return views.viewcount
@@ -30,11 +34,7 @@ async def get_viewcount_single(collection, recipe_id):
 
 async def incr_viewcount(collection, recipe_id):
     async with Session() as session:
-        result = await session.execute(
-            select(Views) \
-                .where(and_(Views.recipe_collection == collection, Views.recipe_id == recipe_id))
-        )
-        views = result.scalar()
+        views = await _get_viewcount(session, collection, recipe_id)
 
         if views is not None:
             views.viewcount += 1
@@ -48,13 +48,7 @@ async def incr_viewcount(collection, recipe_id):
 
 async def move_viewcount(collectionfrom, collectionto, idfrom, idto):
     async with Session() as session:
-        result = await session.execute(
-            select(Views) \
-                .where(and_(Views.recipe_collection == collectionfrom, Views.recipe_id == idfrom))
-        )
-        viewsfrom = result.scalar()
-        print(viewsfrom)
-        print(collectionfrom, collectionto, idfrom, idto)
+        viewsfrom = await _get_viewcount(session, collectionfrom, idfrom)
 
         if viewsfrom is not None:
             session.add(

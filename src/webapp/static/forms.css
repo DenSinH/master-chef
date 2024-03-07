@@ -2,3 +2,11 @@ textarea.error,
 input.error {
     border-color: red !important;
 }
+
+.form-field {
+    display: grid;
+    grid-template-columns: auto;
+    grid-gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+}

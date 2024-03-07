@@ -1,0 +1,20 @@
+{% set english = True %}
+
+{% extends "base.html" %}
+
+{% block head %}
+    <title>Register</title>
+    <link rel="stylesheet" href="static/box.css">
+{% endblock head %}
+
+{% block body %}
+    <div class="center-container">
+        <div class="center-box centering">
+            <div class="header">
+                <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
+                <h1>Registered!</h1>
+            </div>
+            <p>Hi {{ username }}! Your account has been registered!</p>
+        </div>
+    </div>
+{% endblock body %}

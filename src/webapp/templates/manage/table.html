@@ -1,0 +1,235 @@
+{% set english = True %}
+
+{% extends "base.html" %}
+
+{% block head %}
+    <title>Data Manager</title>
+<style>
+        body {
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        td:last-child {
+            display: flex;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        td > div {
+            cursor: pointer;
+        }
+
+        .dataTableContainer {
+            overflow-x: auto;
+        }
+    </style>
+{% endblock head %}
+
+{% block body %}
+    <header>
+        <div class="header">
+            <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
+            <h1>{{ table_name }}</h1>
+        </div>
+    </header>
+
+    <div class="dataTableContainer">
+        <table id="dataTable" border="1">
+            <thead>
+                <tr>
+                    {% for column in columns %}
+                        <th>{{ column }}</th>
+                    {% endfor %}
+                    <th>actions</th>
+                </tr>
+            </thead>
+            <tbody id="dataBody">
+
+            </tbody>
+        </table>
+    </div>
+    <script>
+        // Assuming you have a dictionary 'columnTypes' with column names as keys and their data types as values
+        const columnTypes = {{ column_types | tojson }};
+
+        async function fetchData() {
+            const response = await fetch("/api/{{ table_name }}");
+            const data = await response.json();
+            const tableBody = document.getElementById("dataBody");
+            tableBody.innerHTML = "";
+
+            // Create the "Create" form row
+            const createRow = document.createElement("tr");
+            createRow.className = "create-row";
+            let cell;
+            {% for column in columns %}
+                cell = document.createElement("td");
+                {% if column != "id" %}
+                cell.innerHTML = `<div contenteditable="true" id="create_{{column}}" onclick="startEditing(event)"></div>`;
+                {% endif %}
+                createRow.appendChild(cell);
+            {% endfor %}
+            const createCell = document.createElement("td");
+            createCell.innerHTML = `<span class="round-button" onclick="create()"><i class="fas fa-plus"></i></span>`;
+            createRow.appendChild(createCell);
+            tableBody.appendChild(createRow);
+
+            data.data.forEach(item => {
+                const row = document.createElement("tr");
+                let cell;
+                {% for column in columns %}
+                    cell = document.createElement("td");
+                    {% if column != "id" %}
+                        cell.innerHTML = `<div contenteditable="true" id="${item.id}_{{column}}" onclick="startEditing(event)">${(item['{{column}}'] == null) ? '' : item['{{column}}']}</div>`;
+                    {% else %}
+                        cell.innerHTML = `<div id="${item.id}_{{column}}">${item['{{column}}']}</div>`;
+                    {% endif %}
+                    row.appendChild(cell);
+                {% endfor %}
+                const actionCell = document.createElement("td");
+                actionCell.innerHTML = `<span class="round-button" onclick="update('${item.id}')"><i class="fas fa-upload"></i></span><span class="round-button" onclick="del('${item.id}')"><i class="fas fa-trash"></i></span>`;
+                row.appendChild(actionCell);
+                tableBody.appendChild(row);
+            });
+        }
+
+        async function create() {
+            const data = {};
+            let value;
+            {% for column in columns %}
+                {% if column != "id" %}
+                    value = document.getElementById(`create_{{column}}`).textContent;
+                    data['{{ column }}'] = parseValue(value, columnTypes['{{ column }}']);
+                {% endif %}
+            {% endfor %}
+            await fetch("/api/{{ table_name }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data),
+            }).then((response) => {
+                if (!response.ok) {
+                    show_popup('Error creating row');
+                    throw new Error("Bad response from server");
+                }
+                else {
+                    show_popup('Created row');
+                }
+                fetchData();
+            });
+        }
+
+        async function update(id) {
+            const data = {};
+            let value;
+            {% for column in columns %}
+                {% if column != "id" %}
+                    value = document.getElementById(`${id}_{{column}}`).textContent;
+                    data['{{ column }}'] = parseValue(value, columnTypes['{{ column }}']);
+                {% endif %}
+            {% endfor %}
+            await fetch(`/api/{{ table_name }}/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            }).then((response) => {
+                if (!response.ok) {
+                    show_popup('Error updating row');
+                    throw new Error("Bad response from server");
+                }
+                else {
+                    show_popup('Updated row');
+                }
+                fetchData();
+            });
+        }
+
+        async function del(id) {
+            await fetch(`/api/{{ table_name }}/${id}`, {
+                method: "DELETE"
+            }).then((response) => {
+                if (!response.ok) {
+                    show_popup('Error deleting row');
+                    throw new Error("Bad response from server");
+                }
+                else {
+                    show_popup('Deleted row');
+                }
+                fetchData();
+            });
+        }
+
+        function startEditing(event) {
+            const cell = event.target;
+            cell.setAttribute('contenteditable', 'true');
+            cell.focus();
+        }
+
+        async function updateField(id, column, value) {
+            const data = {};
+            data[column] = parseValue(value, columnTypes[column]);
+            await fetch(`/api/{{ table_name }}/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            }).then((response) => {
+                if (!response.ok) {
+                    show_popup('Error deleting row');
+                    throw new Error("Bad response from server");
+                }
+                else {
+                    show_popup('Deleted row');
+                }
+                fetchData();
+            });
+        }
+
+        // Function to parse values based on column data type
+        function parseValue(value, dataType) {
+            value = value.trim();
+            if (dataType === 'intnull') {
+                return parseInt(value, 10) || null;
+            } else if (dataType === 'integer') {
+                return parseInt(value, 10) || 0;
+            } else if (dataType === 'boolean') {
+                return value.toLowerCase() === 'true';
+            } else if (dataType === 'datetimenull') {
+                if (!value) {
+                    return null;
+                }
+                return Date.parse(value + 'Z') || null;
+            } else if (dataType == 'datetime') {
+                return Date.parse(value.trim() + 'Z');
+            } else if (dataType == 'stringnull') {
+                return value || null;
+            } else {
+                return value;
+            }
+        }
+
+        fetchData();
+    </script>
+{% endblock body %}

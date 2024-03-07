@@ -28,6 +28,8 @@ h1.unmade {
 
 
 .recipe-details {
+    display: flex;
+    flex-direction: column;
     max-width: 800px;
     margin: 0 auto;
     padding: 0 20px;
@@ -36,9 +38,12 @@ h1.unmade {
 
 .recipe-details img {
     display: block;
-    margin: 0 auto;
     max-height: 50vh;
     max-width: 100%;
+}
+
+.recipe-container {
+    margin: 0 auto;
 }
 
 .recipe-details h2 {
@@ -132,4 +137,75 @@ a.original-url:hover {
     .ingredient-conversion {
         max-width: 100%;
     }
+}
+
+.review {
+    position: relative;
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.review .review-date {
+    position: absolute;
+    right: 30px;
+    top: 10px;
+    color: #ccc;
+}
+
+.reviewer-name {
+    font-weight: bold;
+}
+
+.reviewer-name.admin {
+    font-weight: bolder;
+    color: var(--blue);
+}
+
+user-reviewer-name.reviewer-name {
+    margin-bottom: 0;
+}
+
+.star-rating {
+    color: #ddd;
+    font-size: 1.5em;
+    margin: 0;
+}
+
+.star-rating .selected {
+    color: black;
+}
+
+.user-review .star-rating.editing:hover {
+    text-shadow: 0 0 10px black;
+    cursor: pointer;
+}
+
+.user-review {
+    display: flex;
+    align-items: center;
+}
+
+.user-review .user-review-content {
+    flex: 1;
+}
+
+.editable-review.editing {
+    border: 1px solid #ddd;
+}
+
+.editable-review {
+    padding: 10px;
+    margin: 10px 0;
+    outline: none;
+    white-space: pre-wrap;
+}
+
+.user-review-controls {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-review-controls .round-button {
+    margin-bottom: 10px;
 }

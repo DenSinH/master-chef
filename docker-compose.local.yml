@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   db:
     image: postgres
@@ -8,15 +9,27 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    hostname: chef-db
+    networks:
+      - pgadmin-net
+      - local-net
+  redis:
+    image: redis:latest
+    expose:
+      - '6379:6379'
+    networks:
+      - local-net
   web:
     build: .
     depends_on:
       - db
+      - redis
     environment:
       GITHUB_RECIPES_READ_PAT_TOKEN: ${GITHUB_RECIPES_READ_PAT_TOKEN}
       GITHUB_RECIPES_WRITE_PAT_TOKEN: ${GITHUB_RECIPES_WRITE_PAT_TOKEN}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       PASSWORD: ${PASSWORD}
+      ADMIN_USER: ${ADMIN_USER}
       SECRET: ${SECRET}
       IMGUR_ALBUM_ID: ${IMGUR_ALBUM_ID}
       IMGUR_CLIENT_ID: ${IMGUR_CLIENT_ID}
@@ -25,7 +38,17 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       PORT: 5000
       PYTHONUNBUFFERED: 1
+    networks:
+      - local-net
     ports:
       - '80:5000'
+    working_dir: /app/webapp
+    volumes:
+      - ./src/webapp:/app/webapp
+    entrypoint: ["python", "app.py", "--debug"]
 volumes:
   dbdata:
+networks:
+  pgadmin-net:
+    external: true
+  local-net:

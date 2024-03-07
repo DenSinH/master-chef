@@ -29,6 +29,7 @@ CARB_TYPES = [
     "bread",
     "wraps",
     "legumes",
+    "noodles",
     "none",
     "other"
 ]
@@ -45,7 +46,7 @@ CUISINE_TYPES = [
     "greek",
     "middle eastern",
     "spanish",
-    "vietnamese",
+    "eastern",
     "other"
 ]
 
