@@ -3,6 +3,17 @@ h1.unmade {
     color: red;
 }
 
+@media only screen and (max-width: 600px) {
+    h1 {
+        font-size: 7vw;
+        line-height: normal !important;
+    }
+
+    h2 {
+        font-size: 6vw;
+    }
+}
+
 .recipe-info {
     display: flex;
     justify-content: center;
