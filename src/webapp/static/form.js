@@ -1,40 +1,59 @@
 
-function add_ingredient() {
+function add_ingredient(after=-1, text="") {
     const row = $('<div class="ingredient-row">' +
         '<span class="handle"><i class="fas fa-grip-lines"></i></span>' +
         '<input type="text" class="amount" name="ingredient-amount" placeholder="Amount">' +
-        '<input type="text" class="ingredient" name="ingredient-type" placeholder="Ingredient">' +
+        `<input type="text" class="ingredient" name="ingredient-type" placeholder="Ingredient" value=${text}>` +
         '<div class="remove-row-container">' +
             '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
         '</div>' +
         '</div>');
-    $('#ingredientRows').append(row);
+    if (!$('#ingredientRows .ingredient-row').eq(after).after(row).length) {
+        $('#ingredientRows').append(row);
+    }
     set_callbacks();
 }
 
-function add_step() {
+function add_step(after=-1, text="") {
     const row = $('<div class="preparation-row">' +
         '<span class="handle"><i class="fas fa-grip-lines"></i></span>' +
-        '<textarea class="step" name="preparation" placeholder="Step"></textarea>' +
+        `<textarea class="step" name="preparation" placeholder="Step">${text}</textarea>` +
         '<div class="remove-row-container">' +
             '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
         '</div>' +
         '</div>');
-    $('#preparationRows').append(row);
+    console.log(after);
+    console.log($('#preparationRows .preparation-row').eq(after));
+    if (!$('#preparationRows .preparation-row').eq(after).after(row).length) {
+        $("#preparationRows").append(row);
+    }
     set_callbacks();
 }
 
-function add_group() {
-    const row = $('<div class="ingredient-row">' +
+function add_group(after=-1, text="") {
+    const row = $('<div class="nutrition-row">' +
         '<span class="handle"><i class="fas fa-grip-lines"></i></span>' +
         '<input type="text" class="amount" name="nutrition-amount" placeholder="Amount">' +
-        '<input type="text" class="ingredient" name="nutrition-group" placeholder="Group">' +
+        `<input type="text" class="group" name="nutrition-group" placeholder="Group" value="${text}">` +
         '<div class="remove-row-container">' +
             '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
         '</div>' +
         '</div>');
-    $('#nutritionRows').append(row);
+    if (!$('#nutritionRows .nutrition-row').eq(after).after(row).length) {
+        $('#nutritionRows').append(row);
+    }
     set_callbacks();
+}
+
+function get_cursor_pos(element) {
+    if (element.selectionStart !== undefined) {
+        return element.selectionStart;
+    } else {
+        // For IE < 9 support
+        var range = document.selection.createRange();
+        range.moveStart('character', -element.value.length);
+        return range.text.length;
+    }
 }
 
 function set_callbacks() {
@@ -43,11 +62,20 @@ function set_callbacks() {
     for (i in classes) {
         const inputs = $(classes[i]);
         const callback = callbacks[i];
-
+        
+        inputs.off("keydown");
         inputs.on("keydown", function (e) {
             if (e.which == 13 || e.which == 9) {
                 const index = inputs.index(this);
-                if (index == inputs.length - 1 && $(this).val()) {
+
+                if (e.shiftKey) {
+                    let cursor_pos = get_cursor_pos(this);
+                    let input_value = $(this).val();
+                    let after_cursor = input_value.substring(cursor_pos);
+                    $(this).val(input_value.substring(0, cursor_pos));
+                    callback(index, after_cursor);
+                }
+                else if (index == inputs.length - 1 && $(this).val()) {
                     // don't prevent default, since
                     // it will go to the new field
                     // the enter callback has already
