@@ -44,10 +44,10 @@
                 <input type="number" name="people" placeholder="Enter number of people" value="{{ recipe.get('people') or '' }}">
             </div>
 
-            <div id="ingredientsContainer" class="form-field">
+            <div id="ingredientsContainer" class="form-field multi-row">
                 <div class="ingredient-header">
                     <label>Ingredients:</label>
-                    <span id="addIngredient" class="round-button"><i class="fas fa-plus"></i></span>
+                    <span class="add-ingredient round-button"><i class="fas fa-plus"></i></span>
                 </div>
                 <div id="ingredientRows" class="sortable-list">
                     {%- for ingredient in recipe.get('ingredients', []) + [{}] -%}
@@ -61,12 +61,15 @@
                     </div>
                     {%- endfor -%}
                 </div>
+                <div class="ingredient-footer">
+                    <span class="add-ingredient round-button"><i class="fas fa-plus"></i></span>
+                </div>
             </div>
 
-            <div id="preparationContainer" class="form-field">
+            <div id="preparationContainer" class="form-field multi-row">
                 <div class="preparation-header">
                     <label>Preparation:</label>
-                    <span id="addStep" class="round-button"><i class="fas fa-plus"></i></span>
+                    <span class="add-step round-button"><i class="fas fa-plus"></i></span>
                 </div>
                 <div id="preparationRows" class="sortable-list">
                     {%- for step in (recipe.get('preparation') or []) + [''] -%}
@@ -79,6 +82,9 @@
                     </div>
                     {%- endfor -%}
                 </div>
+                <div class="preparation-footer">
+                    <span class="add-step round-button"><i class="fas fa-plus"></i></span>
+                </div>
             </div>
 
             <div class="form-field">
@@ -86,10 +92,10 @@
                 <textarea class="remarks" name="remarks" placeholder="Remarks">{{ recipe.get("remarks") or "" }}</textarea>
             </div>
 
-            <div id="nutritionContainer" class="form-field">
+            <div id="nutritionContainer" class="form-field multi-row">
                 <div class="nutrition-header">
                     <label>Nutrition:</label>
-                    <span id="addGroup" class="round-button"><i class="fas fa-plus"></i></span>
+                    <span class="add-group round-button"><i class="fas fa-plus"></i></span>
                 </div>
                 <div id="nutritionRows" class="sortable-list">
                     {%- for group in (recipe.get('nutrition') or []) + [{}] -%}
@@ -102,6 +108,9 @@
                         </div>
                     </div>
                     {%- endfor -%}
+                </div>
+                <div class="nutrition-footer">
+                    <span class="add-group round-button"><i class="fas fa-plus"></i></span>
                 </div>
             </div>
 

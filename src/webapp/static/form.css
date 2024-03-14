@@ -21,6 +21,17 @@
     justify-content: space-between;
 }
 
+.add-ingredient,
+.add-step,
+.add-group {
+    float: right;
+}
+
+.multi-row {
+    padding-bottom: 20px;
+    border-bottom: 2px solid lightgray;
+}
+
 .ingredient-row input,
 .nutrition-row input,
 .preparation-row textarea,

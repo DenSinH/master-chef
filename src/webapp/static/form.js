@@ -99,9 +99,9 @@ function resizeAndCompressImage(file, maxWidth, callback) {
 }
 
 $(document).ready(function () {
-    $('#addIngredient').click(add_ingredient);
-    $('#addStep').click(add_step);
-    $('#addGroup').click(add_group);
+    $('.add-ingredient').click(add_ingredient);
+    $('.add-step').click(add_step);
+    $('.add-group').click(add_group);
     set_callbacks();
 
     $(document).on('click', '.remove-row', function () {
