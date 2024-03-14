@@ -3,3 +3,4 @@ from .transform import translate_url, translate_page
 from .usage import get_usage
 from .meta import *
 from .title import generate_title
+from .references import replace_ingredient_references

@@ -188,4 +188,9 @@ $(document).ready(function() {
     });
     $("#incr-people").click(incr_people);
     $("#decr-people").click(decr_people);
+    $("ref").click(function(e) {
+      e.stopPropagation();
+      let ingredient = $("#ingredient-" + $(this).attr('data-ingredient'));
+      show_popup(ingredient.text());
+    });
 });

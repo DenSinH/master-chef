@@ -40,10 +40,15 @@ def _strftimestamp(timestamp):
     return date.strftime("%Y-%m-%d")
 
 
+def _add_ingredient_references(step, recipe):
+    return cookbook.replace_ingredient_references(step, (ingredient["ingredient"] for ingredient in recipe["ingredients"]))
+
+
 # 10MB max request size
 app.config.REQUEST_MAX_SIZE = 10000000
 
 app.ext.templating.environment.filters["strftimestamp"] = _strftimestamp
+app.ext.templating.environment.filters["ingredientrefs"] = _add_ingredient_references
 app.ext.templating.environment.filters["capwords"] = string.capwords
 app.ext.templating.environment.globals["CUISINE_TYPES"] = cookbook.CUISINE_TYPES
 app.ext.templating.environment.globals["MEAL_TYPES"] = cookbook.MEAL_TYPES

@@ -220,3 +220,10 @@ user-reviewer-name.reviewer-name {
 .user-review-controls .round-button {
     margin-bottom: 10px;
 }
+
+ref {
+    text-decoration: underline;
+    color: var(--blue-shade);
+    font-weight: 600;
+    cursor: pointer;
+}

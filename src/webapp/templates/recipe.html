@@ -146,7 +146,7 @@
         <div class="ingredients-wrapper">
             <table class="ingredients">
                 {%- for ingredient in recipe["ingredients"] -%}
-                <tr class="ingredient">
+                <tr id="ingredient-{{ loop.index0 }}" class="ingredient">
                     <td class="ingredient-amount" data-base="{{ (ingredient['amount'] or '&nbsp')|capitalize|safe }}">
                         {{ (ingredient["amount"] or "&nbsp")|capitalize|safe }}
                     </td>
@@ -159,7 +159,7 @@
         <h2>{{ 'Instructions' if english else 'Instructies' }}</h2>
         <ol class="instructions">
             {%- for step in recipe["preparation"] -%}
-            <li>{{ step }}</li>
+            <li>{{ step|ingredientrefs(recipe)|safe }}</li>
             {%- endfor -%}
         </ol>
 

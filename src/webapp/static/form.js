@@ -22,8 +22,6 @@ function add_step(after=-1, text="") {
             '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
         '</div>' +
         '</div>');
-    console.log(after);
-    console.log($('#preparationRows .preparation-row').eq(after));
     if (!$('#preparationRows .preparation-row').eq(after).after(row).length) {
         $("#preparationRows").append(row);
     }
