@@ -10,7 +10,7 @@ ingredient_names = ["Garlic cloves", "Garlic Powder", "onion", "tomato", "salt",
 
 def fuzzy_extract(query, text, threshold):
     query = re.sub('[^a-z\- ]', '', query.lower()).strip()
-    score = fuzz.token_set_ratio(query, text)
+    score = fuzz.partial_token_set_ratio(query, text)
     if score > threshold:
         for match in find_near_matches(query.lower(), text.lower(), max_l_dist=1):
             yield (match.matched.lower(), score)
