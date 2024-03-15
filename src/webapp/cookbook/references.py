@@ -4,15 +4,13 @@ from functools import lru_cache
 import re
 
 
-# Sample list of ingredient names
-ingredient_names = ["Garlic cloves", "Garlic Powder", "onion", "tomato", "salt", "pepper"]
+THRESHOLD = 0.8
 
-
-def fuzzy_extract(query, text, threshold):
+def fuzzy_extract(query, text):
     query = re.sub('[^a-z\- ]', '', query.lower()).strip()
     score = fuzz.partial_token_set_ratio(query, text)
-    if score > threshold:
-        for match in find_near_matches(query.lower(), text.lower(), max_l_dist=1):
+    if score > THRESHOLD:
+        for match in find_near_matches(query.lower(), text.lower(), max_l_dist=int((1.0 - THRESHOLD) * len(query))):
             yield (match.matched.lower(), score)
 
 
@@ -20,14 +18,17 @@ def fuzzy_extract(query, text, threshold):
 def replace_ingredient_references(recipe_step, ingredients):
     ingredient_references = {}
     for i, ingredient in enumerate(ingredients):
-        matches = fuzzy_extract(ingredient, recipe_step, 80)
+        matches = fuzzy_extract(ingredient, recipe_step)
         for match, score in matches:
             if match in ingredient_references:
                 if score <= ingredient_references[match][1]:
                     continue
             ingredient_references[match] = (i, score)
 
-    for reference, (i, _) in ingredient_references.items():
-        recipe_step = re.sub(f"({re.escape(reference)})", fr'<ref data-ingredient="{i}">\1</ref>', recipe_step, flags=re.IGNORECASE)
+    regex = re.compile(f"({'|'.join(re.escape(reference.lower()) for reference in ingredient_references)})", flags=re.IGNORECASE)
+    return regex.sub(lambda ref: fr'<ref data-ingredient="{ingredient_references[ref.group().lower()][0]}">{ref.group()}</ref>', recipe_step)
 
-    return recipe_step
+
+if __name__ == "__main__":
+    # Sample list of ingredient names
+    ingredient_names = ["Garlic cloves", "Garlic Powder", "onion", "tomato", "salt", "pepper"]
