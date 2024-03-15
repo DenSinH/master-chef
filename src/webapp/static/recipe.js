@@ -191,6 +191,6 @@ $(document).ready(function() {
     $("ref").click(function(e) {
       e.stopPropagation();
       let ingredient = $("#ingredient-" + $(this).attr('data-ingredient'));
-      show_popup(ingredient.text());
+      show_popup(`${ingredient.find('.ingredient-amount').text()} ${ingredient.find(':not(.ingredient-amount)').text()}`.trim());
     });
 });
