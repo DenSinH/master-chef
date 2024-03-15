@@ -83,7 +83,8 @@ def replace_ingredient_references(recipe_step, ingredients):
     if not ingredient_references:
         return recipe_step
     
-    regex = re.compile(f"(^|\W)({'|'.join(re.escape(reference.lower()) for reference in ingredient_references)})(\W|$)", flags=re.IGNORECASE)
+
+    regex = re.compile(f"(^|\W)({'|'.join(re.escape(reference.lower()) for reference in sorted(ingredient_references, key=lambda ref: -len(ref)))})(\W|$)", flags=re.IGNORECASE)
     return regex.sub(lambda ref: fr'{ref.group(1)}<ref data-ingredient="{ingredient_references[ref.group(2).lower()][1]}">{ref.group(2)}</ref>{ref.group(3)}', recipe_step)
 
 
