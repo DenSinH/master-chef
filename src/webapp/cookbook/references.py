@@ -67,7 +67,6 @@ def _fuzzy_extract(query, text):
         # match at least half the words
         for j in reversed(range(i + ((len(words) + 1) // 2), len(words) + 1)):
             substr = " ".join(words[i:j])
-            print(substr)
             for match in _partial_search(substr, text):
                 yield match
 
