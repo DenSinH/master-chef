@@ -164,6 +164,13 @@ def _get_tiktok_text(soup):
     return json_data["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["desc"]
 
 
+def _get_instagram_text(soup):
+    meta = soup.find("meta", {"property": "og:title"})
+    if meta:
+        return meta["content"]
+    return _get_html_text(soup)
+
+
 def _get_html_text(soup):
     # remove comment sections from website
     COMMENTS = ["comment", "opmerking"]
@@ -185,6 +192,8 @@ async def translate_url(url):
         domain = tld.extract(url).domain.lower()
         if domain == "tiktok":
             text = _get_tiktok_text(soup)
+        elif domain in {"instagram", "ig", "cdninstagram"}:
+            text = _get_instagram_text(soup)
         else:
             text = _get_html_text(soup)
         recipe = await translate_page(text, url=url, thumbnail=get_thumbnail(soup))
