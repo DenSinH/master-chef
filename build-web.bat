@@ -1,1 +1,1 @@
-docker-compose -f docker-compose.local.yml up web --build
+docker-compose -f docker-compose.local.yml up --build web
