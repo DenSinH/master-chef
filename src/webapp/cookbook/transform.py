@@ -1,4 +1,4 @@
-import openai
+from groq import AsyncGroq
 import aiohttp
 from bs4 import BeautifulSoup
 import tldextract as tld
@@ -16,8 +16,8 @@ from .meta import *
 from .thumbnail import get_thumbnail
 
 
-client = openai.AsyncOpenAI(
-    api_key=os.environ["OPENAI_API_KEY"]
+client = AsyncGroq(
+    api_key=os.environ["GROQ_API_KEY"]
 )
 
 
@@ -44,7 +44,7 @@ def _get_headers(url):
 
 
 MAX_RETRIES = 1
-MODEL = "gpt-3.5-turbo-1106"
+MODEL = "mixtral-8x7b-32768"  # works best with json_object response type: https://console.groq.com/docs/text-chat
 PROMPT = """
 The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text from the webpage.
 The recipe contains information on the ingredients, the preparation and possibly nutritional information.
