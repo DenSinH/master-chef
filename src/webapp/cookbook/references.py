@@ -9,14 +9,23 @@ THRESHOLD = 0.8
 
 @dataclass
 class PartialMatch:
-    start: int
-    end: int
-    matched: str
+    matched: tuple[str]
+    target_words: int
     score: int
+    ingredient_idx: int = None
+
+    def target_score(self):
+        return abs(len(self.matched) - self.target_words)
+    
+    def total_length(self):
+        return len(" ".join(self.matched))
+    
+    def sort_val(self):
+        return (self.target_score(), -self.total_length())
 
 
 def _process_string(s):
-    return re.sub(r"[^a-z\- ]+", " ", s.lower()).strip()
+    return re.sub(" +", " ", re.sub(r"[^a-z ]+", " ", s.lower())).strip()
 
 
 def _partial_search(s1, s2):
@@ -24,8 +33,8 @@ def _partial_search(s1, s2):
     Reimplemented from
     https://github.com/seatgeek/fuzzywuzzy/blob/af443f918eebbccff840b86fa606ac150563f466/fuzzywuzzy/fuzz.py#L34
     """
-    s1 = _process_string(s1)
-    s2 = _process_string(s2)
+    s1 = _process_string(s1).split(" ")
+    s2 = _process_string(s2).split(" ")
 
     if len(s1) <= len(s2):
         shorter = s1
@@ -34,23 +43,19 @@ def _partial_search(s1, s2):
         shorter = s2
         longer = s1
 
-    for i, c in enumerate(longer):
-        if c != " ":
-            continue
-        long_start = i + 1
-        long_end = long_start + len(shorter)
-        long_substr = longer[long_start:long_end]
+    shorter_str = " ".join(shorter)
+    for i in range(len(longer)):
+        for j in range(len(shorter) - 1, len(shorter) + 2):
+            long_substr = " ".join(longer[i:i + j])
+            m2 = SequenceMatcher(None, shorter_str, long_substr)
+            r = m2.ratio()
 
-        m2 = SequenceMatcher(None, shorter, long_substr)
-        r = m2.ratio()
-
-        if r > THRESHOLD:
-            yield PartialMatch(
-                start=long_start,
-                end=long_end,
-                matched=long_substr,
-                score=int(round(100 * r))
-            )
+            if r > THRESHOLD:
+                yield PartialMatch(
+                    matched=tuple(longer[i:i + j]),
+                    target_words=len(shorter),
+                    score=int(round(100 * r))
+                )
 
 
 def _fuzzy_extract(query, text):
@@ -66,30 +71,36 @@ def _fuzzy_extract(query, text):
                 yield match
 
 
+def _replace_references(string, sorted_references):
+    if not len(sorted_references):
+        return string
+    ref = sorted_references[0]
+    regex = re.compile(f"(^|\W)({'[^a-z]+'.join(ref.matched)})(\W|$)", flags=re.IGNORECASE)
+    split = regex.split(string)
+    new = ""
+    while len(split) > 1:
+        left, sepl, match, sepr, *split = split
+        new += _replace_references(left, sorted_references[1:])
+        new += sepl + f'<ref data-ingredient="{ref.ingredient_idx}">{match}</ref>' + sepr
+    return new + _replace_references(split[0], sorted_references[1:])
+
+
 @lru_cache(maxsize=1024)
 def replace_ingredient_references(recipe_step, ingredients):
     ingredient_references = {}
     for i, ingredient in enumerate(ingredients):
         for match in _fuzzy_extract(ingredient, recipe_step):
+            match.ingredient_idx = i
             if match.matched not in ingredient_references:
-                ingredient_references[match.matched] = (match, i)
-            elif match.score > ingredient_references[match.matched][0].score:
-                ingredient_references[match.matched] = (match, i)
-            elif match.score == ingredient_references[match.matched][0].score:
-                if len(match.matched) > len(ingredient_references[match.matched][0].matched):
-                    # prefer longer matches
-                    ingredient_references[match.matched] = (match, i)
+                ingredient_references[match.matched] = match
+            elif match.score > ingredient_references[match.matched].score:
+                ingredient_references[match.matched] = match
+            elif match.score == ingredient_references[match.matched].score:
+                if match.total_length() > ingredient_references[match.matched].total_length():
+                    ingredient_references[match.matched] = match
 
     if not ingredient_references:
         return recipe_step
     
-
-    regex = re.compile(f"(^|\W)({'|'.join(re.escape(reference.lower()) for reference in sorted(ingredient_references, key=lambda ref: -len(ref)))})(\W|$)", flags=re.IGNORECASE)
-    return regex.sub(lambda ref: fr'{ref.group(1)}<ref data-ingredient="{ingredient_references[ref.group(2).lower()][1]}">{ref.group(2)}</ref>{ref.group(3)}', recipe_step)
-
-
-if __name__ == "__main__":
-    # Sample list of ingredient names
-    ingredient_names = ("ui", "knoflook", "olijfolie", "komijn", "paprikapoeder", "cayennepeper", "paprika", "venkel", "verse tomaatjes", "tomatenpuree", "Peper en zout", "eieren", "gehakte tomatenblokjes")
-    step = "Fruit de ui aan tot deze glazig is en voeg de knoflook, komijn, paprikapoeder en cayenne toe en bak dit even mee."
-    print(replace_ingredient_references(step, ingredient_names))
+    sorted_references = sorted(ingredient_references.values(), key=lambda ref: ref.sort_val())
+    return _replace_references(recipe_step, sorted_references)
