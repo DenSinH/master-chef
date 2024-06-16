@@ -44,7 +44,7 @@ def _get_headers(url):
 
 
 MAX_RETRIES = 1
-MODEL = "gpt-3.5-turbo-1106"
+MODEL = "gpt-4-turbo"
 PROMPT = """
 The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text from the webpage.
 The recipe contains information on the ingredients, the preparation and possibly nutritional information.
