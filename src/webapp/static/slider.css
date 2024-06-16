@@ -1,0 +1,88 @@
+/* Style for the switch container */
+.switch-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Style for the switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    margin-bottom: 10px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: transparent;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--blue);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider .utensils {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    top: 4px;
+    left: 4px;
+    fill: white;
+    stroke: white;
+    stroke-width: 4;
+    transition: 0.4s;
+}
+
+input:checked + .slider .utensils {
+    transform: translateX(26px);
+}
+
+.utensil {
+    transition: transform 0.4s;
+}
+
+input:checked + .slider .utensil:nth-child(1) {
+    transform: rotate(30deg);
+}
+
+input:checked + .slider .utensil:nth-child(2) {
+    transform: rotate(-30deg);
+}
+
+/* Style for the mode text */
+.mode-text {
+    font-size: 0.7em;
+    color: #333;
+    margin: 0;
+}
