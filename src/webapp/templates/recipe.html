@@ -78,6 +78,7 @@
                 {%- endif -%}
             </div>
         </header>
+        
         <!-- Needs to be here to position save-icon properly-->
         <div class="recipe-container" id="recipe{{ recipe_id }}">
             <img src="{{ recipe['thumbnail'] or '/static/spaghet.png' }}" onerror="this.onerror=null; this.src='/static/spaghet.png'" alt="Preview">
@@ -131,14 +132,17 @@
         <div class="recipe-info">
             {{ tags(meta) }}
         </div>
-        <h2>{{ 'Ingredients' if english else 'Ingrediënten'}} </h2>
+        <h2>{{ 'Ingredients' if english else 'Ingrediënten'}}</h2>
         {%- if recipe.get("people") is not none -%}
         <div class="ingredient-conversion">
             <div class="people">
                 <div id="people-amount" data-base="{{ recipe['people'] }}">
                     {{ recipe['people'] }}
                 </div>
-                <div class="people-text">{{ 'People' if english else 'Personen' }}</div></div>
+                <div class="people-text">
+                    {{ 'People' if english else 'Personen' }}
+                </div>
+            </div>
             <div class="buttons">
                 <div id="decr-people" class="round-button"><i class="fas fa-minus"></i></div>
                 <div id="incr-people" class="round-button"><i class="fas fa-plus"></i></div>
