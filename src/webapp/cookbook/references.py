@@ -1,4 +1,5 @@
 from .StringMatcher import StringMatcher as SequenceMatcher
+from typing import Iterable, List
 from functools import lru_cache
 import re
 from dataclasses import dataclass
@@ -15,23 +16,30 @@ class PartialMatch:
     ingredient_idx: int = None
 
     def target_score(self):
+        """ Score to determine the accuracy of the match (lower is better) """
         return abs(len(self.matched) - self.target_words)
     
     def total_length(self):
+        """ Total length of the matched string """
         return len(" ".join(self.matched))
     
     def sort_val(self):
+        """ Sorting value for how 'good' a match is
+            We replace the best matches first, and worse matches may be gone
+            since they may have been a part of a better match """
         return (self.target_score(), -self.total_length())
 
 
-def _process_string(s):
+def _process_string(s: str):
+    """ Convert string to lowercase and replace non-letter characters and multiple spaces """
     return re.sub(" +", " ", re.sub(r"[^a-z ]+", " ", s.lower())).strip()
 
 
-def _partial_search(s1, s2):
+def _partial_search(s1: str, s2: str) -> Iterable[PartialMatch]:
     """
     Reimplemented from
     https://github.com/seatgeek/fuzzywuzzy/blob/af443f918eebbccff840b86fa606ac150563f466/fuzzywuzzy/fuzz.py#L34
+    Rewritten to return the best matched substring
     """
     s1 = _process_string(s1).split(" ")
     s2 = _process_string(s2).split(" ")
@@ -58,7 +66,11 @@ def _partial_search(s1, s2):
                 )
 
 
-def _fuzzy_extract(query, text):
+def _fuzzy_extract(query, text) -> Iterable[PartialMatch]:
+    """ 
+    Fuzzy extract 'query' from 'text'
+    Yields all PartialMatches
+    """
     query = _process_string(query)
     words = query.split(" ")
 
@@ -71,7 +83,10 @@ def _fuzzy_extract(query, text):
                 yield match
 
 
-def _replace_references(string, sorted_references):
+def _replace_references(string: str, sorted_references) -> str:
+    """
+    Replace all partial references, without replacing matches within matches.
+    """
     if not len(sorted_references):
         return string
     ref = sorted_references[0]
@@ -92,15 +107,16 @@ def replace_ingredient_references(recipe_step, ingredients):
         for match in _fuzzy_extract(ingredient, recipe_step):
             match.ingredient_idx = i
             if match.matched not in ingredient_references:
+                # new match
                 ingredient_references[match.matched] = match
             elif match.score > ingredient_references[match.matched].score:
+                # better match
                 ingredient_references[match.matched] = match
-            elif match.score == ingredient_references[match.matched].score:
-                if match.total_length() > ingredient_references[match.matched].total_length():
-                    ingredient_references[match.matched] = match
 
+    # no matches, no need to replace, just return the original string
     if not ingredient_references:
         return recipe_step
     
+    # sort the references and replace them in order
     sorted_references = sorted(ingredient_references.values(), key=lambda ref: ref.sort_val())
     return _replace_references(recipe_step, sorted_references)

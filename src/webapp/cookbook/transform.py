@@ -56,8 +56,11 @@ Convert the recipe to a JSON object with the following keys:
                and the ingredient "1el Komijn" should yield {{'amount': '1 el', 'ingredient': 'Komijn'}}, and "400gr tomaat" should yield {{'amount': '400 gr', 'ingredient': 'tomaat'}}
                and "packet of noodles" should yield {{'amount': '1 packet', 'ingredient': 'noodles'}}. If no amount is specified in a separate ingredients section,
                infer the "amount" from the recipe if it is mentioned there.
+               In case there are multiple 'sections' of ingredients, insert an ingredient object with 'ingredient' value '#name of section'. For
+               example, if there is a section of ingredients for the sauce, insert {{ 'amount': null, 'ingredient': '#For the sauce' }}.
 "preparation": a list of strings containing the steps of the recipe. Split the steps from the original recipe up into multiple steps
-               if they are more than 2 or 3 sentences.
+               if they are more than 2 or 3 sentences. If there are sections, insert steps with the value '#name of section'.
+               For example, if there are steps for making rice, insert a step '#For the rice'. 
 "nutrition": null if there is no nutritional information in the recipe, or a list of dictionaries containing the keys "group", with the type
 of nutrional information, and "amount": with the amount of this group that is contained in the recipe, as a string including the unit, so
 "Fats 12gr" should yield {{'group': 'fats', 'amount': '12 gr'}}.
@@ -113,10 +116,11 @@ def fix_recipe(_recipe):
     if "nutrition" in _recipe and _recipe["nutrition"] is not None:
         recipe["nutrition"] = []
         for group in _recipe.get("nutrition", []):
-            recipe["nutrition"].append({
-                "amount": _get_or_none(group, "amount", str),
-                "group": str(group["group"])
-            })
+            if "group" in group:
+                recipe["nutrition"].append({
+                    "amount": _get_or_none(group, "amount", str),
+                    "group": str(group["group"])
+                })
     else:
         recipe["nutrition"] = None
 

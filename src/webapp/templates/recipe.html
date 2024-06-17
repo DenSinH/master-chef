@@ -78,7 +78,7 @@
                 {%- endif -%}
             </div>
         </header>
-        
+
         <!-- Needs to be here to position save-icon properly-->
         <div class="recipe-container" id="recipe{{ recipe_id }}">
             <img src="{{ recipe['thumbnail'] or '/static/spaghet.png' }}" onerror="this.onerror=null; this.src='/static/spaghet.png'" alt="Preview">
@@ -152,12 +152,20 @@
         <div class="ingredients-wrapper">
             <table class="ingredients">
                 {%- for ingredient in recipe["ingredients"] -%}
-                <tr id="ingredient-{{ loop.index0 }}" class="ingredient">
-                    <td class="ingredient-amount" data-base="{{ (ingredient['amount'] or '&nbsp')|capitalize|safe }}">
-                        {{ (ingredient["amount"] or "&nbsp")|capitalize|safe }}
-                    </td>
-                    <td>{{ ingredient["ingredient"]|capitalize }}</td>
-                </tr>
+                    {%- if ingredient["ingredient"].startswith('#') -%}
+                        <tr class="step-section-header-row">
+                            <td colspan="2">
+                                <h3 class="step-section-header">{{ ingredient["ingredient"][1:]|capitalize }}</h3>
+                            </td>
+                        </tr>
+                    {%- else -%}
+                    <tr id="ingredient-{{ loop.index0 }}" class="ingredient">
+                        <td class="ingredient-amount" data-base="{{ (ingredient['amount'] or '&nbsp')|capitalize|safe }}">
+                            {{ (ingredient["amount"] or "&nbsp")|capitalize|safe }}
+                        </td>
+                        <td>{{ ingredient["ingredient"]|capitalize }}</td>
+                    </tr>
+                    {%- endif -%}
                 {%- endfor -%}
             </table>
         </div>
@@ -183,7 +191,11 @@
         </div>
         <ol class="instructions">
             {%- for step in recipe["preparation"] -%}
-            <li>{{ step|ingredientrefs(recipe)|safe }}</li>
+                {%- if step.startswith('#') -%}
+                    <h3 class="step-section-header">{{ step[1:]|capitalize }}</h3>
+                {%- else -%}
+                    <li>{{ step|ingredientrefs(recipe)|safe }}</li>
+                {%- endif -%}
             {%- endfor -%}
         </ol>
 
