@@ -91,6 +91,22 @@ textarea {
     padding: 8px;
 }
 
+/* ingredient amounts are hidden for values starting with # */
+input.amount:has(+ input[value^="#"]) {
+    display: none;
+}
+
+/* style inputs with title */
+input[type="text"][value^="#"] {
+    font-weight: bold;
+    border: 2px solid black;
+}
+
+textarea[value^="#"] {
+    font-weight: bold;
+    border: 2px solid black;
+}
+
 .thumbnail-container {
     display: flex;
     justify-content: center;
