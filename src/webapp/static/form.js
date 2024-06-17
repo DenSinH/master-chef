@@ -1,5 +1,18 @@
+function add_element(parent, selector, index, element, after=true) {
+    if (after) {
+        if (!$(`${parent} ${selector}`).eq(index).after(element).length) {
+            $(parent).append(element);
+        }
+    }
+    else {
+        if (!$(`${parent} ${selector}`).eq(index).before(element).length) {
+            $(parent).prepend(element);
+        }
+    }
+}
 
-function add_ingredient(after=-1, text="") {
+
+function add_ingredient(index=-1, text="", after=true) {
     const row = $('<div class="ingredient-row">' +
         '<span class="handle"><i class="fas fa-grip-lines"></i></span>' +
         '<input type="text" class="amount" name="ingredient-amount" placeholder="Amount">' +
@@ -8,13 +21,11 @@ function add_ingredient(after=-1, text="") {
             '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
         '</div>' +
         '</div>');
-    if (!$('#ingredientRows .ingredient-row').eq(after).after(row).length) {
-        $('#ingredientRows').append(row);
-    }
+    add_element('#ingredientRows', '.ingredient-row', index, row, after);
     set_callbacks();
 }
 
-function add_step(after=-1, text="") {
+function add_step(index=-1, text="", after=true) {
     const row = $('<div class="preparation-row">' +
         '<span class="handle"><i class="fas fa-grip-lines"></i></span>' +
         `<textarea class="step" name="preparation" placeholder="Step">${text}</textarea>` +
@@ -22,13 +33,11 @@ function add_step(after=-1, text="") {
             '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
         '</div>' +
         '</div>');
-    if (!$('#preparationRows .preparation-row').eq(after).after(row).length) {
-        $("#preparationRows").append(row);
-    }
+    add_element('#preparationRows', '.preparation-row', index, row, after);
     set_callbacks();
 }
 
-function add_group(after=-1, text="") {
+function add_group(index=-1, text="", after=true) {
     const row = $('<div class="nutrition-row">' +
         '<span class="handle"><i class="fas fa-grip-lines"></i></span>' +
         '<input type="text" class="amount" name="nutrition-amount" placeholder="Amount">' +
@@ -37,9 +46,7 @@ function add_group(after=-1, text="") {
             '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
         '</div>' +
         '</div>');
-    if (!$('#nutritionRows .nutrition-row').eq(after).after(row).length) {
-        $('#nutritionRows').append(row);
-    }
+    add_element('#nutritionRows', '.nutrition-row', index, row, after);
     set_callbacks();
 }
 
@@ -125,9 +132,12 @@ function resizeAndCompressImage(file, maxWidth, callback) {
 }
 
 $(document).ready(function () {
-    $('.add-ingredient').click(add_ingredient);
-    $('.add-step').click(add_step);
-    $('.add-group').click(add_group);
+    $('.add-ingredient').first().click(() => add_ingredient(0, "", false));
+    $('.add-ingredient').last().click(add_ingredient);
+    $('.add-step').first().click(() => add_step(0, "", false));
+    $('.add-step').last().click(add_step);
+    $('.add-group').first().click(() => add_group(0, "", false));
+    $('.add-group').last().click(add_group);
     set_callbacks();
 
     $(document).on('click', '.remove-row', function () {
