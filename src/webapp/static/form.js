@@ -67,9 +67,14 @@ function set_callbacks() {
     for (i in classes) {
         const inputs = $(classes[i]);
         const callback = callbacks[i];
+
+
+        inputs.on("keyup", function(e) {
+            $(this).attr("value", $(this).val());
+        });
         
         inputs.off("keydown");
-        inputs.on("keydown", function (e) {
+        inputs.on("keydown", function(e) {
             if (e.which == 13 || e.which == 9) {
                 const index = inputs.index(this);
 
