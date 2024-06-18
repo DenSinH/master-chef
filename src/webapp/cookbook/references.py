@@ -104,6 +104,10 @@ def _replace_references(string: str, sorted_references) -> str:
 def replace_ingredient_references(recipe_step, ingredients):
     ingredient_references = {}
     for i, ingredient in enumerate(ingredients):
+        if ingredient.startswith("#"):
+            # skip headers
+            continue
+
         for match in _fuzzy_extract(ingredient, recipe_step):
             match.ingredient_idx = i
             if match.matched not in ingredient_references:
