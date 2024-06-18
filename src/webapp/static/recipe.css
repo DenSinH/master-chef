@@ -237,3 +237,12 @@ ref {
     font-weight: 600;
     cursor: pointer;
 }
+
+.modal table.conversion td, .modal table.conversion th {
+    padding: 0 10px;
+    text-align: left;
+}
+
+.modal table.conversion tr:nth-child(odd) {
+    background-color: var(--highlight);
+}

@@ -9,10 +9,12 @@
     <title>{{ recipe["name"]|capwords }}</title>
     <link rel="stylesheet" href="/static/recipe.css">
     <link rel="stylesheet" href="/static/slider.css">
+    <link rel="stylesheet" href="/static/modal.css">
     {% include "tags.html" %}
 
     <script src="/static/recipe.js"></script>
     <script src="/static/wakelock.js"></script>
+    <script src="/static/modal.js"></script>
     {%- if is_user or is_admin -%}
     <link rel="stylesheet" href="/static/likes.css">
     {%- endif -%}
@@ -76,6 +78,8 @@
                 {%- else -%}
                 <a href="{{ url_for('logout') }}" class="round-button"><i class="fas fa-sign-out-alt"></i></a>
                 {%- endif -%}
+                <button class="round-button" data-modal-target="#units-modal"><i class="fas fa-calculator"></i></button>
+                <a href="{{ url_for('logout') }}" class="round-button"><i class="fas fa-sign-out-alt"></i></a>
             </div>
         </header>
 
@@ -400,4 +404,5 @@
         <script>getSavedSingle('{{ collection }}', '{{ recipe_id }}');</script>
         {%- endif -%}
     </div>
+    {% include "units.html" %}
 {% endblock body %}
