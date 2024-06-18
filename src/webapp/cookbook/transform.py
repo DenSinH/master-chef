@@ -53,11 +53,11 @@ Convert the recipe to a JSON object with the following keys:
 "ingredients": a list of dictionaries, with keys "ingredient", mapping to the name of the ingredient, and "amount" which is a string containing the amount of this ingredient needed including the unit, or 
                a null value if no specific amount is given.
                For example, the ingredient "one onion" should yield {{'amount': '1', 'ingredient': 'onion'}}, and the ingredient "zout" should yield {{'amount': null, 'ingredient': 'zout'}}
-               and the ingredient "1el Komijn" should yield {{'amount': '1 el', 'ingredient': 'Komijn'}}, and "400gr tomaat" should yield {{'amount': '400 gr', 'ingredient': 'tomaat'}}
-               and "packet of noodles" should yield {{'amount': '1 packet', 'ingredient': 'noodles'}}. If no amount is specified in a separate ingredients section,
-               infer the "amount" from the recipe if it is mentioned there.
+               and the ingredient "1el Komijn" should yield {{'amount': '1el', 'ingredient': 'Komijn'}}, and "400gr tomaat" should yield {{'amount': '400gr', 'ingredient': 'tomaat'}}
+               and "packet of noodles" should yield {{'amount': '1 packet', 'ingredient': 'noodles'}}.
                In case there are multiple 'sections' of ingredients, insert an ingredient object with 'ingredient' value '#name of section'. For
                example, if there is a section of ingredients for the sauce, insert {{ 'amount': null, 'ingredient': '#For the sauce' }}.
+               So for example, Chicken marinade: - 10g cumin - one onion should yield [{{'amount': null, 'ingredient': '#Chicken marinade:'}}, {{'amount': '10g', 'ingredient': 'cumin'}}, {{'amount': 'one', 'ingredient': 'onion'}}]
 "preparation": a list of strings containing the steps of the recipe. Split the steps from the original recipe up into multiple steps
                if they are more than 2 or 3 sentences. If there are sections, insert steps with the value '#name of section'.
                For example, if there are steps for making rice, insert a step '#For the rice'. 
