@@ -7,6 +7,6 @@ RUN pip install -r requirements.txt
 
 COPY ./src .
 
-WORKDIR webapp
+WORKDIR /app/webapp
 
 ENTRYPOINT ["python", "app.py"]

@@ -1,5 +1,4 @@
 import datetime
-
 import aiohttp
 import base64
 import json
@@ -13,6 +12,10 @@ load_dotenv()
 import os
 
 from .utils import *
+
+RECIPE_REPO_USER = os.environ["RECIPE_REPO_USER"]
+RECIPE_REPO_NAME = os.environ["RECIPE_REPO_NAME"]
+RECIPE_PAT = os.environ["RECIPE_PAT"]
 
 
 class CollectionCache:
@@ -30,7 +33,8 @@ class CollectionCache:
 
 DEFAULT_COLLECTION = "recipes"
 COLLECTIONS = {
-    DEFAULT_COLLECTION, "unmade"
+    DEFAULT_COLLECTION, 
+    "unmade"
 }
 _COLLECTIONS = {c: CollectionCache() for c in COLLECTIONS}
 
@@ -61,10 +65,10 @@ async def _get_recipes(collection) -> CollectionCache:
     async with aiohttp.ClientSession() as session:
         try:
             res = await session.get(
-                f"https://api.github.com/repos/DenSinH/master-chef-recipes/contents/{collection}.json",
+                f"https://api.github.com/repos/{RECIPE_REPO_USER}/{RECIPE_REPO_NAME}/contents/{collection}.json",
                 headers={
                     "accept": "application/vnd.github+json",
-                    "authorization": f"token {os.environ['GITHUB_RECIPES_READ_PAT_TOKEN']}"
+                    "authorization": f"token {RECIPE_PAT}"
                 }
             )
         except aiohttp.ClientConnectionError:
@@ -95,7 +99,7 @@ async def _push_recipes(collection, message):
 
     async with aiohttp.ClientSession() as session:
         res = await session.put(
-            f"https://api.github.com/repos/DenSinH/master-chef-recipes/contents/{collection}.json",
+            f"https://api.github.com/repos/{RECIPE_REPO_USER}/{RECIPE_REPO_NAME}/contents/{collection}.json",
             data=json.dumps({
                 "message": message,
                 "content": base64.b64encode(json.dumps(col.recipes, indent=2, sort_keys=True).encode("ascii")).decode("ascii"),
@@ -107,7 +111,7 @@ async def _push_recipes(collection, message):
             }),
             headers={
                 "accept": "application/vnd.github+json",
-                "authorization": f"token {os.environ['GITHUB_RECIPES_WRITE_PAT_TOKEN']}"
+                "authorization": f"token {RECIPE_PAT}"
             }
         )
 
