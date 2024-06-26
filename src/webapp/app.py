@@ -7,7 +7,8 @@ import re
 import string
 import sanic
 import asyncio
-from sanic import Sanic
+import msgspec
+from sanic import Sanic, response
 from sanic import Request
 from sanic_ext import render
 from sanic.exceptions import NotFound
@@ -29,6 +30,7 @@ from limiter import init_limiter, close_limiter, RateLimiter, TooManyRequests
 from dotenv import load_dotenv; load_dotenv()
 import os
 
+response.BaseHTTPResponse._dumps = msgspec.json.encode
 
 app = Sanic(__name__)
 app.ext.templating.environment.loader = MinifyingFileSystemLoader(
