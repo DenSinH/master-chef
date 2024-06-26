@@ -4,6 +4,10 @@ from htmlmin import Minifier
 
 
 class MinifyingFileSystemLoader(FileSystemLoader):
+    """
+    A template loader that minifies HTML templates
+    on load, reducing processing time for rendering
+    """
 
     minifier = Minifier(
         remove_empty_space=True

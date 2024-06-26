@@ -18,6 +18,7 @@ class CookbookAuthFailed(Exception):
 
 
 def _set_cookie(response, key, value, config, force_httponly=None):
+    """ Setting a cookie in the response """
     response.cookies.add_cookie(key, value)
     response.cookies.get_cookie(key).httponly = (
         config.cookie_httponly() if force_httponly is None else force_httponly
@@ -31,13 +32,17 @@ def _set_cookie(response, key, value, config, force_httponly=None):
 
 
 async def authenticate(request, *args, **kwargs):
+    """ Authenticate user from username / password form data """
     username = request.form.get("username").strip()
     password = request.form.get("password")
 
     if await users.login_user(username, password):
         scopes = ["user"]
+
+        # if user is admin, add scope
         if username == os.environ.get("ADMIN_USER", "admin"):
             scopes.append("admin")
+        
         return {
             "user_id": username,
             "scopes": scopes
@@ -46,10 +51,13 @@ async def authenticate(request, *args, **kwargs):
 
 
 async def extend_scopes(user, *args, **kwargs):
+    """ Method to retrieve scopes from user, 
+        needed for sanic-jwt """
     return user.get("scopes", [])
 
 
 async def validate_scopes(request: Request, scopes):
+    """ Override of sanic-jwt's scope validation """
     return await _validate_scopes(
         request,
         scopes,
@@ -63,6 +71,11 @@ class JwtResonses(Responses):
 
     @staticmethod
     def exception_response(request: Request, exception):
+        """ What to do on failed responses, basically:
+            For GET: redirect to login
+            For POST: either return unauthorized response code, or redirect to login form
+                      (this distinction is needed since otherwise a failed login will loop,
+                      continuously redirecting to the page itself) """
         if request.method == "GET":
             return sanic.redirect(request.app.url_for("login_form", redirect=request.url))
         else:
@@ -78,6 +91,9 @@ class JwtResonses(Responses):
     def get_token_response(
             request: Request, access_token, output, config, refresh_token=None
     ):
+        """ Response after getting the jwt on successful login
+            Basically, we want to redirect, though the recipe pages
+            have to be handled separately """
         redirect = dict(request.query_args).get("redirect", "/")
 
         # special case for recipe page, as it has a template parameter
