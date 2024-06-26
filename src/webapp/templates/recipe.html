@@ -176,7 +176,7 @@
         {%- endif -%}
         <div class="ingredients-wrapper">
             <table class="ingredients">
-                {%- for ingredient in recipe.ingredient -%}
+                {%- for ingredient in recipe.ingredients -%}
                     {%- if ingredient.ingredient.startswith('#') -%}
                         <tr class="step-section-header-row">
                             <td colspan="2">
