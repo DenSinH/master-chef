@@ -21,7 +21,7 @@ client = openai.AsyncOpenAI(
 )
 
 
-def _get_headers(url):
+def _get_headers(url, user_agent=None):
     _NO_USER_AGENT = {
         "cdninstagram",
         "ig",
@@ -39,7 +39,7 @@ def _get_headers(url):
     ]
     headers = {}
     if tld.extract(url).domain.lower() not in _NO_USER_AGENT:
-        headers["User-Agent"] = random.choice(_USER_AGENTS)
+        headers["User-Agent"] = user_agent or random.choice(_USER_AGENTS)
     return headers
 
 
@@ -186,9 +186,9 @@ def _get_html_text(soup):
     return text
 
 
-async def translate_url(url):
+async def translate_url(url, user_agent=None):
     print(f"Retrieving url {url}")
-    async with aiohttp.ClientSession(headers=_get_headers(url)) as session:
+    async with aiohttp.ClientSession(headers=_get_headers(url, user_agent=user_agent)) as session:
         res = await session.get(url)
         if not res.ok:
             raise CookbookError(f"Could not get the specified url, status code {res.status}")

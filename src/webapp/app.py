@@ -555,7 +555,8 @@ async def add_recipe_url_form(request: Request, collection: str):
 async def add_recipe_url(request: Request, collection: str):
     url = request.form["url"][0]
     try:
-        recipe = await cookbook.translate_url(url)
+        # pass user agent through to transform
+        recipe = await cookbook.translate_url(url, user_agent=request.headers.get("user-agent"))
     except aiohttp.client_exceptions.ClientConnectorError:
         return sanic.response.redirect(app.url_for("add_recipe_url_form", error="notfound"))
 
