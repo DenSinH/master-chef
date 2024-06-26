@@ -2,6 +2,7 @@ import openai
 import aiohttp
 from bs4 import BeautifulSoup
 import tldextract as tld
+import dataclasses
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -166,11 +167,15 @@ async def translate_page(text, url=None, thumbnail=None) -> Recipe:
         _, meta = await _chatgpt_json_and_fix(RecipeMeta, messages, temperature=0.7)
     except Exception as e:
         meta = {}
-    fixed.meta = meta
 
+    # update meta and predetermined values
     # add url / thumbnail after the fact, since we want to use as few tokens as possible
-    fixed.url = url
-    fixed.thumbnail = thumbnail
+    fixed = dataclasses.replace(
+        fixed,
+        meta=meta,
+        url=url,
+        thumbnail=thumbnail
+    )
     return fixed
 
 

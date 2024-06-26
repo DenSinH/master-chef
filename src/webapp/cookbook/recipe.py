@@ -120,7 +120,7 @@ class Nutrition(Fixable):
 
 @dataclass(kw_only=True, slots=True, frozen=True)
 class Recipe(Fixable):
-    name: str
+    name: str = ""
     meta: RecipeMeta = field(default_factory=RecipeMeta)
     time: int = None
     people: int = None
@@ -130,6 +130,8 @@ class Recipe(Fixable):
     nutrition: list[Nutrition] = field(default_factory=list)
     remarks: str = None
     thumbnail: str = None
+
+    # preserved fields
     date_created: float = field(default=0.0, compare=False)
     date_updated: float = field(default=0.0, compare=False)
     igcode: str = None

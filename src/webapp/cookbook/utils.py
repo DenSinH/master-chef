@@ -11,6 +11,8 @@ class InstagramError(CookbookError):
 
 
 def get_headers(url, user_agent=None):
+    """ Get headers for requesting 'url', with a default
+        user-agent header passed """
     _NO_USER_AGENT = {
         "cdninstagram",
         "ig",

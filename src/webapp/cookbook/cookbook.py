@@ -22,7 +22,7 @@ RECIPE_PAT = os.environ["RECIPE_PAT"]
 class CollectionCache:
 
     def __init__(self):
-        self.recipes: list[Recipe] = None
+        self.recipes: dict[str, Recipe] = None
         self.file: dict = None  # full file info from GitHub API
         self.recipe_timeout = None
 
@@ -140,9 +140,11 @@ async def _push_recipes(collection, message):
 
 async def add_recipe(collection, recipe: Recipe):
     now = _now()
-    if not recipe.date_created:
-        recipe.date_created = now
-    recipe.date_updated = now
+    recipe = dataclasses.replace(
+        recipe,
+        date_created=recipe.date_created or now,
+        date_updated=now
+    )
     col = await _get_recipes(collection)
     key = _generate_key(col.recipes)
     col.recipes[key] = recipe
@@ -150,7 +152,7 @@ async def add_recipe(collection, recipe: Recipe):
     return key
 
 
-async def update_recipe(collection, key, recipe):
+async def update_recipe(collection: str, key: str, recipe: Recipe):
     col = await _get_recipes(collection)
     if key not in col.recipes:
         raise CookbookError(f"Cannot update recipe with id {key} in collection {collection}, as it does not exist")
@@ -161,7 +163,8 @@ async def update_recipe(collection, key, recipe):
         **dataclasses.asdict(recipe),
         # preserved "date_created" field
         "date_created": old_recipe.date_created,
-        "date_updated": _now()
+        "date_updated": _now(),
+        "igcode": recipe.igcode or old_recipe.igcode
     })
 
     if old_recipe == new_recipe:
