@@ -1,3 +1,6 @@
+""" This file contains the allowed values
+for the recipe metadata. """
+
 LANGUAGES = ["nl", "en"]
 MEAL_TYPES = [
     "breakfast",

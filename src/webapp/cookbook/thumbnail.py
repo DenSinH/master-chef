@@ -17,6 +17,7 @@ THUMBNAIL_META_ATTR = [
 
 
 def get_thumbnail(soup: BeautifulSoup):
+    """ Try to find a thumbnail image from an HTML page """
     # try to find known meta attributes for thumbnails
     for attr in THUMBNAIL_META_ATTR:
         image = soup.find("meta", attr)

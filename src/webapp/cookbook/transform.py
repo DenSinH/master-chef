@@ -13,7 +13,7 @@ import msgspec
 
 from .utils import *
 from .meta import *
-from .recipe import Recipe, RecipeMeta
+from .recipe import Recipe, RecipeMeta, Fixable
 from .instagram import get_instagram_recipe
 from .thumbnail import get_thumbnail
 
@@ -70,17 +70,24 @@ Please output only the JSON object and nothing else. You can do this!
 """
 
 
-def _get_tiktok_text(soup):
+def _get_tiktok_text(soup: BeautifulSoup):
+    """ Get description of tiktok page 
+    We cannot use simple scraping, since the 
+    caption is loaded lazily. """
     data = soup.find("script", {"id": "__UNIVERSAL_DATA_FOR_REHYDRATION__"})
     json_data = msgspec.json.decode(data.contents[0], strict=False)
     return json_data["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["desc"]
 
 
 def _get_text(soup: BeautifulSoup):
+    """ Get text from soup. We remove any unnecessary spacing. """
     return re.sub(r"(\n\s*)+", "\n", soup.get_text(separator=" ", strip=True))
 
 
 def _get_html_text(soup: BeautifulSoup):
+    """ Get text from html page
+    First, we try to just get all the text. If this is too long,
+    we attempt to strip away any 'small' comment sections. """
     text = _get_text(soup)
     
     # text is "short enough", do not remove comments
@@ -104,6 +111,8 @@ def _get_html_text(soup: BeautifulSoup):
 
 
 async def translate_url(url, user_agent=None) -> Recipe:
+    """ Transform a recipe from a url, determining
+    the thumbnail automatically """
     print(f"Retrieving url {url}")
     domain = tld.extract(url).domain.lower()
     if domain in {"instagram", "ig", "cdninstagram"}:
@@ -128,6 +137,12 @@ async def translate_url(url, user_agent=None) -> Recipe:
 
 
 async def _chatgpt_json_and_fix(cls, messages, temperature=0.7, **kwargs):
+    """ Send message to chatgpt, and load object of type 'cls'
+    from the response. 'cls' should be a subclass of Fixable """
+    assert issubclass(cls, Fixable)
+
+    # we may do a multi-shot recipe conversion if chatgpt
+    # fails the first time around
     for i in range(1 + MAX_RETRIES):
         try:
             chat_completion = await client.chat.completions.create(
@@ -153,6 +168,8 @@ async def _chatgpt_json_and_fix(cls, messages, temperature=0.7, **kwargs):
 
 
 async def translate_page(text, url=None, thumbnail=None) -> Recipe:
+    """ Tranform a recipe from text, filling in the url and thumbnail
+    fields from the given parameters """
     print(f"Converting with ChatGPT ({MODEL})")
     messages = [
         {"role": "system", "content": "You are a helpful AI cook that converts recipes into JSON objects."},
@@ -169,7 +186,8 @@ async def translate_page(text, url=None, thumbnail=None) -> Recipe:
         meta = {}
 
     # update meta and predetermined values
-    # add url / thumbnail after the fact, since we want to use as few tokens as possible
+    # add url / thumbnail after the fact, since we 
+    # want to use as few tokens as possible
     fixed = dataclasses.replace(
         fixed,
         meta=meta,

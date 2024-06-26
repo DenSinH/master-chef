@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 import dataclasses
 import types
+import abc
 from .meta import *
 from thefuzz import process
 
@@ -9,7 +10,12 @@ class RecipeError(Exception):
     pass
 
 
-class Fixable:
+class Fixable(abc.ABC):
+
+    """
+    Abstract (data)class that can be instantiated from a dictionary,
+    loosely parsing the dictionary into its fields.
+    """
 
     @classmethod
     def from_data(cls, **kwargs):

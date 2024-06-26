@@ -1,3 +1,10 @@
+"""
+Generates random titles for the cookbook.
+They are generated from some predetermined,
+Dutch and English combinations of prefixes, 
+postfixes and names.
+"""
+
 import random
 
 

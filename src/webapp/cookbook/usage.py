@@ -13,6 +13,7 @@ USAGE_CACHE = {}
 
 
 async def get_usage(date: Union[datetime.date, str]):
+    """ Get OpenAI usage on a specific date, with cache """
     headers = {'Authorization': f'Bearer {API_KEY}'}
     url = 'https://api.openai.com/v1/usage'
     if isinstance(date, datetime.date):

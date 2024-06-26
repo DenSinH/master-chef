@@ -21,6 +21,9 @@ RECIPE_PAT = os.environ["RECIPE_PAT"]
 
 class CollectionCache:
 
+    """ Cache for recipes, so we do not need to
+    retrieve them from the GitHub every time """
+
     def __init__(self):
         self.recipes: dict[str, Recipe] = None
         self.file: dict = None  # full file info from GitHub API
@@ -43,14 +46,17 @@ COLLECTIONS = {
     DEFAULT_COLLECTION, 
     "unmade"
 }
+
+# initialize with empty caches
 _COLLECTIONS = {c: CollectionCache() for c in COLLECTIONS}
 
 
-def _now():
+def _now() -> float:
     return datetime.datetime.now().timestamp()
 
 
 def _get_collection(collection) -> CollectionCache:
+    """ Get (cached) recipe collection by name """
     if collection not in COLLECTIONS:
         raise CookbookError(f"Collection {collection} not found")
 
@@ -58,6 +64,7 @@ def _get_collection(collection) -> CollectionCache:
 
 
 async def _get_recipes(collection) -> CollectionCache:
+    """ Refresh cache, and get collection """
     col = _get_collection(collection)
 
     # check collection cache timeout
@@ -66,11 +73,15 @@ async def _get_recipes(collection) -> CollectionCache:
             col.recipe_timeout = None
 
     if col.recipes is not None and col.recipe_timeout is not None and col.file is not None:
+        # invalid timeout, reset it
         col.recipe_timeout = datetime.datetime.now() + datetime.timedelta(minutes=15)
         return col
 
+    # refresh cached collection
     async with aiohttp.ClientSession() as session:
         try:
+            # get recipe collection from GitHub repo
+            # use GitHub API, as the repo may be private
             res = await session.get(
                 f"https://api.github.com/repos/{RECIPE_REPO_USER}/{RECIPE_REPO_NAME}/contents/{collection}.json",
                 headers={
@@ -84,23 +95,30 @@ async def _get_recipes(collection) -> CollectionCache:
         if not res.ok:
             raise CookbookError(f"Error getting recipes: {res.status} ({await res.text()})")
 
+        # save all data from the repo
+        # (part of) this is needed to correctly
+        # push the updated collection on an update
         col.file = await res.json()
         recipes = msgspec.json.decode(
             base64.b64decode(col.file["content"]),
             strict=False
         )
+
+        # load the recipes
         col.recipes = {
-            recipe_id: Recipe.from_data(**recipe)
+            recipe_id: Recipe(**recipe)
             for recipe_id, recipe in recipes.items()
         }
         return col
 
 
 async def get_recipes(collection) -> dict[str, Recipe]:
+    """ Get the (possibly cached) recipes for a collection """
     return (await _get_recipes(collection)).recipes
 
 
 def _generate_key(recipes) -> str:
+    """ Generate a key for a new recipe """ 
     while True:
         key = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
         if key not in recipes:
@@ -108,11 +126,16 @@ def _generate_key(recipes) -> str:
 
 
 async def _push_recipes(collection, message):
+    """ Push an updated collection to the repository
+    with a given message """
     col = _get_collection(collection)
 
     async with aiohttp.ClientSession() as session:
+        # encode and format collection
         data = msgspec.json.encode(col.asdict(), order='sorted')
         formatted = msgspec.json.format(data, indent=2)
+
+        # execute push
         res = await session.put(
             f"https://api.github.com/repos/{RECIPE_REPO_USER}/{RECIPE_REPO_NAME}/contents/{collection}.json",
             data=msgspec.json.encode({
@@ -138,7 +161,8 @@ async def _push_recipes(collection, message):
             raise CookbookError(f"Error pushing recipe: {res.status} ({await res.text()})")
 
 
-async def add_recipe(collection, recipe: Recipe):
+async def add_recipe(collection: str, recipe: Recipe):
+    """ Add recipe to collection by name """
     now = _now()
     recipe = dataclasses.replace(
         recipe,
@@ -148,11 +172,15 @@ async def add_recipe(collection, recipe: Recipe):
     col = await _get_recipes(collection)
     key = _generate_key(col.recipes)
     col.recipes[key] = recipe
-    await _push_recipes(collection, f"Add recipe {recipe.name} in {collection}")
+    await _push_recipes(
+        collection, 
+        f"Add recipe {recipe.name} in {collection}"
+    )
     return key
 
 
 async def update_recipe(collection: str, key: str, recipe: Recipe):
+    """ Update recipe in collection by name and ID """
     col = await _get_recipes(collection)
     if key not in col.recipes:
         raise CookbookError(f"Cannot update recipe with id {key} in collection {collection}, as it does not exist")
@@ -171,14 +199,22 @@ async def update_recipe(collection: str, key: str, recipe: Recipe):
         # nothing to update
         return
 
+    # replace recipe in collection
     col.recipes[key] = new_recipe
-    await _push_recipes(collection, f"Update recipe {new_recipe.name} in {collection}")
+    await _push_recipes(
+        collection, 
+        f"Update recipe {new_recipe.name} in {collection}"
+    )
     return key
 
 
 async def delete_recipe(collection, key):
+    """ Remove recipe from collection """
     col = await _get_recipes(collection)
     recipe = col.recipes.pop(key)
 
-    await _push_recipes(collection, f"Delete recipe {recipe.name} in {collection}")
+    await _push_recipes(
+        collection, 
+        f"Delete recipe {recipe.name} in {collection}"
+    )
     return recipe

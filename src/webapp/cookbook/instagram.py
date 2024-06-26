@@ -12,19 +12,22 @@ load_dotenv()
 from .utils import InstagramError, get_headers
 
 
-_client = instagrapi.Client()
+_CLIENT = instagrapi.Client()
 
-def _get_client():
-    _client.login(
+def _get_client() -> instagrapi.Client:
+    """ Get (logged in) Instagram client """
+    _CLIENT.login(
         os.environ["INSTAGRAM_USER"],
         os.environ["INSTAGRAM_PASS"],
         relogin=False
     )
-    return _client
+    return _CLIENT
 
 
 
 def get_instagram_recipe(url):
+    """ Get recipe from Instagram media caption,
+    as well as the thumbnail url """
     client = _get_client()
     media_pk = client.media_pk_from_url(url)
     media = client.media_info(media_pk)
@@ -32,6 +35,8 @@ def get_instagram_recipe(url):
 
 
 async def _download_image(url: str, callback: callable, user_agent=None):
+    """ Helper function to download an image from a URL,
+    save it to a temporary path and call a callback on it """
     # Check if the URL ends with .jpg or .jpeg
     if not url.lower().endswith(('.jpg', '.jpeg')):
         raise InstagramError(f"Instagram post image URL does not point to a .jpg or .jpeg image: '{url}'")
@@ -48,6 +53,8 @@ async def _download_image(url: str, callback: callable, user_agent=None):
 
 
 async def post_instagram_recipe(recipe_name, image_url, user_agent=None):
+    """ Post the image from image_url to the Instagram account
+    from the environment credentials. """
     def _upload_from_path(path: Path):
         print(f"Uploading from {path}")
         client = _get_client()
