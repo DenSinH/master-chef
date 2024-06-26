@@ -4,7 +4,6 @@ import base64
 import msgspec
 import string
 import random
-import copy
 import dataclasses
 from dotenv import load_dotenv
 
@@ -98,8 +97,7 @@ async def _get_recipes(collection) -> CollectionCache:
 
 
 async def get_recipes(collection) -> dict[str, Recipe]:
-    # for external use, ensure we don't mutate our collection cache
-    return copy.deepcopy((await _get_recipes(collection)).recipes)
+    return (await _get_recipes(collection)).recipes
 
 
 def _generate_key(recipes) -> str:
