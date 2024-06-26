@@ -26,7 +26,7 @@ class CollectionCache:
 
     def __init__(self):
         self.recipes: dict[str, Recipe] = None
-        self.file: dict = None  # full file info from GitHub API
+        self.sha: str = None  # file SHA from GitHub API
         self.recipe_timeout = None
 
     def asdict(self):
@@ -37,7 +37,7 @@ class CollectionCache:
 
     def clear(self):
         self.recipes = None
-        self.file = None
+        self.sha = None
         self.recipe_timeout = None
 
 
@@ -72,7 +72,7 @@ async def _get_recipes(collection) -> CollectionCache:
         if datetime.datetime.now() > col.recipe_timeout:
             col.recipe_timeout = None
 
-    if col.recipes is not None and col.recipe_timeout is not None and col.file is not None:
+    if col.recipes is not None and col.recipe_timeout is not None and col.sha is not None:
         # invalid timeout, reset it
         col.recipe_timeout = datetime.datetime.now() + datetime.timedelta(minutes=15)
         return col
@@ -98,21 +98,22 @@ async def _get_recipes(collection) -> CollectionCache:
         # save all data from the repo
         # (part of) this is needed to correctly
         # push the updated collection on an update
-        col.file = await res.json()
+        file = await res.json()
+        col.sha = file["sha"]
         recipes = msgspec.json.decode(
-            base64.b64decode(col.file["content"]),
+            base64.b64decode(file["content"]),
             strict=False
         )
 
         # load the recipes
         col.recipes = {
-            recipe_id: Recipe(**recipe)
+            recipe_id: Recipe.from_data(**recipe)
             for recipe_id, recipe in recipes.items()
         }
         return col
 
 
-async def get_recipes(collection) -> dict[str, Recipe]:
+async def get_recipes(collection: str) -> dict[str, Recipe]:
     """ Get the (possibly cached) recipes for a collection """
     return (await _get_recipes(collection)).recipes
 
@@ -125,7 +126,7 @@ def _generate_key(recipes) -> str:
             return key
 
 
-async def _push_recipes(collection, message):
+async def _push_recipes(collection: str, message: str):
     """ Push an updated collection to the repository
     with a given message """
     col = _get_collection(collection)
@@ -145,7 +146,7 @@ async def _push_recipes(collection, message):
                     "name": "Master Chef",
                     "email": "robot@masterchef.com"
                 },
-                "sha": col.file["sha"]
+                "sha": col.sha
             }),
             headers={
                 "accept": "application/vnd.github+json",
@@ -153,11 +154,8 @@ async def _push_recipes(collection, message):
             }
         )
 
-        # regardless of whether the update was successful, we need to retrieve the recipies again, because
-        # the SHA changed
-        col.clear()
-
         if not res.ok:
+            col.clear()
             raise CookbookError(f"Error pushing recipe: {res.status} ({await res.text()})")
 
 
@@ -208,7 +206,7 @@ async def update_recipe(collection: str, key: str, recipe: Recipe):
     return key
 
 
-async def delete_recipe(collection, key):
+async def delete_recipe(collection: str, key: str):
     """ Remove recipe from collection """
     col = await _get_recipes(collection)
     recipe = col.recipes.pop(key)
