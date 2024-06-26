@@ -8,6 +8,7 @@ import string
 import sanic
 import asyncio
 import msgspec
+import dataclasses
 from sanic import Sanic, response
 from sanic import Request
 from sanic_ext import render
@@ -39,11 +40,13 @@ app.ext.templating.environment.loader = MinifyingFileSystemLoader(
 
 
 def _strftimestamp(timestamp):
+    """ Format timestamp to text """
     date = datetime.datetime.fromtimestamp(timestamp)
     return date.strftime("%Y-%m-%d")
 
 
 def _add_ingredient_references(step: str, recipe: cookbook.Recipe):
+    """ Add ingredient references to recipe step """
     return cookbook.replace_ingredient_references(
         step, 
         tuple(ingredient.ingredient for ingredient in recipe.ingredients)
@@ -94,6 +97,7 @@ app.after_server_stop(close_limiter)
 
 
 async def _get_username(request: Request):
+    """ Get username from request """
     try:
         return await app.ctx.auth.extract_user_id(request)
     except AttributeError:
@@ -106,6 +110,7 @@ async def _get_username(request: Request):
 @app.exception(NotFound)
 @app.ext.template("sorry.html")
 async def notfound(request: Request, exc):
+    """ 404 page """
     return {
         "title": "Resource not found",
         "message": f"<p>{' '.join(exc.args)}</p>"
@@ -114,6 +119,7 @@ async def notfound(request: Request, exc):
 
 @app.exception(CookbookAuthFailed)
 async def auth_failed(request: Request, exc):
+    """ Authentication failed default response """
     return sanic.json({
         "error": str(exc)
     }, 401)
@@ -121,6 +127,7 @@ async def auth_failed(request: Request, exc):
 
 @app.exception(TooManyRequests)
 async def too_many_requests(request: Request, exc: TooManyRequests):
+    """ Too many requests default response """
     return sanic.json({
         "error": "Too many requests"
     }, exc.status_code)
@@ -128,6 +135,7 @@ async def too_many_requests(request: Request, exc: TooManyRequests):
 
 @app.exception(Exception)
 async def exception(request: Request, exc):
+    """ Stacktrace page """
     return await render(
         "sorry.html",
         500,
@@ -141,14 +149,21 @@ async def exception(request: Request, exc):
 
 @app.get("/")
 async def index(request: Request):
-    return await collection(request, collection=cookbook.DEFAULT_COLLECTION)
+    """ Index page """
+    # show default collection
+    return await collection(
+        request, 
+        collection=cookbook.DEFAULT_COLLECTION
+    )
 
 
 @app.get("/collection/<collection:str>")
 @app.ext.template("cookbook.html")
 async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLECTION):
+    """ Get a recipe collection """
     recipes = await cookbook.get_recipes(collection)
 
+    # sort recipes by date_updated (default ordering)
     ordered = OrderedDict(
         sorted(
             recipes.items(),
@@ -156,6 +171,8 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
             reverse=True
         )
     )
+
+    # get recipe views and request info
     viewcount, is_admin, is_user, username = await asyncio.gather(
         views.get_viewcount(collection),
         validate_scopes(request, "admin"),
@@ -163,6 +180,7 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
         _get_username(request)
     )
 
+    # user-specific rendering
     if username is not None:
         title = f"{username}'s Kitchen"
     else:
@@ -190,6 +208,7 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
 @app.get("/about")
 @app.ext.template("about.html")
 async def about(request: Request):
+    """ About page """
     return {
         "album": os.environ["IMGUR_ALBUM_ID"]
     }
@@ -198,6 +217,7 @@ async def about(request: Request):
 @app.get("/login")
 @app.ext.template("users/login.html")
 async def login_form(request: Request):
+    """ User login form """
     return {
         "redirect": dict(request.query_args).get("redirect", "/")
     }
@@ -206,12 +226,17 @@ async def login_form(request: Request):
 @app.get("/register")
 @app.ext.template("users/register.html")
 async def register_form(request: Request):
+    """ User registration form """
     return {}
 
 
 @app.post("/register")
 async def register(request: Request):
+    """ User registration endpoint """
+    
     username = request.form.get("username").strip()
+
+    # username validation
     if not username:
         return sanic.json({
             "error": "Username must be specified"
@@ -224,7 +249,10 @@ async def register(request: Request):
         return sanic.json({
             "error": "Username must be at most 50 characters long"
         }, 400)
+    
     password = request.form.get("password")
+
+    # password validation
     if not password or len(password) < 6:
         return sanic.json({
             "error": "Password must be at least of length 6"
@@ -234,7 +262,8 @@ async def register(request: Request):
             "error": "Username already exists"
         }, 400)
 
-    # rate limit after checks
+    # rate limit after checks, otherwise
+    # failed attempts will trigger rate limiting
     await RateLimiter(times=1, hours=1)(request)
     try:
         await users.register_user(username, password)
@@ -248,10 +277,13 @@ async def register(request: Request):
 
 @app.get("/forgot-password")
 async def forgot_password(request: Request):
+    """ Forgot password page """
     username = dict(request.query_args).get("username")
     user = await users.get_user(username)
     if user is None:
         return sanic.redirect("login")
+
+    # password can only be reset if the admin cleared it
     if user.password is not None:
         return await render(
             "sorry.html",
@@ -271,10 +303,13 @@ async def forgot_password(request: Request):
 
 @app.post("/forgot-password", ctx_limiter=RateLimiter(times=1, minutes=5))
 async def update_password(request: Request):
+    """ Update password post route """
     username = dict(request.query_args).get("username")
     user = await users.get_user(username)
     if user is None:
         return sanic.json({"error": "This user does not exist, are you sure you entered the right name before hitting 'Forgot password'"}, 400)
+    
+    # can only update password if it has been cleared
     if user.password is not None:
         return sanic.redirect(app.url_for("forgot_password", username=username))
 
@@ -288,6 +323,7 @@ async def update_password(request: Request):
 @app.get("/registered")
 @app.ext.template("users/registered.html")
 async def registered(request: Request):
+    """ Registration form landing page """
     username = (await _get_username(request)) or "there"
     return {
         "username": username
@@ -296,6 +332,7 @@ async def registered(request: Request):
 
 @app.get("/logout")
 async def logout(request: Request):
+    """ User logout page """
     response = sanic.redirect(request.app.url_for("index"))
     response.cookies.delete_cookie(JWT_TOKEN_NAME)
     return response
@@ -303,10 +340,13 @@ async def logout(request: Request):
 
 @app.get("/recipe/<collection:str>/<id>")
 async def recipe(request: Request, collection: str, id: str):
+    """ Recipe viewer page """
+    
     recipes = await cookbook.get_recipes(collection)
     if id not in recipes:
         raise NotFound("No such recipe exists on this website")
 
+    # only register a single recipe view per session
     session = request.ctx.session
     if "views" not in session:
         session["views"] = {}
@@ -321,9 +361,11 @@ async def recipe(request: Request, collection: str, id: str):
     else:
         session_views[collection] = [id]
 
+    # increment views if recipe was not viewed in session
     if viewcount is None:
         viewcount = await views.incr_viewcount(collection, id)
 
+    # user specific data
     is_admin, is_user, username = await asyncio.gather(
         validate_scopes(request, "admin"),
         validate_scopes(request, "user"),
@@ -339,8 +381,10 @@ async def recipe(request: Request, collection: str, id: str):
     found_admin_comment = False
     for comment, user in await comments.get_comments(collection, id):
         if requser is not None and user.id == requser.id:
+            # select user comment
             user_comment = comment
         else:
+            # place admin comment at the top
             if user.username == os.environ.get("ADMIN_USER", "admin"):
                 comments_users.insert(0, (comment, user))
                 found_admin_comment = True
@@ -368,6 +412,8 @@ async def recipe(request: Request, collection: str, id: str):
     return response
 
 
+# extra endpoint with a "pretty recipe name"
+# this is discarded and can be anything really
 @app.get("/recipe/<collection:str>/<id>/<name>")
 async def _recipe(request: Request, collection: str, id: str, name: str):
     return await recipe(request, collection, id)
@@ -380,6 +426,7 @@ async def _recipe(request: Request, collection: str, id: str, name: str):
 @protected()
 @scoped("user")
 async def get_saved(request: Request, collection):
+    """ Get saved recipes in collection for active user """
     username = await app.ctx.auth.extract_user_id(request)
     user = await users.get_user(username)
     if user is None:
@@ -394,6 +441,7 @@ async def get_saved(request: Request, collection):
 @protected()
 @scoped("user")
 async def get_saved_single(request: Request, collection, recipe_id):
+    """ Get whether the specified recipe is saved by the active user """
     username = await app.ctx.auth.extract_user_id(request)
     user = await users.get_user(username)
     if user is None:
@@ -408,6 +456,7 @@ async def get_saved_single(request: Request, collection, recipe_id):
 @protected()
 @scoped("user")
 async def post_save(request: Request, collection, id):
+    """ Save the recipe for the active user """
     username = await app.ctx.auth.extract_user_id(request)
     user = await users.get_user(username)
     if user is None:
@@ -420,10 +469,12 @@ async def post_save(request: Request, collection, id):
 @protected()
 @scoped("user")
 async def delete_save(request: Request, collection, id):
+    """ Unsave the recipe for the active user """
     username = await app.ctx.auth.extract_user_id(request)
     user = await users.get_user(username)
     if user is None:
         return sanic.json({"error": "Unknown user"}, 400)
+    
     await saves.delete_save(user.id, collection, id)
     return sanic.empty()
 
@@ -432,6 +483,7 @@ async def delete_save(request: Request, collection, id):
 @protected()
 @scoped("user")
 async def post_comment(request: Request, collection, id):
+    """ Post a comment on the recipe for the active user """
     username = await app.ctx.auth.extract_user_id(request)
     user = await users.get_user(username)
     if user is None:
@@ -444,7 +496,6 @@ async def post_comment(request: Request, collection, id):
         return sanic.json({"error": "Rating should be between 1 and 5"}, 400)
 
     await comments.add_comment(collection, id, user.id, text, rating)
-
     return sanic.empty()
 
 
@@ -452,13 +503,13 @@ async def post_comment(request: Request, collection, id):
 @protected()
 @scoped("user")
 async def delete_comment(request: Request, collection, id):
+    """ Delete a comment on the recipe for the active user """
     username = await app.ctx.auth.extract_user_id(request)
     user = await users.get_user(username)
     if user is None:
         return sanic.json({"error": "Unknown user"}, 400)
 
     await comments.delete_comment(collection, id, user.id)
-
     return sanic.empty()
 
 
@@ -466,10 +517,15 @@ async def delete_comment(request: Request, collection, id):
 @protected()
 @scoped("admin")
 async def get_usage(request: Request):
+    """ Get OpenAI usage data """
     date = request.args.get("date")
     try:
         usage = await cookbook.get_usage(date)
     except ClientResponseError as e:
+        # too many requests for OpenAI usage endpoint
+        # this limit is actually fairly low,
+        # so it may be triggered pretty often
+        # we don't want to get a stacktrace page in this case
         if e.status == 429:
             return sanic.empty(500)
         raise
@@ -481,7 +537,10 @@ async def get_usage(request: Request):
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/usage"))
 @scoped("admin")
 async def usage(request: Request):
+    """ OpenAI usage page """
     today = datetime.date.today()
+
+    # get relevant dates (creation dates of recipes)
     dates = {
         datetime.datetime.fromtimestamp(recipe.date_created).date()
         for collection in cookbook.COLLECTIONS
@@ -505,6 +564,7 @@ async def usage(request: Request):
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="recipe"))
 @scoped("admin")
 async def update_recipe_form(request: Request, collection: str, id: str):
+    """ Update recipe form page """
     recipes = await cookbook.get_recipes(collection)
     if id not in recipes:
         raise NotFound("No such recipe exists on this website")
@@ -520,6 +580,7 @@ async def update_recipe_form(request: Request, collection: str, id: str):
 @protected()
 @scoped("admin")
 async def update_recipe(request: Request, collection: str, id: str):
+    """ Update recipe """
     recipe = _parse_recipe_form(request.form)
     await cookbook.update_recipe(collection, id, recipe)
     return sanic.redirect(app.url_for("recipe", id=id, collection=collection))
@@ -530,10 +591,12 @@ async def update_recipe(request: Request, collection: str, id: str):
 @protected()
 @scoped("admin")
 async def delete_recipe(request: Request, collection: str, id: str):
+    """ Delete recipe """
     recipes = await cookbook.get_recipes(collection)
     if id not in recipes:
         raise NotFound("No such recipe exists on this website")
 
+    # delete all info
     await asyncio.gather(
         cookbook.delete_recipe(collection, id),
         views.delete_viewcount(collection, id),
@@ -548,6 +611,7 @@ async def delete_recipe(request: Request, collection: str, id: str):
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/url"))
 @scoped("admin")
 async def add_recipe_url_form(request: Request, collection: str):
+    """ Add recipe with URL form page """
     return {
         "collection": collection,
         "error": dict(request.query_args).get("error")
@@ -558,6 +622,7 @@ async def add_recipe_url_form(request: Request, collection: str):
 @protected()
 @scoped("admin")
 async def add_recipe_url(request: Request, collection: str):
+    """ Add recipe with URL """
     url = request.form["url"][0]
     try:
         # pass user agent through to transform
@@ -581,6 +646,7 @@ async def add_recipe_url(request: Request, collection: str):
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/text"))
 @scoped("admin")
 async def add_recipe_text_form(request: Request, collection: str):
+    """ Add recipe from text form page """
     return {
         "collection": collection,
         "error": dict(request.query_args).get("error")
@@ -592,6 +658,7 @@ async def add_recipe_text_form(request: Request, collection: str):
 @protected()
 @scoped("admin")
 async def add_recipe_text(request: Request, collection: str):
+    """ Add recipe from text """
     recipe = await cookbook.translate_page(request.form["text"][0])
     return {
         "collection": collection,
@@ -605,6 +672,8 @@ async def add_recipe_text(request: Request, collection: str):
 @protected()
 @scoped("admin")
 async def upload_image(request: Request):
+    """ Upload an image, and return the url of the
+        uploaded image """
     link = None
     for name, file in request.files.items():
         if not file:
@@ -624,6 +693,7 @@ async def upload_image(request: Request):
 @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/form"))
 @scoped("admin")
 async def add_recipe_form_form(request: Request, collection: str):
+    """ Add recipe from form, form page """
     return {
         "collection": collection,
         "recipe": cookbook.Recipe(),  # empty recipe for template rendering
@@ -633,6 +703,9 @@ async def add_recipe_form_form(request: Request, collection: str):
 
 
 def _parse_recipe_form(form: sanic.request.RequestParameters) -> cookbook.Recipe:
+    """ Parse an HTML form into a Request """
+
+    # fix ingredients (zip fields)
     ingredients = []
     for amount, ingredient in zip(form.getlist("ingredient-amount", []), form.getlist("ingredient-type", [])):
         if ingredient == "null":
@@ -645,6 +718,7 @@ def _parse_recipe_form(form: sanic.request.RequestParameters) -> cookbook.Recipe
             "ingredient": ingredient
         })
 
+    # fix nutrition (zip fields)
     nutrition = []
     for amount, group in zip(form.getlist("nutrition-amount", []), form.getlist("nutrition-group", [])):
         if group == "null":
@@ -659,6 +733,7 @@ def _parse_recipe_form(form: sanic.request.RequestParameters) -> cookbook.Recipe
     if not nutrition:
         nutrition = None
 
+    # Recipe factory
     recipe = cookbook.Recipe.from_data(
         name=form.get("name"),
         meta={
@@ -685,6 +760,7 @@ def _parse_recipe_form(form: sanic.request.RequestParameters) -> cookbook.Recipe
 @protected()
 @scoped("admin")
 async def add_recipe_form(request: Request, collection: str):
+    """ Add recipe from form """
     recipe = _parse_recipe_form(request.form)
     id = await cookbook.add_recipe(collection, recipe)
     return sanic.redirect(app.url_for("recipe", id=id, collection=collection))
@@ -694,6 +770,8 @@ async def add_recipe_form(request: Request, collection: str):
 @protected()
 @scoped("admin")
 async def post_recipe(request: Request, collection: str, id: str):
+    """ Post a recipe to instagram
+        Triggers a refresh on the page """
     recipes = await cookbook.get_recipes(collection)
     if id not in recipes:
         raise NotFound("No such recipe exists on this website")
@@ -705,23 +783,32 @@ async def post_recipe(request: Request, collection: str, id: str):
     if not recipe.name or not recipe.thumbnail:
         raise cookbook.instagram.InstagramError("Cannot upload recipe without name or thumbnail")
     
-    # upload recipe and set instagram code
+    # upload recipe and get instagram code
     code = await cookbook.instagram.post_instagram_recipe(
         recipe_name=recipe.name,
         image_url=recipe.thumbnail,
         user_agent=request.headers.get("user-agent")
     )
-    recipe.igcode = code
+
+    # ugly way of updating a frozen dataclass
+    # I want to keep recipes frozen though, as to
+    # not accidentally update them anywhere
+    object.__setattr__(recipe, "igcode", code)
     await cookbook.update_recipe(collection, id, recipe)
-    return sanic.json({"redirect": app.url_for("recipe", id=id, collection=collection)})
+    return sanic.json({
+        "redirect": app.url_for("recipe", id=id, collection=collection)
+    })
 
 
 @app.post("/move/<collectionfrom:str>/<collectionto:str>/<id>")
 @protected()
 @scoped("admin")
 async def move_recipe(request: Request, collectionfrom: str, collectionto: str, id: str):
+    """ Move recipe to other collection """
     recipe = await cookbook.delete_recipe(collectionfrom, id)
     idto = await cookbook.add_recipe(collectionto, recipe)
+
+    # move user data
     await asyncio.gather(
         views.move_viewcount(collectionfrom, collectionto, id, idto),
         comments.move_comments(collectionfrom, collectionto, id, idto),
@@ -735,6 +822,7 @@ from data.models import *
 import data
 from sqlalchemy import select
 
+# endpoint name -> sqlalchemy model mapping
 TABLES = {
     "users": User,
     "comments": Comment,
@@ -743,12 +831,15 @@ TABLES = {
 
 
 def convert_field(field):
+    """ Convert a sqlalchmy field to something that can be
+        rendered properly in HTML """
     if isinstance(field, (datetime.datetime, datetime.date)):
         return str(field)
     return field
 
 
 def to_dict(row):
+    """ Convert sqlalchemy object columns """
     return {
         col.name: convert_field(getattr(row, col.name))
         for col in row.__table__.columns
@@ -756,6 +847,7 @@ def to_dict(row):
 
 
 def col_type(col):
+    """ Get column type as string """
     if isinstance(col.type, Boolean):
         return "boolean"
     if isinstance(col.type, Integer):
@@ -776,6 +868,7 @@ def col_type(col):
 @protected()
 @scoped("admin")
 async def manage(request, table_name):
+    """ Data management table view """
     return {
         "columns": list([col.name for col in TABLES[table_name].__table__.columns]),
         "column_types": {
@@ -790,16 +883,20 @@ async def manage(request, table_name):
 @protected()
 @scoped("admin")
 async def api_get_all(request, table_name):
+    """ Data management table contents """
     async with data.Session() as session:
         table_class = TABLES[table_name]
         result = await session.execute(select(table_class))
-        return sanic.json({"data": [to_dict(row) for row in result.scalars().all()]})
+        return sanic.json({
+            "data": [to_dict(row) for row in result.scalars().all()]
+        })
 
 
 @app.get("/api/<table_name>/<id>")
 @protected()
 @scoped("admin")
 async def api_get_one(request, table_name, id: int):
+    """ Data management get single row by id """
     async with data.Session() as session:
         table_class = TABLES[table_name]
         result = await session.execute(select(table_class).where(table_class.id == id))
@@ -814,13 +911,18 @@ async def api_get_one(request, table_name, id: int):
 @protected()
 @scoped("admin")
 async def api_create(request: Request, table_name):
+    """ Data management create row """
     async with data.Session() as session:
         table_class = TABLES[table_name]
         obj_data = request.json
+
+        # convert datetime columns
         for col, val in obj_data.items():
             if isinstance(table_class.__table__.columns[col], (DateTime,)):
                 if isinstance(val, (int, float)):
                     obj_data[col] = datetime.datetime.utcfromtimestamp(val / 1000)
+        
+        # create instance
         obj = table_class(**obj_data)
         session.add(obj)
         res_data = to_dict(obj)
@@ -832,16 +934,20 @@ async def api_create(request: Request, table_name):
 @protected()
 @scoped("admin")
 async def api_update(request, table_name, id: int):
+    """ Data management update single row """
     async with data.Session() as session:
         table_class = TABLES[table_name]
         result = await session.execute(select(table_class).where(table_class.id == id))
         obj = result.scalar()
 
         if obj:
+            # convert datetime columns
             for key, value in request.json.items():
                 if isinstance(table_class.__table__.columns[key].type, (DateTime,)):
                     if isinstance(value, (int, float)):
                         value = datetime.datetime.utcfromtimestamp(value / 1000)
+                
+                # update object
                 setattr(obj, key, value)
             res_data = to_dict(obj)
             await session.commit()
@@ -854,6 +960,7 @@ async def api_update(request, table_name, id: int):
 @protected()
 @scoped("admin")
 async def api_delete(request, table_name, id: int):
+    """ Data management delete single row """
     async with data.Session() as session:
         table_class = TABLES[table_name]
         result = await session.execute(select(table_class).where(table_class.id == id))
