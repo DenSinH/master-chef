@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from .utils import InstagramError, _get_headers
+from .utils import InstagramError, get_headers
 
 
 _client = instagrapi.Client()
@@ -37,7 +37,7 @@ async def _download_image(url: str, callback: callable, user_agent=None):
         raise InstagramError(f"Instagram post image URL does not point to a .jpg or .jpeg image: '{url}'")
     
     async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=_get_headers(url=url, user_agent=user_agent)) as response:
+        async with session.get(url, headers=get_headers(url=url, user_agent=user_agent)) as response:
             if not response.ok:
                 raise InstagramError(f"Failed to download image. HTTP status code: {response.status}")
             

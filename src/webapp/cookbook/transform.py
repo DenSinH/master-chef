@@ -180,7 +180,7 @@ async def translate_url(url, user_agent=None):
         # instagram must be handled separately
         text, thumbnail = get_instagram_recipe(url)
     else:
-        async with aiohttp.ClientSession(headers=_get_headers(url, user_agent=user_agent)) as session:
+        async with aiohttp.ClientSession(headers=get_headers(url, user_agent=user_agent)) as session:
             res = await session.get(url)
             if not res.ok:
                 headers = "\n".join(f"{header}: {value}" for header, value in res.headers.items())

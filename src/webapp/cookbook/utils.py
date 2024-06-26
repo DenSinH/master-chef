@@ -10,7 +10,7 @@ class InstagramError(CookbookError):
     pass
 
 
-def _get_headers(url, user_agent=None):
+def get_headers(url, user_agent=None):
     _NO_USER_AGENT = {
         "cdninstagram",
         "ig",
