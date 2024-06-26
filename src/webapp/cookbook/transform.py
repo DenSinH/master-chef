@@ -191,7 +191,9 @@ async def translate_url(url, user_agent=None):
     async with aiohttp.ClientSession(headers=_get_headers(url, user_agent=user_agent)) as session:
         res = await session.get(url)
         if not res.ok:
-            raise CookbookError(f"Could not get the specified url, status code {res.status}")
+            headers = "\n".join(f"{header}: {value}" for header, value in res.headers.items())
+            message = f"Could not get the specified url, status code {res.status}\n" + headers
+            raise CookbookError(message)
         soup = BeautifulSoup(await res.text(), features="html.parser")
         domain = tld.extract(url).domain.lower()
         if domain == "tiktok":
