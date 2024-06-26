@@ -18,6 +18,7 @@ from minifyloader import MinifyingFileSystemLoader
 from imgupload import upload_imgur
 
 import cookbook
+import cookbook.instagram
 from data import init_db
 import data.views as views
 import data.users as users
@@ -684,6 +685,32 @@ async def add_recipe_form(request: Request, collection: str):
     recipe = _parse_recipe_form(request.form)
     id = await cookbook.add_recipe(collection, recipe)
     return sanic.redirect(app.url_for("recipe", id=id, collection=collection))
+
+
+@app.post("/post/<collection:str>/<id>")
+@protected()
+@scoped("admin")
+async def post_recipe(request: Request, collection: str, id: str):
+    recipes = await cookbook.get_recipes(collection)
+    if id not in recipes:
+        raise NotFound("No such recipe exists on this website")
+
+    recipe = recipes[id]
+    if "igcode" in recipe:
+        raise cookbook.instagram.InstagramError(f"Recipe was already posted to instagram with code {recipe['igcode']}")
+
+    if not recipe["name"] or not recipe["thumbnail"]:
+        raise cookbook.instagram.InstagramError("Cannot upload recipe without name or thumbnail")
+    
+    # upload recipe and set instagram code
+    code = await cookbook.instagram.post_instagram_recipe(
+        recipe_name=recipe["name"],
+        image_url=recipe["thumbnail"],
+        user_agent=request.headers.get("user-agent")
+    )
+    recipe["igcode"] = code
+    await cookbook.update_recipe(collection, id, recipe)
+    return sanic.json({"redirect": app.url_for("recipe", id=id, collection=collection)})
 
 
 @app.post("/move/<collectionfrom:str>/<collectionto:str>/<id>")
