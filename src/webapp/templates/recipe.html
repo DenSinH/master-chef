@@ -1,12 +1,12 @@
 {% from "tags.html" import tags %}
-{%- set meta = recipe.get("meta", {}) -%}
-{%- set english = meta.get("language", "en") == "en" -%}
+{%- set meta = recipe.meta -%}
+{%- set english = (meta.language or "en") == "en" -%}
 
 {% extends "base.html" %}
 
 {% block head %}
-    <meta property="og:image" itemprop="image primaryImageOfPage" content="{{ recipe['thumbnail'] or '/static/spaghet.png' }}">
-    <title>{{ recipe["name"]|capwords }}</title>
+    <meta property="og:image" itemprop="image primaryImageOfPage" content="{{ recipe.thumbnail or '/static/spaghet.png' }}">
+    <title>{{ recipe.name|capwords }}</title>
     <link rel="stylesheet" href="/static/recipe.css">
     <link rel="stylesheet" href="/static/slider.css">
     <link rel="stylesheet" href="/static/modal.css">
@@ -79,21 +79,21 @@
         <header>
             <div class="header">
                 <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('collection', collection=collection) }}'">
-                <h1 class="{{ collection }}">{{ recipe["name"]|capwords }}</h1>
+                <h1 class="{{ collection }}">{{ recipe.name|capwords }}</h1>
             </div>
             <div class="buttons">
                 {%- if is_admin -%}
                     {%- if collection == 'unmade' -%}
                         <a onclick="make_recipe()" class="round-button admin"><i class="fas fa-exchange-alt"></i></a>
-                    {%- elif not recipe.get('igcode') -%}
+                    {%- elif not recipe.igcode -%}
                         <a onclick="post_recipe()" class="round-button admin"><i class="fas fa-upload"></i></a>
                     {%- endif -%}
                     <a href="{{ url_for('update_recipe_form', id=recipe_id, collection=collection) }}" class="round-button admin"><i class="fas fa-edit"></i></a>
                     <a onclick="delete_recipe()" class="round-button admin"><i class="fas fa-trash"></i></a>
                 {%- endif -%}
                 <button class="round-button" data-modal-target="#units-modal"><i class="fas fa-calculator"></i></button>
-                {%- if recipe.get('igcode') -%}
-                    <a href="https://www.instagram.com/p/{{ recipe['igcode'] }}/" class="round-button" target="_blank"><i class="fab fa-instagram"></i></a>
+                {%- if recipe.igcode -%}
+                    <a href="https://www.instagram.com/p/{{ recipe.igcode }}/" class="round-button" target="_blank"><i class="fab fa-instagram"></i></a>
                 {%- endif -%}
                 <a onclick="share_recipe()" class="round-button"><i class="fas fa-share"></i></a>
                 {%- if not (is_user or is_admin) -%}
@@ -106,7 +106,7 @@
 
         <!-- Needs to be here to position save-icon properly-->
         <div class="recipe-container" id="recipe{{ recipe_id }}">
-            <img src="{{ recipe['thumbnail'] or '/static/spaghet.png' }}" onerror="this.onerror=null; this.src='/static/spaghet.png'" alt="Preview">
+            <img src="{{ recipe.thumbnail or '/static/spaghet.png' }}" onerror="this.onerror=null; this.src='/static/spaghet.png'" alt="Preview">
             {% if is_user or is_admin %}
             <div class="save-icon hidden" onclick="toggleSave(event, '{{ collection }}', '{{ recipe_id }}')">
                 <i class="far fa-heart"></i>
@@ -115,9 +115,9 @@
             {% endif %}
         </div>
 
-        {%- if recipe.get("url") is not none -%}
+        {%- if recipe.url -%}
         <div class="recipe-info">
-            <a class="original-url" href="{{ recipe['url'] }}" target="_blank">{{ 'original recipe' if english else 'origineel recept' }}</a>
+            <a class="original-url" href="{{ recipe.url }}" target="_blank">{{ 'original recipe' if english else 'origineel recept' }}</a>
         </div>
         {%- endif -%}
 
@@ -131,26 +131,26 @@
                 {%- endif -%}
             </span>
             </div>
-            {%- if recipe.get("time") is not none -%}
+            {%- if recipe.time -%}
             <div class="recipe-info-detail">
-                <i class="fas fa-clock"></i> <span class="info-item">{{ recipe["time"] }} {{ 'minutes' if english else 'minuten' }}</span>
+                <i class="fas fa-clock"></i> <span class="info-item">{{ recipe.time }} {{ 'minutes' if english else 'minuten' }}</span>
             </div>
             {%- endif -%}
-            {%- if recipe.get("people") is not none -%}
+            {%- if recipe.people -%}
             <div class="recipe-info-detail">
-                <i class="fas fa-users"></i> <span class="info-item">{{ recipe["people"] }} {{ 'servings' if english else 'porties' }} </span>
+                <i class="fas fa-users"></i> <span class="info-item">{{ recipe.people}} {{ 'servings' if english else 'porties' }} </span>
             </div>
             {%- endif -%}
         </div>
         <div class="recipe-info">
-            {%- if recipe.get("date_created") is not none -%}
+            {%- if recipe.date_created -%}
             <div class="recipe-info-detail">
-                <i class="fas fa-calendar-plus"></i> <span class="info-item">{{ 'Added' if english else 'Toegevoegd' }} {{ recipe["date_created"]|strftimestamp }}</span>
+                <i class="fas fa-calendar-plus"></i> <span class="info-item">{{ 'Added' if english else 'Toegevoegd' }} {{ recipe.date_created|strftimestamp }}</span>
             </div>
             {%- endif -%}
-            {%- if recipe.get("date_updated") is not none -%}
+            {%- if recipe.date_updated -%}
             <div class="recipe-info-detail">
-                <i class="fas fa-calendar-check"></i> <span class="info-item">{{ 'Updated' if english else 'Geüpdatet' }} {{ recipe["date_updated"]|strftimestamp }}</span>
+                <i class="fas fa-calendar-check"></i> <span class="info-item">{{ 'Updated' if english else 'Geüpdatet' }} {{ recipe.date_updated|strftimestamp }}</span>
             </div>
             {%- endif -%}
         </div>
@@ -158,11 +158,11 @@
             {{ tags(meta) }}
         </div>
         <h2>{{ 'Ingredients' if english else 'Ingrediënten'}}</h2>
-        {%- if recipe.get("people") is not none -%}
+        {%- if recipe.people -%}
         <div class="ingredient-conversion">
             <div class="people">
-                <div id="people-amount" data-base="{{ recipe['people'] }}">
-                    {{ recipe['people'] }}
+                <div id="people-amount" data-base="{{ recipe.people }}">
+                    {{ recipe.people }}
                 </div>
                 <div class="people-text">
                     {{ 'People' if english else 'Personen' }}
@@ -176,19 +176,19 @@
         {%- endif -%}
         <div class="ingredients-wrapper">
             <table class="ingredients">
-                {%- for ingredient in recipe["ingredients"] -%}
-                    {%- if ingredient["ingredient"].startswith('#') -%}
+                {%- for ingredient in recipe.ingredient -%}
+                    {%- if ingredient.ingredient.startswith('#') -%}
                         <tr class="step-section-header-row">
                             <td colspan="2">
-                                <h3 class="step-section-header">{{ ingredient["ingredient"][1:]|capitalize }}</h3>
+                                <h3 class="step-section-header">{{ ingredient.ingredient[1:]|capitalize }}</h3>
                             </td>
                         </tr>
                     {%- else -%}
                     <tr id="ingredient-{{ loop.index0 }}" class="ingredient">
-                        <td class="ingredient-amount" data-base="{{ (ingredient['amount'] or '&nbsp')|capitalize|safe }}">
-                            {{ (ingredient["amount"] or "&nbsp")|capitalize|safe }}
+                        <td class="ingredient-amount" data-base="{{ (ingredient.amount or '&nbsp')|capitalize|safe }}">
+                            {{ (ingredient.amount or "&nbsp")|capitalize|safe }}
                         </td>
-                        <td>{{ ingredient["ingredient"]|capitalize }}</td>
+                        <td>{{ ingredient.ingredient|capitalize }}</td>
                     </tr>
                     {%- endif -%}
                 {%- endfor -%}
@@ -215,7 +215,7 @@
             </div>
         </div>
         <ol class="instructions">
-            {%- for step in recipe["preparation"] -%}
+            {%- for step in recipe.preparation -%}
                 {%- if step.startswith('#') -%}
                     <h3 class="step-section-header">{{ step[1:]|capitalize }}</h3>
                 {%- else -%}
@@ -224,20 +224,20 @@
             {%- endfor -%}
         </ol>
 
-        {%- if recipe.get("remarks") is not none -%}
-        {%- if recipe["remarks"].strip() -%}
+        {%- if recipe.remarks is not none -%}
+        {%- if recipe.remarks.strip() -%}
         <h2>{{ 'Remarks' if english else 'Opmerkingen' }}</h2>
         <p class="remarks">
-            {{ recipe["remarks"] }}
+            {{ recipe.remarks }}
         </p>
         {%- endif -%}
         {%- endif -%}
 
-        {%- if recipe.get("nutrition") is not none -%}
+        {%- if recipe.nutrition -%}
         <h2>{{ 'Nutrition' if english else 'Voedingswaarden' }}</h2>
         <table class="nutrition">
-            {%- for group in recipe["nutrition"] -%}
-            <tr><td>{{ group["group"]|capitalize }}</td><td>{{ group["amount"] }}</td></tr>
+            {%- for group in recipe.nutrition -%}
+            <tr><td>{{ group.group|capitalize }}</td><td>{{ group.amount }}</td></tr>
             {%- endfor -%}
         </table>
         {%- endif -%}

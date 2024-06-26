@@ -66,7 +66,7 @@ def _partial_search(s1: str, s2: str) -> Iterable[PartialMatch]:
                 )
 
 
-def _fuzzy_extract(query, text) -> Iterable[PartialMatch]:
+def _fuzzy_extract(query: str, text: str) -> Iterable[PartialMatch]:
     """ 
     Fuzzy extract 'query' from 'text'
     Yields all PartialMatches
@@ -83,7 +83,7 @@ def _fuzzy_extract(query, text) -> Iterable[PartialMatch]:
                 yield match
 
 
-def _replace_references(string: str, sorted_references) -> str:
+def _replace_references(string: str, sorted_references: list[PartialMatch]) -> str:
     """
     Replace all partial references, without replacing matches within matches.
     """
@@ -101,7 +101,7 @@ def _replace_references(string: str, sorted_references) -> str:
 
 
 @lru_cache(maxsize=1024)
-def replace_ingredient_references(recipe_step, ingredients):
+def replace_ingredient_references(recipe_step: str, ingredients: tuple[str]) -> str:
     ingredient_references = {}
     for i, ingredient in enumerate(ingredients):
         if ingredient.startswith("#"):
@@ -122,5 +122,8 @@ def replace_ingredient_references(recipe_step, ingredients):
         return recipe_step
     
     # sort the references and replace them in order
-    sorted_references = sorted(ingredient_references.values(), key=lambda ref: ref.sort_val())
+    sorted_references: list[PartialMatch] = sorted(
+        ingredient_references.values(), 
+        key=lambda ref: ref.sort_val()
+    )
     return _replace_references(recipe_step, sorted_references)

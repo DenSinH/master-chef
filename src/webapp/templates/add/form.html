@@ -26,22 +26,22 @@
 
             <div class="form-field">
                 <label>Name:</label>
-                <input id="recipe-name" type="text" name="name" placeholder="Enter recipe name" value="{{ recipe.get('name') or '' }}" required>
+                <input id="recipe-name" type="text" name="name" placeholder="Enter recipe name" value="{{ recipe.name or '' }}" required>
             </div>
 
             <div class="form-field">
                 <label>URL:</label>
-                <input type="text" name="url" placeholder="Enter recipe URL" value="{{ recipe.get('url') or '' }}">
+                <input type="text" name="url" placeholder="Enter recipe URL" value="{{ recipe.url or '' }}">
             </div>
 
             <div class="form-field">
                 <label>Time (minutes):</label>
-                <input type="number" name="time" placeholder="Enter time in minutes" value="{{ recipe.get('time') or '' }}">
+                <input type="number" name="time" placeholder="Enter time in minutes" value="{{ recipe.time or '' }}">
             </div>
 
             <div class="form-field">
                 <label>People:</label>
-                <input type="number" name="people" placeholder="Enter number of people" value="{{ recipe.get('people') or '' }}">
+                <input type="number" name="people" placeholder="Enter number of people" value="{{ recipe.people or '' }}">
             </div>
 
             <div id="ingredientsContainer" class="form-field multi-row">
@@ -50,11 +50,11 @@
                     <span class="add-ingredient round-button"><i class="fas fa-plus"></i></span>
                 </div>
                 <div id="ingredientRows" class="sortable-list">
-                    {%- for ingredient in recipe.get('ingredients', []) + [{}] -%}
+                    {%- for ingredient in recipe.ingredients + [None] -%}
                     <div class="ingredient-row">
                         <span class="handle"><i class="fas fa-grip-lines"></i></span>
-                        <input type="text" class="amount" name="ingredient-amount" placeholder="Amount" value="{{ ingredient.get('amount') or '' }}">
-                        <input type="text" class="ingredient" name="ingredient-type" placeholder="Ingredient" value="{{ ingredient.get('ingredient') or '' }}">
+                        <input type="text" class="amount" name="ingredient-amount" placeholder="Amount" value="{{ ingredient.amount or '' }}">
+                        <input type="text" class="ingredient" name="ingredient-type" placeholder="Ingredient" value="{{ ingredient.ingredient or '' }}">
                         <div class="remove-row-container">
                             <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
                         </div>
@@ -72,7 +72,7 @@
                     <span class="add-step round-button"><i class="fas fa-plus"></i></span>
                 </div>
                 <div id="preparationRows" class="sortable-list">
-                    {%- for step in (recipe.get('preparation') or []) + [''] -%}
+                    {%- for step in recipe.preparation + [''] -%}
                     <div class="preparation-row">
                         <span class="handle"><i class="fas fa-grip-lines"></i></span>
                         <textarea class="step" name="preparation" placeholder="Step">{{ step }}</textarea>
@@ -89,7 +89,7 @@
 
             <div class="form-field">
                 <label>Remarks:</label>
-                <textarea class="remarks" name="remarks" placeholder="Remarks">{{ recipe.get("remarks") or "" }}</textarea>
+                <textarea class="remarks" name="remarks" placeholder="Remarks">{{ recipe.remarks or "" }}</textarea>
             </div>
 
             <div id="nutritionContainer" class="form-field multi-row">
@@ -98,11 +98,11 @@
                     <span class="add-group round-button"><i class="fas fa-plus"></i></span>
                 </div>
                 <div id="nutritionRows" class="sortable-list">
-                    {%- for group in (recipe.get('nutrition') or []) + [{}] -%}
+                    {%- for group in (recipe.nutrition or []) + [{}] -%}
                     <div class="nutrition-row">
                         <span class="handle"><i class="fas fa-grip-lines"></i></span>
-                        <input type="text" class="amount" name="nutrition-amount" placeholder="Amount" value="{{ group.get('amount') or '' }}">
-                        <input type="text" class="group" name="nutrition-group" placeholder="Group" value="{{ group.get('group') or '' }}">
+                        <input type="text" class="amount" name="nutrition-amount" placeholder="Amount" value="{{ group.amount or '' }}">
+                        <input type="text" class="group" name="nutrition-group" placeholder="Group" value="{{ group.group or '' }}">
                         <div class="remove-row-container">
                             <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
                         </div>
@@ -114,17 +114,17 @@
                 </div>
             </div>
 
-            {%- set meta = recipe.get("meta", {}) -%}
+            {%- set meta = recipe.meta -%}
             <div class="form-field form-field-local">
                 <label>Language</label>
                 <select name="language">
-                    {%- if not meta.get("language") -%}
+                    {%- if not meta.language -%}
                     <option selected value=""></option>
                     {%- else -%}
                     <option value=""></option>
                     {%- endif -%}
                     {%- for option, name in LANGUAGES.items() -%}
-                    {%- if meta.get("language") == option -%}
+                    {%- if meta.language == option -%}
                         <option selected value="{{ option }}">{{ name }}</option>
                     {%- else -%}
                         <option value="{{ option }}">{{ name }}</option>
@@ -136,7 +136,7 @@
                 <label>Meal type</label>
                 <select name="meal_type">
                     {%- for meal_type in MEAL_TYPES -%}
-                    {%- if meal_type == meta.get("meal_type", "other") -%}
+                    {%- if meal_type == meta.meal_type -%}
                         <option selected value="{{ meal_type }}">{{ meal_type|capitalize }}</option>
                     {%- else -%}
                         <option value="{{ meal_type }}">{{ meal_type|capitalize }}</option>
@@ -148,7 +148,7 @@
                 <label>Cuisine</label>
                 <select name="cuisine">
                     {%- for cuisine in CUISINE_TYPES -%}
-                    {%- if cuisine == meta.get("cuisine", "other") -%}
+                    {%- if cuisine == meta.cuisine -%}
                         <option selected value="{{ cuisine }}">{{ cuisine|capitalize }}</option>
                     {%- else -%}
                         <option value="{{ cuisine }}">{{ cuisine|capitalize }}</option>
@@ -161,7 +161,7 @@
                 <div class="double-select">
                     <select name="meat_type">
                         {%- for meat in MEAT_TYPES -%}
-                        {%- if meat == meta.get("meat_type", ["other"])[0] -%}
+                        {%- if meat == meta.meat_type[0] -%}
                             <option selected value="{{ meat }}">{{ meat|capitalize }}</option>
                         {%- else -%}
                             <option value="{{ meat }}">{{ meat|capitalize }}</option>
@@ -172,7 +172,7 @@
                         <option selected value=""></option>
                         {%- for meat in MEAT_TYPES -%}
                             {%- if meat != 'other'-%}
-                                {%- if meat == meta.get("meat_type", ["other", None])[1] -%}
+                                {%- if meat == meta.meat_type[1] -%}
                                     <option selected value="{{ meat }}">{{ meat|capitalize }}</option>
                                 {%- else -%}
                                     <option value="{{ meat }}">{{ meat|capitalize }}</option>
@@ -187,7 +187,7 @@
                 <div class="double-select">
                     <select name="carb_type">
                         {%- for carb in CARB_TYPES -%}
-                        {%- if carb == meta.get("carb_type", ["other"])[0] -%}
+                        {%- if carb == meta.carb_type[0] -%}
                             <option selected value="{{ carb }}">{{ carb|capitalize }}</option>
                         {%- else -%}
                             <option value="{{ carb }}">{{ carb|capitalize }}</option>
@@ -198,7 +198,7 @@
                         <option selected value=""></option>
                         {%- for carb in CARB_TYPES -%}
                             {%- if carb != 'other' and carb != 'none' -%}
-                                {%- if carb == meta.get("carb_types", ["other", None])[1] -%}
+                                {%- if carb == meta.carb_type[1] -%}
                                     <option selected value="{{ carb }}">{{ carb|capitalize }}</option>
                                 {%- else -%}
                                     <option value="{{ carb }}">{{ carb|capitalize }}</option>
@@ -212,7 +212,7 @@
                 <label>Temperature</label>
                 <select name="temperature">
                     {%- for temp in TEMPERATURE_TYPES -%}
-                        {%- if temp == meta.get("temperature", "any") -%}
+                        {%- if temp == meta.temperature -%}
                             <option selected value="{{ temp }}">{{ temp|capitalize }}</option>
                         {%- else -%}
                             <option value="{{ temp }}">{{ temp|capitalize }}</option>
@@ -224,15 +224,15 @@
             <div class="form-field">
                 <label>Thumbnail:</label>
                 <div class="thumbnail-input-row">
-                    <input type="text" id="thumbnailField" name="thumbnail" placeholder="Enter thumbnail url" value="{{ recipe.get('thumbnail') or '' }}">
+                    <input type="text" id="thumbnailField" name="thumbnail" placeholder="Enter thumbnail url" value="{{ recipe.thumbnail or '' }}">
                     <input type="file" accept="image/*" id="image-upload-input" style="display: none">
                     <span class="round-button" id="image-upload"><i class="fas fa-upload"></i></span>
                 </div>
                 <div class="thumbnail-container">
-                    {%- if not recipe.get('thumbnail') -%}
+                    {%- if not recipe.thumbnail -%}
                         <img style="display: none" id="thumbnailPreview" src="" alt="" onerror="$('#thumbnailError').show();">
                     {%- else -%}
-                        <img id="thumbnailPreview" src="{{ recipe.get('thumbnail') or '' }}" alt="" onerror="$('#thumbnailError').show();">
+                        <img id="thumbnailPreview" src="{{ recipe.thumbnail or '' }}" alt="" onerror="$('#thumbnailError').show();">
                     {%- endif -%}
                     <p style="display: none" id="thumbnailLoading">Loading thumbnail...</p>
                     <p style="display: none" id="thumbnailError" class="warning">Failed to load thumbnail, please check URL</p>

@@ -1,16 +1,18 @@
 import datetime
 import aiohttp
 import base64
-import json
+import msgspec
 import string
 import random
 import copy
+import dataclasses
 from dotenv import load_dotenv
 
 load_dotenv()
 
 import os
 
+from .recipe import Recipe
 from .utils import *
 
 RECIPE_REPO_USER = os.environ["RECIPE_REPO_USER"]
@@ -21,9 +23,15 @@ RECIPE_PAT = os.environ["RECIPE_PAT"]
 class CollectionCache:
 
     def __init__(self):
-        self.recipes = None
-        self.file = None
+        self.recipes: list[Recipe] = None
+        self.file: dict = None  # full file info from GitHub API
         self.recipe_timeout = None
+
+    def asdict(self):
+        return {
+            recipe_id: dataclasses.asdict(recipe)
+            for recipe_id, recipe in self.recipes.items()
+        }
 
     def clear(self):
         self.recipes = None
@@ -78,18 +86,25 @@ async def _get_recipes(collection) -> CollectionCache:
             raise CookbookError(f"Error getting recipes: {res.status} ({await res.text()})")
 
         col.file = await res.json()
-        col.recipes = json.loads(base64.b64decode(col.file["content"]).decode("utf-8"))
+        recipes = msgspec.json.decode(
+            base64.b64decode(col.file["content"]),
+            strict=False
+        )
+        col.recipes = {
+            recipe_id: Recipe.from_data(**recipe)
+            for recipe_id, recipe in recipes.items()
+        }
         return col
 
 
-async def get_recipes(collection):
+async def get_recipes(collection) -> dict[str, Recipe]:
     # for external use, ensure we don't mutate our collection cache
     return copy.deepcopy((await _get_recipes(collection)).recipes)
 
 
-def _generate_key(recipes):
+def _generate_key(recipes) -> str:
     while True:
-        key = ''.join(random.choice(string.ascii_lowercase) for x in range(10))
+        key = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
         if key not in recipes:
             return key
 
@@ -98,11 +113,13 @@ async def _push_recipes(collection, message):
     col = _get_collection(collection)
 
     async with aiohttp.ClientSession() as session:
+        data = msgspec.json.encode(col.asdict(), order='sorted')
+        formatted = msgspec.json.format(data, indent=2)
         res = await session.put(
             f"https://api.github.com/repos/{RECIPE_REPO_USER}/{RECIPE_REPO_NAME}/contents/{collection}.json",
-            data=json.dumps({
+            data=msgspec.json.encode({
                 "message": message,
-                "content": base64.b64encode(json.dumps(col.recipes, indent=2, sort_keys=True).encode("ascii")).decode("ascii"),
+                "content": base64.b64encode(formatted).decode("ascii"),
                 "committer": {
                     "name": "Master Chef",
                     "email": "robot@masterchef.com"
@@ -123,15 +140,15 @@ async def _push_recipes(collection, message):
             raise CookbookError(f"Error pushing recipe: {res.status} ({await res.text()})")
 
 
-async def add_recipe(collection, recipe):
+async def add_recipe(collection, recipe: Recipe):
     now = _now()
-    if "date_created" not in recipe:
-        recipe["date_created"] = now
-    recipe["date_updated"] = now
+    if not recipe.date_created:
+        recipe.date_created = now
+    recipe.date_updated = now
     col = await _get_recipes(collection)
     key = _generate_key(col.recipes)
     col.recipes[key] = recipe
-    await _push_recipes(collection, f"Add recipe {recipe['name']} in {collection}")
+    await _push_recipes(collection, f"Add recipe {recipe.name} in {collection}")
     return key
 
 
@@ -140,17 +157,18 @@ async def update_recipe(collection, key, recipe):
     if key not in col.recipes:
         raise CookbookError(f"Cannot update recipe with id {key} in collection {collection}, as it does not exist")
 
-    new_recipe = copy.deepcopy(col.recipes[key])
+    old_recipe = col.recipes[key]
+    new_recipe = dataclasses.replace(old_recipe, **dataclasses.asdict(recipe))
 
-    # preserved "date_created" fields etc.
-    new_recipe.update(**recipe)
+    # preserved "date_created" field
+    new_recipe.date_created = old_recipe.date_created
     if col.recipes[key] == new_recipe:
         # nothing to update
         return
-    new_recipe["date_updated"] = _now()
+    new_recipe.date_updated = _now()
 
     col.recipes[key] = new_recipe
-    await _push_recipes(collection, f"Update recipe {new_recipe['name']} in {collection}")
+    await _push_recipes(collection, f"Update recipe {new_recipe.name} in {collection}")
     return key
 
 
@@ -158,5 +176,5 @@ async def delete_recipe(collection, key):
     col = await _get_recipes(collection)
     recipe = col.recipes.pop(key)
 
-    await _push_recipes(collection, f"Delete recipe {recipe['name']} in {collection}")
+    await _push_recipes(collection, f"Delete recipe {recipe.name} in {collection}")
     return recipe

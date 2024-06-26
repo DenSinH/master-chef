@@ -93,13 +93,13 @@
                 onclick="window.location.href = '{{ url_for('recipe', id=recipe_id, collection=collection) }}'"
                 class="recipe-item recipe-container unselectable"
                 style="display: none"
-                data-name="{{ recipe.get('name', '').lower() }}"
-                data-created="{{ recipe.get('date_created', 0) }}"
-                data-updated="{{ recipe.get('date_updated', 0) }}"
+                data-name="{{ recipe.name.lower() }}"
+                data-created="{{ recipe.date_created }}"
+                data-updated="{{ recipe.date_updated }}"
                 id="recipe{{ recipe_id }}"
         >
             <div class="thumbnail-wrapper">
-                <img src="{{ recipe['thumbnail'] or '/static/spaghet.png' }}" onerror="this.onerror=null; this.src='/static/spaghet.png'" alt="Recipe 1" loading="lazy">
+                <img src="{{ recipe.thumbnail or '/static/spaghet.png' }}" onerror="this.onerror=null; this.src='/static/spaghet.png'" alt="Recipe 1" loading="lazy">
             </div>
             {% if is_user or is_admin %}
             <div class="save-icon hidden" onclick="toggleSave(event, '{{ collection }}', '{{ recipe_id }}')">
@@ -107,9 +107,9 @@
                 <i class="fas fa-heart"></i>
             </div>
             {% endif %}
-            <h2 class="searchable {{ collection }}">{{ recipe["name"]|capwords }}</h2>
+            <h2 class="searchable {{ collection }}">{{ recipe.name|capwords }}</h2>
 
-            {%- set meta = recipe.get("meta", {}) -%}
+            {%- set meta = recipe.meta -%}
             {{ tags(meta) }}
 
             <div class="recipe-info">
@@ -117,18 +117,18 @@
                 {%- if recipe_views is not none -%}
                 <p><i class="fas fa-eye"></i> <span class="info-item">{{ recipe_views }} {{ 'views' if recipe_views != 1 else 'view' }}</span></p>
                 {%- endif -%}
-                {%- if recipe.get("time") is not none -%}
-                <p><i class="fas fa-clock"></i> <span class="info-item">{{ recipe["time"] }} minutes</span></p>
+                {%- if recipe.time is not none -%}
+                <p><i class="fas fa-clock"></i> <span class="info-item">{{ recipe.time }} minutes</span></p>
                 {%- endif -%}
-                {%- if recipe.get("people") is not none -%}
-                <p><i class="fas fa-users"></i> <span class="info-item">Serves {{ recipe["people"] }}</span></p>
+                {%- if recipe.people is not none -%}
+                <p><i class="fas fa-users"></i> <span class="info-item">Serves {{ recipe.people }}</span></p>
                 {%- endif -%}
             </div>
 
-            {%- if recipe["ingredients"] is defined and recipe["ingredients"]|length > 0 -%}
+            {%- if recipe.ingredients|length > 0 -%}
             <span class="hidden searchable">
-                {%- for ingredient in recipe["ingredients"] -%}
-                {{ ingredient["ingredient"]|lower }}
+                {%- for ingredient in recipe.ingredients -%}
+                {{ ingredient.ingredient|lower }}
                 {% endfor %}
             </span>
             {%- endif -%}

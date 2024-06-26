@@ -2,42 +2,42 @@
 
 {% macro tags(meta) %}
 <div class="tags">
-    {%- if meta.get("language") -%}
-        <span class="tag searchable {{ meta.get('language') }}">
-            {{ LANGUAGES[meta.get("language")]|capitalize }}
+    {%- if meta.language -%}
+        <span class="tag searchable {{ meta.language }}">
+            {{ LANGUAGES[meta.language]|capitalize }}
         </span>
     {%- endif -%}
-    {%- if meta.get("cuisine", "other") != "other" -%}
+    {%- if meta.cuisine != "other" -%}
         <span class="tag searchable">
-            {{ meta.get("cuisine")|capitalize }}
+            {{ meta.cuisine|capitalize }}
         </span>
     {%- endif -%}
-    {%- if meta.get("meal_type", "other") != "other" -%}
+    {%- if meta.meal_type != "other" -%}
         <span class="tag searchable">
-            {{ meta.get("meal_type")|capitalize }}
+            {{ meta.meal_type|capitalize }}
         </span>
     {%- endif -%}
-    <span class="tag searchable {{ meta.get('meat_type', ['other'])[0] }}">
-        {%- if meta.get("meat_type", ["other"])[0] == "other" -%}
+    <span class="tag searchable {{ meta.meat_type[0] }}">
+        {%- if meta.meat_type[0] == "other" -%}
             Other/mixed meat
         {%- else -%}
-            {{ '/'.join(meta.get("meat_type"))|capitalize }}
+            {{ '/'.join(meta.meat_type)|capitalize }}
         {%- endif -%}
     </span>
-    {%- if meta.get("carb_type", ["other"])[0] != "none" -%}
-    <span class="tag searchable {{ meta.get('carb_type', ['other'])[0]|replace(' ', '-') }}">
-        {%- if meta.get("carb_type", ["other"])[0] == "other" -%}
+    {%- if meta.carb_type[0] != "none" -%}
+    <span class="tag searchable {{ meta.temperature[0]|replace(' ', '-') }}">
+        {%- if meta.carb_type[0] == "other" -%}
             Other carbs
         {%- else -%}
-            {{ '/'.join(meta.get("carb_type"))|capitalize }}
+            {{ '/'.join(meta.carb_type)|capitalize }}
         {%- endif -%}
     </span>
     {%- endif -%}
-    <span class="tag searchable {{ meta.get('temperature', 'any')|replace(' ', '-') }}">
-        {%- if meta.get("temperature", "any") == "any" -%}
+    <span class="tag searchable {{ meta.temperature|replace(' ', '-') }}">
+        {%- if meta.temperature == "any" -%}
             Any temperature
         {%- else -%}
-            {{ meta.get("temperature")|capitalize }}
+            {{ meta.temperature|capitalize }}
         {%- endif -%}
     </span>
 </div>

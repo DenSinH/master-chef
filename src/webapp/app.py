@@ -41,8 +41,11 @@ def _strftimestamp(timestamp):
     return date.strftime("%Y-%m-%d")
 
 
-def _add_ingredient_references(step, recipe):
-    return cookbook.replace_ingredient_references(step, (ingredient["ingredient"] for ingredient in recipe["ingredients"]))
+def _add_ingredient_references(step: str, recipe: cookbook.Recipe):
+    return cookbook.replace_ingredient_references(
+        step, 
+        tuple(ingredient.ingredient for ingredient in recipe.ingredients)
+    )
 
 
 # 10MB max request size
@@ -147,7 +150,7 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
     ordered = OrderedDict(
         sorted(
             recipes.items(),
-            key=lambda x: x[1].get("date_updated", 0),
+            key=lambda x: x[1].date_updated,
             reverse=True
         )
     )
@@ -175,7 +178,7 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
         "is_admin": is_admin,
         "is_user": is_user,
         "username": username,
-        "latest": max(recipes, key=lambda recipe_id: recipes[recipe_id].get("date_created", 0), default=None),
+        "latest": max(recipes, key=lambda recipe_id: recipes[recipe_id].date_created, default=None),
         "viewcount": viewcount,
         "unverified_users": unverified_users,
         "title": title,
@@ -477,12 +480,12 @@ async def get_usage(request: Request):
 @scoped("admin")
 async def usage(request: Request):
     today = datetime.date.today()
-    dates = set()
-    for collection in cookbook.COLLECTIONS:
-        recipes = await cookbook.get_recipes(collection)
-        for _, recipe in recipes.items():
-            if "date_created" in recipe:
-                dates.add(datetime.datetime.fromtimestamp(recipe["date_created"]).date())
+    dates = {
+        datetime.datetime.fromtimestamp(recipe.date_created).date()
+        for collection in cookbook.COLLECTIONS
+        for _, recipe in (await cookbook.get_recipes(collection)).items()
+        if recipe.date_created
+    }
 
     return {
         "dates": [
@@ -517,7 +520,6 @@ async def update_recipe_form(request: Request, collection: str, id: str):
 async def update_recipe(request: Request, collection: str, id: str):
     recipe = _parse_recipe_form(request.form)
     await cookbook.update_recipe(collection, id, recipe)
-
     return sanic.redirect(app.url_for("recipe", id=id, collection=collection))
 
 
@@ -622,13 +624,13 @@ async def upload_image(request: Request):
 async def add_recipe_form_form(request: Request, collection: str):
     return {
         "collection": collection,
-        "recipe": {},  # empty recipe for template rendering
+        "recipe": cookbook.Recipe(),  # empty recipe for template rendering
         "action": app.url_for('add_recipe_form', collection=collection),
         "error": dict(request.query_args).get("error"),
     }
 
 
-def _parse_recipe_form(form: sanic.request.RequestParameters):
+def _parse_recipe_form(form: sanic.request.RequestParameters) -> cookbook.Recipe:
     ingredients = []
     for amount, ingredient in zip(form.getlist("ingredient-amount", []), form.getlist("ingredient-type", [])):
         if ingredient == "null":
@@ -655,26 +657,25 @@ def _parse_recipe_form(form: sanic.request.RequestParameters):
     if not nutrition:
         nutrition = None
 
-    recipe = {
-        "name": form["name"][0],
-        "url": form["url"][0] if "url" in form else None,
-        "people": int(form["people"][0]) if "people" in form else None,
-        "time": int(form["time"][0]) if "time" in form else None,
-        "ingredients": ingredients,
-        "remarks": form["remarks"][0] if "remarks" in form else None,
-        "nutrition": nutrition,
-        "preparation": form.getlist("preparation", []),
-        "meta": {
-            "language": form["language"][0] if "language" in form else None,
-            "meal_type": form["meal_type"][0] if "meal_type" in form else None,
-            "cuisine": form["cuisine"][0] if "cuisine" in form else None,
-            "meat_type": [meat for meat in form["meat_type"] if meat] if "meat_type" in form else None,
-            "carb_type": [carb for carb in form["carb_type"] if carb] if "carb_type" in form else None,
-            "temperature": form["temperature"][0] if "cuisine" in form else None,
+    recipe = cookbook.Recipe.from_data(
+        name=form.get("name"),
+        meta={
+            "language": form.get("language"),
+            "meal_type": form.get("meal_type"),
+            "meat_type": form.get("meat_type"),
+            "carb_type": form.get("carb_type"),
+            "cuisine": form.get("cuisine"),
+            "temperature": form.get("temperature")
         },
-        "thumbnail": str(form["thumbnail"][0]) if "thumbnail" in form else None
-    }
-
+        time=form.get("time"),
+        people=form.get("people"),
+        url=form.get("url"),
+        ingredients=ingredients,
+        preparation=form.getlist("preparation"),
+        nutrition=nutrition,
+        remarks=form.get("remarks"),
+        thumbnail=form.get("thumbnail"),
+    )
     return recipe
 
 
@@ -696,19 +697,19 @@ async def post_recipe(request: Request, collection: str, id: str):
         raise NotFound("No such recipe exists on this website")
 
     recipe = recipes[id]
-    if "igcode" in recipe:
-        raise cookbook.instagram.InstagramError(f"Recipe was already posted to instagram with code {recipe['igcode']}")
+    if recipe.igcode:
+        raise cookbook.instagram.InstagramError(f"Recipe was already posted to instagram with code {recipe.igcode}")
 
-    if not recipe["name"] or not recipe["thumbnail"]:
+    if not recipe.name or not recipe.thumbnail:
         raise cookbook.instagram.InstagramError("Cannot upload recipe without name or thumbnail")
     
     # upload recipe and set instagram code
     code = await cookbook.instagram.post_instagram_recipe(
-        recipe_name=recipe["name"],
-        image_url=recipe["thumbnail"],
+        recipe_name=recipe.name,
+        image_url=recipe.thumbnail,
         user_agent=request.headers.get("user-agent")
     )
-    recipe["igcode"] = code
+    recipe.igcode = code
     await cookbook.update_recipe(collection, id, recipe)
     return sanic.json({"redirect": app.url_for("recipe", id=id, collection=collection)})
 
