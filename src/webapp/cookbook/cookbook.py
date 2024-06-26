@@ -158,14 +158,17 @@ async def update_recipe(collection, key, recipe):
         raise CookbookError(f"Cannot update recipe with id {key} in collection {collection}, as it does not exist")
 
     old_recipe = col.recipes[key]
-    new_recipe = dataclasses.replace(old_recipe, **dataclasses.asdict(recipe))
+    new_recipe = Recipe.from_data(**{
+        **dataclasses.asdict(old_recipe),
+        **dataclasses.asdict(recipe),
+        # preserved "date_created" field
+        "date_created": old_recipe.date_created,
+        "date_updated": _now()
+    })
 
-    # preserved "date_created" field
-    new_recipe.date_created = old_recipe.date_created
-    if col.recipes[key] == new_recipe:
+    if old_recipe == new_recipe:
         # nothing to update
         return
-    new_recipe.date_updated = _now()
 
     col.recipes[key] = new_recipe
     await _push_recipes(collection, f"Update recipe {new_recipe.name} in {collection}")

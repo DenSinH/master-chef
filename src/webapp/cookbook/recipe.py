@@ -93,7 +93,7 @@ class Fixable:
         return cls(**fixed)
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True, slots=True, frozen=True)
 class RecipeMeta(Fixable):
     language: str = field(default=None, metadata={"allowed_values": LANGUAGES})
     meal_type: str = field(default="other", metadata={"allowed_values": MEAL_TYPES})
@@ -103,23 +103,22 @@ class RecipeMeta(Fixable):
     temperature: str = field(default="any", metadata={"allowed_values": TEMPERATURE_TYPES})
 
     def __post_init__(self):
-        self.carb_type = self.carb_type[:2]
-        self.meat_type = self.meat_type[:2]
+        object.__setattr__(self, 'carb_type', self.carb_type[:2])
+        object.__setattr__(self, 'meat_type', self.meat_type[:2])
 
-
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True, slots=True, frozen=True)
 class Ingredient(Fixable):
     ingredient: str
     amount: str = None
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True, slots=True, frozen=True)
 class Nutrition(Fixable):
     group: str
     amount: str = None
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True, slots=True, frozen=True)
 class Recipe(Fixable):
     name: str
     meta: RecipeMeta = field(default_factory=RecipeMeta)
@@ -131,6 +130,6 @@ class Recipe(Fixable):
     nutrition: list[Nutrition] = field(default_factory=list)
     remarks: str = None
     thumbnail: str = None
-    date_created: float = field(default=0.0)
-    date_updated: float = field(default=0.0)
+    date_created: float = field(default=0.0, compare=False)
+    date_updated: float = field(default=0.0, compare=False)
     igcode: str = None
