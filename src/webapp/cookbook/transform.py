@@ -13,6 +13,7 @@ import random
 
 from .utils import *
 from .meta import *
+from .instagram import get_instagram_recipe
 from .thumbnail import get_thumbnail
 
 
@@ -168,13 +169,6 @@ def _get_tiktok_text(soup):
     return json_data["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["desc"]
 
 
-def _get_instagram_text(soup):
-    meta = soup.find("meta", {"property": "og:title"})
-    if meta:
-        return meta["content"]
-    return _get_html_text(soup)
-
-
 def _get_html_text(soup):
     # remove comment sections from website
     COMMENTS = ["comment", "opmerking"]
@@ -188,22 +182,26 @@ def _get_html_text(soup):
 
 async def translate_url(url, user_agent=None):
     print(f"Retrieving url {url}")
-    async with aiohttp.ClientSession(headers=_get_headers(url, user_agent=user_agent)) as session:
-        res = await session.get(url)
-        if not res.ok:
-            headers = "\n".join(f"{header}: {value}" for header, value in res.headers.items())
-            message = f"Could not get the specified url, status code {res.status}\n" + headers
-            raise CookbookError(message)
-        soup = BeautifulSoup(await res.text(), features="html.parser")
-        domain = tld.extract(url).domain.lower()
-        if domain == "tiktok":
-            text = _get_tiktok_text(soup)
-        elif domain in {"instagram", "ig", "cdninstagram"}:
-            text = _get_instagram_text(soup)
-        else:
-            text = _get_html_text(soup)
-        recipe = await translate_page(text, url=url, thumbnail=get_thumbnail(soup))
-        return recipe
+    domain = tld.extract(url).domain.lower()
+    if domain in {"instagram", "ig", "cdninstagram"}:
+        # instagram must be handled separately
+        text, thumbnail = get_instagram_recipe(url)
+    else:
+        async with aiohttp.ClientSession(headers=_get_headers(url, user_agent=user_agent)) as session:
+            res = await session.get(url)
+            if not res.ok:
+                headers = "\n".join(f"{header}: {value}" for header, value in res.headers.items())
+                message = f"Could not get the specified url, status code {res.status}\n" + headers
+                raise CookbookError(message)
+            soup = BeautifulSoup(await res.text(), features="html.parser")
+            if domain == "tiktok":
+                text = _get_tiktok_text(soup)
+            else:
+                text = _get_html_text(soup)
+            thumbnail = get_thumbnail(soup)
+
+    recipe = await translate_page(text, url=url, thumbnail=thumbnail)
+    return recipe
 
 
 async def _chatgpt_json_and_fix(messages, fix, temperature=0.7, **kwargs):
