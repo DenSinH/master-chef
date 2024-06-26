@@ -169,14 +169,30 @@ def _get_tiktok_text(soup):
     return json_data["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["desc"]
 
 
-def _get_html_text(soup):
+def _get_text(soup: BeautifulSoup):
+    return re.sub(r"(\n\s*)+", "\n", soup.get_text(separator=" ", strip=True))
+
+
+def _get_html_text(soup: BeautifulSoup):
+    text = _get_text(soup)
+    
+    # text is "short enough", do not remove comments
+    if len(text) < 8000:
+        return text
+    
+    # get initial text length
+    text_length = len(text)
+    
     # remove comment sections from website
     COMMENTS = ["comment", "opmerking"]
     for attr in ["class", "id"]:
         for element in soup.find_all(attrs={attr: re.compile(fr".*({'|'.join(COMMENTS)}).*", flags=re.IGNORECASE)}):
-            element.decompose()
-
-    text = re.sub(r"(\n\s*)+", "\n", soup.get_text(separator=" ", strip=True))
+            # only remove "small" text sections
+            if len(_get_text(element)) < 0.1 * text_length:
+                element.decompose()
+    
+    # return reduced text
+    text = _get_text(soup)
     return text
 
 
