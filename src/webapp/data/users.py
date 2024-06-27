@@ -3,9 +3,7 @@ import sanic
 from .models import User
 from .base import Session
 from hashlib import sha256
-from sqlalchemy import select, func
-import random
-import string
+from sqlalchemy import select
 import datetime
 
 
@@ -21,7 +19,7 @@ class RegistrationError(Exception):
     pass
 
 
-async def _get_user(session, username):
+async def _get_user(session, username) -> User:
     username = username.strip()
     result = await session.execute(
         select(User).where(User.username == username)
@@ -29,7 +27,7 @@ async def _get_user(session, username):
     return result.scalar()
 
 
-async def _login_user(session, username, password):
+async def _login_user(session, username, password) -> User | None:
     username = username.strip()
     user = await _get_user(session, username)
     if user is None:
@@ -39,20 +37,16 @@ async def _login_user(session, username, password):
     return None
 
 
-async def get_user(username):
+async def get_user(username) -> User | None:
     username = username.strip()
     async with Session() as session:
         return await _get_user(session, username.strip())
 
 
-async def login_user(username, password):
+async def login_user(username, password) -> User | None:
     username = username.strip()
     async with Session() as session:
         return (await _login_user(session, username, password)) is not None
-
-
-def _generate_secret():
-    return ''.join(random.choice(string.ascii_letters) for i in range(30))
 
 
 async def register_user(username, password, force_verified=False):

@@ -1,6 +1,6 @@
 from .models import Views
 from .base import Session
-from sqlalchemy import select, update, and_, delete
+from sqlalchemy import select, and_
 
 
 async def get_viewcount(collection):
@@ -44,32 +44,4 @@ async def incr_viewcount(collection, recipe_id):
         viewcount = views.viewcount
         await session.commit()
     return viewcount
-
-
-async def move_viewcount(collectionfrom, collectionto, idfrom, idto):
-    async with Session() as session:
-        viewsfrom = await _get_viewcount(session, collectionfrom, idfrom)
-
-        if viewsfrom is not None:
-            session.add(
-                Views(
-                    recipe_collection=collectionto,
-                    recipe_id=idto,
-                    viewcount=viewsfrom.viewcount
-                )
-            )
-            await session.execute(
-                delete(Views) \
-                    .where(and_(Views.recipe_collection == collectionfrom, Views.recipe_id == idfrom))
-            )
-            await session.commit()
-
-
-async def delete_viewcount(collection, id):
-    async with Session() as session:
-        await session.execute(
-            delete(Views) \
-                .where(and_(Views.recipe_collection == collection, Views.recipe_id == id))
-        )
-        await session.commit()
 

@@ -1,6 +1,6 @@
 from .models import Comment, User
 from .base import Session
-from sqlalchemy import select, update, and_, delete, func
+from sqlalchemy import select, and_, func
 import datetime
 
 
@@ -43,44 +43,6 @@ async def add_comment(collection, recipe_id, user_id, text, rating):
             comment.text = text
             comment.rating = rating
             comment.date_edited = datetime.datetime.now()
-        await session.commit()
-
-
-async def delete_comment(collection, recipe_id, user_id):
-    async with Session() as session:
-        await session.execute(
-            delete(Comment).where(and_(
-                Comment.recipe_collection == collection,
-                Comment.recipe_id == recipe_id,
-                Comment.user_id == user_id
-            ))
-        )
-        await session.commit()
-
-
-async def delete_comments(collection, recipe_id):
-    async with Session() as session:
-        await session.execute(
-            delete(Comment).where(and_(
-                Comment.recipe_collection == collection,
-                Comment.recipe_id == recipe_id
-            ))
-        )
-        await session.commit()
-
-
-async def move_comments(collectionfrom, collectionto, idfrom, idto):
-    async with Session() as session:
-        await session.execute(
-            update(Comment).where(and_(
-                Comment.recipe_collection == collectionfrom,
-                Comment.recipe_id == idfrom
-            ))
-            .values(
-                recipe_collection=collectionto,
-                recipe_id=idto
-            )
-        )
         await session.commit()
 
 

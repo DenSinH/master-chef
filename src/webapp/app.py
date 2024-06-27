@@ -341,7 +341,7 @@ async def logout(request: Request):
 @app.get("/recipe/<collection:str>/<id>")
 async def recipe(request: Request, collection: str, id: str):
     """ Recipe viewer page """
-    
+
     recipes = await cookbook.get_recipes(collection)
     if id not in recipes:
         raise NotFound("No such recipe exists on this website")
@@ -475,7 +475,7 @@ async def delete_save(request: Request, collection, id):
     if user is None:
         return sanic.json({"error": "Unknown user"}, 400)
     
-    await saves.delete_save(user.id, collection, id)
+    await Save.delete_for_user(user.id, collection, id)
     return sanic.empty()
 
 
@@ -509,7 +509,7 @@ async def delete_comment(request: Request, collection, id):
     if user is None:
         return sanic.json({"error": "Unknown user"}, 400)
 
-    await comments.delete_comment(collection, id, user.id)
+    await Comment.delete_for_user(user.id, collection, id)
     return sanic.empty()
 
 
@@ -599,9 +599,9 @@ async def delete_recipe(request: Request, collection: str, id: str):
     # delete all info
     await asyncio.gather(
         cookbook.delete_recipe(collection, id),
-        views.delete_viewcount(collection, id),
-        comments.delete_comments(collection, id),
-        saves.delete_saves(collection, id),
+        Views.delete_recipe(collection, id),
+        Comment.delete_recipe(collection, id),
+        Save.delete_recipe(collection, id),
     )
     return sanic.empty()
 
@@ -810,9 +810,9 @@ async def move_recipe(request: Request, collectionfrom: str, collectionto: str, 
 
     # move user data
     await asyncio.gather(
-        views.move_viewcount(collectionfrom, collectionto, id, idto),
-        comments.move_comments(collectionfrom, collectionto, id, idto),
-        saves.move_saves(collectionfrom, collectionto, id, idto)
+        Views.move_recipe(collectionfrom, collectionto, id, idto),
+        Comment.move_recipe(collectionfrom, collectionto, id, idto),
+        Save.move_recipe(collectionfrom, collectionto, id, idto)
     )
     return sanic.json({"redirect": app.url_for("recipe", id=idto, collection=collectionto)})
 
