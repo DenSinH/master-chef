@@ -89,8 +89,8 @@
     background-color: #000000;
 }
 
-.tag.hot {
-    background-color: #FF0000;
+.tag.warm {
+    background-color: #ff2222;
 }
 
 .tag.cold {
