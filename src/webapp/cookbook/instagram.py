@@ -5,9 +5,6 @@ import aiofiles
 import tempfile
 from pathlib import Path
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 from .utils import InstagramError, get_headers
 

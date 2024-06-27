@@ -29,7 +29,7 @@ function showPages(doHide) {
     if (doHide) {
         $(".recipe-item").hide();
     }
-    let recipes = get_active_recipes().slice(0, numPages * pageSize).show();
+    get_active_recipes().slice(0, numPages * pageSize).show();
 }
 
 $(window).scroll(function() {

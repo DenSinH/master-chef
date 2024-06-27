@@ -1,10 +1,6 @@
 from typing import Union
 import aiohttp
 import datetime
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import os
 
 

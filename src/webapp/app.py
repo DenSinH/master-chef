@@ -8,7 +8,7 @@ import string
 import sanic
 import asyncio
 import msgspec
-import dataclasses
+import os
 from sanic import Sanic, response
 from sanic import Request
 from sanic_ext import render
@@ -28,8 +28,10 @@ import data.comments as comments
 import data.saves as saves
 from limiter import init_limiter, close_limiter, RateLimiter, TooManyRequests
 
-from dotenv import load_dotenv; load_dotenv()
-import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 response.BaseHTTPResponse._dumps = msgspec.json.encode
 

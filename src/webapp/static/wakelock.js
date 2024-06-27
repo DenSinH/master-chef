@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    const $wakeLockSwitch = $('#wakeLockSwitch');
+    const wakeLockSwitch = $('#wakeLockSwitch');
     let wakeLock = null;
 
     const requestWakeLock = async () => {
@@ -18,7 +18,7 @@ $(document).ready(function() {
         }
     };
 
-    $wakeLockSwitch.change(function() {
+    wakeLockSwitch.change(function() {
         if (this.checked) {
             requestWakeLock();
         } else {

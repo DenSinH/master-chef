@@ -1,5 +1,5 @@
 from .StringMatcher import StringMatcher as SequenceMatcher
-from typing import Iterable, List
+from typing import Iterable
 from functools import lru_cache
 import re
 from dataclasses import dataclass
@@ -9,7 +9,7 @@ THRESHOLD = 0.8
 
 
 @dataclass
-class PartialMatch:
+class _PartialMatch:
     matched: tuple[str]
     target_words: int
     score: int
@@ -35,12 +35,10 @@ def _process_string(s: str):
     return re.sub(" +", " ", re.sub(r"[^a-z ]+", " ", s.lower())).strip()
 
 
-def _partial_search(s1: str, s2: str) -> Iterable[PartialMatch]:
-    """
-    Reimplemented from
-    https://github.com/seatgeek/fuzzywuzzy/blob/af443f918eebbccff840b86fa606ac150563f466/fuzzywuzzy/fuzz.py#L34
-    Rewritten to return the best matched substring
-    """
+def _partial_search(s1: str, s2: str) -> Iterable[_PartialMatch]:
+    """ Reimplemented from
+        https://github.com/seatgeek/fuzzywuzzy/blob/af443f918eebbccff840b86fa606ac150563f466/fuzzywuzzy/fuzz.py#L34
+        Rewritten to return the best matched substring """
     s1 = _process_string(s1).split(" ")
     s2 = _process_string(s2).split(" ")
 
@@ -59,16 +57,16 @@ def _partial_search(s1: str, s2: str) -> Iterable[PartialMatch]:
             r = m2.ratio()
 
             if r > THRESHOLD:
-                yield PartialMatch(
+                yield _PartialMatch(
                     matched=tuple(longer[i:i + j]),
                     target_words=len(shorter),
                     score=int(round(100 * r))
                 )
 
 
-def _fuzzy_extract(query: str, text: str) -> Iterable[PartialMatch]:
+def _fuzzy_extract(query: str, text: str) -> Iterable[_PartialMatch]:
     """  Fuzzy extract 'query' from 'text'
-    Yields all PartialMatches """
+    Yields all _PartialMatches """
     query = _process_string(query)
     words = query.split(" ")
 
@@ -81,7 +79,7 @@ def _fuzzy_extract(query: str, text: str) -> Iterable[PartialMatch]:
                 yield match
 
 
-def _replace_references(string: str, sorted_references: list[PartialMatch]) -> str:
+def _replace_references(string: str, sorted_references: list[_PartialMatch]) -> str:
     """ Replace all partial references, without replacing 
     matches within matches. """
     if not len(sorted_references):
@@ -121,7 +119,7 @@ def replace_ingredient_references(recipe_step: str, ingredients: tuple[str]) -> 
         return recipe_step
     
     # sort the references and replace them in order
-    sorted_references: list[PartialMatch] = sorted(
+    sorted_references: list[_PartialMatch] = sorted(
         ingredient_references.values(), 
         key=lambda ref: ref.sort_val()
     )

@@ -4,13 +4,11 @@ import sanic_jwt
 from sanic_jwt import Responses
 from sanic_jwt.responses import COOKIE_OPTIONS
 from sanic_jwt.validators import validate_scopes as _validate_scopes
+import os
 
 from data import users
 
 from cookbook import DEFAULT_COLLECTION
-
-from dotenv import load_dotenv; load_dotenv()
-import os
 
 
 class CookbookAuthFailed(Exception):

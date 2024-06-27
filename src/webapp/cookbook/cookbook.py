@@ -5,10 +5,6 @@ import msgspec
 import string
 import random
 import dataclasses
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import os
 
 from .recipe import Recipe

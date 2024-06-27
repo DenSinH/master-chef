@@ -1,8 +1,5 @@
-from pyimgurasync import Imgur, Album, Image
-from dotenv import load_dotenv
+from pyimgurasync import Imgur
 import os
-
-load_dotenv()
 
 
 # If you already have an access/refresh pair in hand

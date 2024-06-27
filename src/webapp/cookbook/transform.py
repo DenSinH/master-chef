@@ -3,10 +3,6 @@ import aiohttp
 from bs4 import BeautifulSoup
 import tldextract as tld
 import dataclasses
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import os
 import re
 import msgspec

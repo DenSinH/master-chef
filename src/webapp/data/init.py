@@ -1,15 +1,14 @@
-from sanic import Sanic
-
 from .base import Base, engine
 from .users import register_user, UserExistsException
-
-from dotenv import load_dotenv
 import os
 
-load_dotenv()
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sanic import Sanic
 
 
-async def init_db(app: Sanic, loop):
+
+async def init_db(app: 'Sanic', loop):
     print("Initializing DB")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

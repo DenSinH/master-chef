@@ -75,26 +75,32 @@ class Fixable(abc.ABC):
 
         # validate allowed values
         for key, value in fixed.items():
-            field = fields[key]
-
             if value is None:
                 continue
-
+            
+            # get allowed values
+            field = fields[key]
             allowed_values = field.metadata.get("allowed_values")
-            if allowed_values is not None:
-                def _fix_value(v):
-                    if v is None:
-                        return v
-                    if v in allowed_values:
-                        return v
-                    process.extractOne(v, allowed_values)[0]
+            if allowed_values is None:
+                continue
+            
+            def _fix_value(v):
+                """ Fix a single value v to one of the allowed
+                    values for this field """
+                if v is None:
+                    return v
+                
+                # v may already be allowed
+                if v in allowed_values:
+                    return v
+                process.extractOne(v, allowed_values)[0]
 
-                if isinstance(value, list):
-                    value = [_fix_value(v) for v in value]
-                else:
-                    value = _fix_value(value)
+            if isinstance(value, list):
+                value = [_fix_value(v) for v in value]
+            else:
+                value = _fix_value(value)
 
-                fixed[key] = value
+            fixed[key] = value
 
         return cls(**fixed)
 
@@ -109,8 +115,10 @@ class RecipeMeta(Fixable):
     temperature: str = field(default="any", metadata={"allowed_values": TEMPERATURE_TYPES})
 
     def __post_init__(self):
+        # ensure max length
         object.__setattr__(self, 'carb_type', self.carb_type[:2])
         object.__setattr__(self, 'meat_type', self.meat_type[:2])
+
 
 @dataclass(kw_only=True, slots=True, frozen=True)
 class Ingredient(Fixable):
