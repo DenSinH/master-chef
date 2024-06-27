@@ -154,6 +154,10 @@ async def _push_recipes(collection: str, message: str):
             }
         )
 
+        # update cache SHA
+        commit = await res.json()
+        col.sha = commit["content"]["sha"]
+
         if not res.ok:
             col.clear()
             raise CookbookError(f"Error pushing recipe: {res.status} ({await res.text()})")

@@ -3,7 +3,7 @@ import sanic
 from .models import User
 from .base import Session
 from hashlib import sha256
-from sqlalchemy import select
+from sqlalchemy import select, func
 import datetime
 
 
