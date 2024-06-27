@@ -25,7 +25,7 @@
         {%- endif -%}
     </span>
     {%- if meta.carb_type[0] != "none" -%}
-    <span class="tag searchable {{ meta.temperature[0]|replace(' ', '-') }}">
+    <span class="tag searchable {{ meta.carb_type[0]|replace(' ', '-') }}">
         {%- if meta.carb_type[0] == "other" -%}
             Other carbs
         {%- else -%}
