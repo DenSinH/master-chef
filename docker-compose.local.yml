@@ -36,6 +36,7 @@ services:
       SECRET: ${SECRET}
       INSTAGRAM_USER: ${INSTAGRAM_USER}
       INSTAGRAM_PASS: ${INSTAGRAM_PASS}
+      PERSIST_DIR: /cache
       IMGUR_ALBUM_ID: ${IMGUR_ALBUM_ID}
       IMGUR_CLIENT_ID: ${IMGUR_CLIENT_ID}
       IMGUR_CLIENT_SECRET: ${IMGUR_CLIENT_SECRET}
@@ -49,9 +50,11 @@ services:
       - '80:5000'
     working_dir: /app/webapp
     volumes:
+      - cache-volume:/cache
       - ./src/webapp:/app/webapp
     entrypoint: ["python", "app.py", "--debug"]
 volumes:
+  cache-volume:
   dbdata:
 networks:
   pgadmin-net:
