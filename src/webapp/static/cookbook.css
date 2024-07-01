@@ -44,6 +44,7 @@ h2.unmade {
     border: 1px solid #ddd;
     border-radius: 5px;
     padding: 10px;
+    text-decoration: none;
 }
 
 @media (hover: hover) {
