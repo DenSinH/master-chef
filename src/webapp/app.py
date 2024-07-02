@@ -75,6 +75,7 @@ app.ext.templating.environment.globals["LANGUAGES"] = {
 app.config.SECRET = os.environ.get("SECRET", os.environ["PASSWORD"])
 app.static("/static", "./static")
 app.static("/robots.txt", "./static/robots.txt", name="robots")
+app.static("/favicon.ico", "./static/favicon.ico", name="favicon")
 
 JWT_TOKEN_NAME = "jwt_access_token"
 initialize(
