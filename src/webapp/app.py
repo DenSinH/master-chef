@@ -9,6 +9,7 @@ import sanic
 import asyncio
 import msgspec
 import os
+import hashlib
 from sanic import Sanic, response
 from sanic import Request
 from sanic_ext import render
@@ -164,10 +165,39 @@ async def index(request: Request):
     )
 
 
+def _update_etag_reqinfo(etag: 'hashlib._Hash', is_admin: bool, is_user: bool, username: str | None) -> str:
+    """ Update etag hash with request info """
+    etag.update(is_admin.to_bytes())
+    etag.update(is_user.to_bytes())
+    etag.update((username or "").encode("utf-8", errors="ignore"))
+    return etag.hexdigest()
+
+
 @app.get("/collection/<collection:str>")
-@app.ext.template("cookbook.html")
 async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLECTION):
     """ Get a recipe collection """
+    # get request info
+    is_admin, is_user, username = await asyncio.gather(
+        validate_scopes(request, "admin"),
+        validate_scopes(request, "user"),
+        _get_username(request)
+    )
+
+    # check caching with collection SHA
+    etag = _update_etag_reqinfo(
+        hashlib.sha256(
+            (await cookbook.get_collection_etag(collection)).encode("ascii")
+        ),
+        is_admin, is_user, username
+    )
+    if_match = request.headers.get("If-None-Match")
+    if if_match is not None and if_match == etag:
+        # use cached response
+        return sanic.empty(
+            headers={"ETag": etag},
+            status=304
+        )
+
     recipes = await cookbook.get_recipes(collection)
 
     # sort recipes by date_updated (default ordering)
@@ -177,14 +207,6 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
             key=lambda x: x[1].date_updated,
             reverse=True
         )
-    )
-
-    # get recipe views and request info
-    viewcount, is_admin, is_user, username = await asyncio.gather(
-        views.get_viewcount(collection),
-        validate_scopes(request, "admin"),
-        validate_scopes(request, "user"),
-        _get_username(request)
     )
 
     # user-specific rendering
@@ -198,18 +220,31 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
     else:
         unverified_users = None
 
-    return {
-        "collection": collection,
-        "collections": cookbook.COLLECTIONS,
-        "recipes": ordered,
-        "is_admin": is_admin,
-        "is_user": is_user,
-        "username": username,
-        "latest": max(recipes, key=lambda recipe_id: recipes[recipe_id].date_created, default=None),
-        "viewcount": viewcount,
-        "unverified_users": unverified_users,
-        "title": title,
-    }
+    return await render(
+        "cookbook.html",
+        headers={
+            "ETag": etag
+        },
+        context={
+            "collection": collection,
+            "collections": cookbook.COLLECTIONS,
+            "recipes": ordered,
+            "is_admin": is_admin,
+            "is_user": is_user,
+            "username": username,
+            "latest": max(recipes, key=lambda recipe_id: recipes[recipe_id].date_created, default=None),
+            "unverified_users": unverified_users,
+            "title": title,
+        }
+    )
+
+
+@app.get("/views/<collection:str>")
+async def collection_views(request: Request, collection: str = cookbook.DEFAULT_COLLECTION):
+    """ Get viewcount for recipe collection """
+    return sanic.json(
+        await views.get_viewcount(collection)
+    )
 
 
 @app.get("/about")
@@ -345,14 +380,8 @@ async def logout(request: Request):
     return response
 
 
-@app.get("/recipe/<collection:str>/<id>")
-async def recipe(request: Request, collection: str, id: str):
-    """ Recipe viewer page """
-
-    recipes = await cookbook.get_recipes(collection)
-    if id not in recipes:
-        raise NotFound("No such recipe exists on this website")
-
+async def _recipe_views(request: Request, collection: str, id: str):
+    """ Get recipe viewcount, possibly incremented after request """
     # only register a single recipe view per session
     session = request.ctx.session
     if "views" not in session:
@@ -372,12 +401,37 @@ async def recipe(request: Request, collection: str, id: str):
     if viewcount is None:
         viewcount = await views.incr_viewcount(collection, id)
 
+    return viewcount
+
+
+@app.get("/recipe/<collection:str>/<id>")
+async def recipe(request: Request, collection: str, id: str):
+    """ Recipe viewer page """
+    recipes = await cookbook.get_recipes(collection)
+    if id not in recipes:
+        raise NotFound("No such recipe exists on this website")
+
     # user specific data
     is_admin, is_user, username = await asyncio.gather(
         validate_scopes(request, "admin"),
         validate_scopes(request, "user"),
         _get_username(request)
     )
+
+    # update recipe sha with user info
+    recipe = recipes[id]
+    etag = _update_etag_reqinfo(
+        recipe.sha,
+        is_admin, is_user, username
+    )
+    if_match = request.headers.get("If-None-Match")
+    if if_match is not None and if_match == etag:
+        # use cached response
+        return sanic.empty(
+            headers={"ETag": etag},
+            status=304
+        )
+
     if username is not None:
         requser = await users.get_user(username)
     else:
@@ -400,16 +454,17 @@ async def recipe(request: Request, collection: str, id: str):
 
     response = await render(
         "recipe.html",
+        headers={"ETag": etag},
         context={
             "collection": collection,
-            "recipe": recipes[id],
+            "recipe": recipe,
             "recipe_id": id,
             "is_admin": is_admin,
             "is_user": is_user,
             "user_comment": user_comment,
             "comments_users": comments_users,
             "found_admin_comment": found_admin_comment,
-            "viewcount": viewcount
+            "viewcount": await _recipe_views(request, collection, id),
         }
     )
 
@@ -417,6 +472,14 @@ async def recipe(request: Request, collection: str, id: str):
     response.add_cookie("last-collection", collection)
 
     return response
+
+
+@app.get("/views/<collection:str>/<id:str>")
+async def recipe_views(request: Request, collection: str, id: str):
+    """ Get viewcount for a single recipe """
+    return sanic.json({
+        id: await _recipe_views(request, collection, id)
+    })
 
 
 # extra endpoint with a "pretty recipe name"

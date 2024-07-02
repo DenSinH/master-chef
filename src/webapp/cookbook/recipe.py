@@ -3,6 +3,8 @@ import dataclasses
 import types
 import abc
 from .meta import *
+import msgspec
+import hashlib
 from thefuzz import process
 
 
@@ -149,3 +151,12 @@ class Recipe(Fixable):
     date_created: float = field(default=0.0, compare=False)
     date_updated: float = field(default=0.0, compare=False)
     igcode: str = None
+
+    @property
+    def sha(self) -> 'hashlib._Hash':
+        return hashlib.sha256(
+            msgspec.json.encode(
+                dataclasses.asdict(self), 
+                order="deterministic"
+            )
+        )

@@ -109,6 +109,10 @@ async def _get_recipes(collection) -> CollectionCache:
         return col
 
 
+async def get_collection_etag(collection: str) -> str:
+    """ Get the current file sha for a collection """
+    return (await _get_recipes(collection)).sha
+
 async def get_recipes(collection: str) -> dict[str, Recipe]:
     """ Get the (possibly cached) recipes for a collection """
     return (await _get_recipes(collection)).recipes

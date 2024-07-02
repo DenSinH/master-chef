@@ -123,9 +123,10 @@
 
         <div class="recipe-info">
             <div class="recipe-info-detail">
-                <i class="fas fa-eye"></i> <span class="info-item">{{ viewcount }}
+                <i class="fas fa-eye"></i><span class="info-item">
+                <span class="viewcount-value">{{ viewcount or 0 }}</span>
                 {% if english -%}
-                    {{ 'views' if viewcount != 1 else 'view' }}
+                    views
                 {%- else -%}
                     keer bekeken
                 {%- endif -%}
@@ -420,6 +421,8 @@
             }
         </script>
         {%- endif -%}
+        <script src="/static/views.js"></script>
+        <script>getViews('{{ url_for("recipe_views", collection=collection, id=recipe_id) }}')</script>
         {%- if is_user or is_admin -%}
         <script src="/static/likes.js"></script>
         <script>getSavedSingle('{{ collection }}', '{{ recipe_id }}');</script>
