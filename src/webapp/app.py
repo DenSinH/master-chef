@@ -16,6 +16,7 @@ from sanic.exceptions import NotFound
 from sanic_jwt import initialize, protected, scoped
 from sanic_session import Session
 from auth import authenticate, extend_scopes, JwtResonses, validate_scopes, CookbookAuthFailed
+from compress import init_compression
 from minifyloader import MinifyingFileSystemLoader
 from imgupload import upload_imgur
 
@@ -97,6 +98,8 @@ app.before_server_start(init_db)
 app.ctx.global_limiter = RateLimiter(times=5, seconds=1)
 app.before_server_start(init_limiter)
 app.after_server_stop(close_limiter)
+
+init_compression(app)
 
 
 async def _get_username(request: Request):
