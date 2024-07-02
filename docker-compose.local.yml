@@ -52,7 +52,7 @@ services:
     volumes:
       - cache-volume:/cache
       - ./src/webapp:/app/webapp
-    entrypoint: ["python", "app.py", "--debug"]
+    entrypoint: ["python", "main.py", "--debug"]
 volumes:
   cache-volume:
   dbdata:

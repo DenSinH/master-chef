@@ -9,4 +9,4 @@ COPY ./src .
 
 WORKDIR /app/webapp
 
-ENTRYPOINT ["python", "app.py"]
+ENTRYPOINT ["python", "main.py"]

@@ -10,6 +10,8 @@ from data import users
 
 from cookbook import DEFAULT_COLLECTION
 
+JWT_TOKEN_NAME = "jwt_access_token"
+
 
 class CookbookAuthFailed(Exception):
     pass
@@ -64,6 +66,14 @@ async def validate_scopes(request: Request, scopes):
         destructure=request.app.ctx.auth.destructure_scopes,
     )
 
+
+async def get_username(request: Request):
+    """ Get username from request """
+    try:
+        return await request.app.ctx.auth.extract_user_id(request)
+    except AttributeError:
+        return None
+    
 
 class JwtResonses(Responses):
 
