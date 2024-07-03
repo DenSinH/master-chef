@@ -9,7 +9,7 @@
     {% set _target = url_for('collection', collection=col) %}
   {% endif %}
   <a href="{{ _target }}">
-    <img id="icon" src="/static/icon.png" alt="icon">
+    <img id="icon" src="/static/icon-min.png" alt="icon">
   </a>
 {% endmacro %}
 
@@ -28,7 +28,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon"/>
     <link rel="stylesheet" href="/static/base.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"></noscript>
     <script defer src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script defer src="/static/base.js"></script>
 
