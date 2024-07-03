@@ -98,7 +98,12 @@
                 id="recipe{{ recipe_id }}"
         >
             <div class="thumbnail-wrapper">
-                <img src="{{ recipe.thumbnail or '/static/spaghet.png' }}" onerror="this.onerror=null; this.src='/static/spaghet.png'" alt="Recipe 1" loading="lazy">
+                <img 
+                    src="{{ recipe.thumbnail or '/static/spaghet.png' }}" 
+                    onerror="this.onerror=null; this.src='/static/spaghet.png'" 
+                    alt="{{ recipe.name }}" 
+                    loading="{{ 'eager' if loop.index0 < 8 else 'lazy'}}"
+                >
             </div>
             {% if is_user or is_admin %}
             <div class="save-icon hidden" onclick="toggleSave(event, '{{ collection }}', '{{ recipe_id }}')">
