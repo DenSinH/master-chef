@@ -6,7 +6,7 @@
     <title>Add Recipe</title>
     <link rel="stylesheet" href="/static/form.css">
     <link rel="stylesheet" href="/static/forms.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 {% endblock head %}
 
 {% block body %}
@@ -230,9 +230,9 @@
                 </div>
                 <div class="thumbnail-container">
                     {%- if not recipe.thumbnail -%}
-                        <img style="display: none" id="thumbnailPreview" src="" alt="" onerror="$('#thumbnailError').show();">
+                        <img style="display: none" id="thumbnailPreview" src="" alt="" onerror="document.getElementById('thumbnailError').style.display = 'block';">
                     {%- else -%}
-                        <img id="thumbnailPreview" src="{{ recipe.thumbnail or '' }}" alt="" onerror="$('#thumbnailError').show();">
+                        <img id="thumbnailPreview" src="{{ recipe.thumbnail or '' }}" alt="" onerror="document.getElementById('thumbnailError').style.display = 'block';">
                     {%- endif -%}
                     <p style="display: none" id="thumbnailLoading">Loading thumbnail...</p>
                     <p style="display: none" id="thumbnailError" class="warning">Failed to load thumbnail, please check URL</p>
@@ -243,5 +243,5 @@
         </form>
     </div>
 
-    <script src="/static/form.js"></script>
+    <script defer src="/static/form.js"></script>
 {% endblock body %}

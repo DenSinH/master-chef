@@ -32,7 +32,7 @@
                     try {
                         window.location.href = response.redirect;
                     } catch (e) {
-                        window.location.href = '{{ url_for('index') }}'
+                        window.location.href = '{{ url_for("index") }}'
                     }
                 },
                 error: function(xhr, status, error) {

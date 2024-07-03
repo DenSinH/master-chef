@@ -25,21 +25,6 @@ def add_data_routes(app: Sanic):
         })
 
 
-    @app.get("/saved/<collection>/<recipe_id>")
-    @protected()
-    @scoped("user")
-    async def get_saved_single(request: Request, collection, recipe_id):
-        """ Get whether the specified recipe is saved by the active user """
-        username = await app.ctx.auth.extract_user_id(request)
-        user = await users.get_user(username)
-        if user is None:
-            return sanic.json({"error": "Unknown user"}, 400)
-
-        return sanic.json({
-            "saved": await saves.get_saved_single(user.id, collection, recipe_id)
-        })
-
-
     @app.post("/saved/<collection>/<id>", ctx_limiter=RateLimiter(times=1, seconds=1))
     @protected()
     @scoped("user")

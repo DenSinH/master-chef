@@ -1,8 +1,9 @@
+const saves_url = document.currentScript.getAttribute("data-url");
 
-function getSaved(collection) {
+function getSaved() {
     $.ajax({
         type: 'GET',
-        url: `/saved/${collection}`,
+        url: saves_url,
         contentType: 'application/json',
         success: function(response) {
             for (let saved of response.saves) {
@@ -16,22 +17,7 @@ function getSaved(collection) {
     });
 }
 
-function getSavedSingle(collection, recipeId) {
-    $.ajax({
-        type: 'GET',
-        url: `/saved/${collection}/${recipeId}`,
-        contentType: 'application/json',
-        success: function(response) {
-            if (response.saved) {
-                $(`#recipe${recipeId}`).addClass('saved');
-            }
-            $(".save-icon").removeClass('hidden');
-        },
-        error: function(xhr, status, error) {
-            show_popup('Failed to retrieve saved status, are you still logged in?')
-        }
-    });
-}
+$(document).ready(getSaved);
 
 function toggleSave(event, collection, recipeId) {
     event.preventDefault();
@@ -73,5 +59,4 @@ function toggleSave(event, collection, recipeId) {
             }
         });
     }
-    element.addClass
 }

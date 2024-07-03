@@ -74,13 +74,15 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
         ),
         is_admin, is_user, username
     )
-    if_match = request.headers.get("If-None-Match")
-    if if_match is not None and if_match == etag:
-        # use cached response
-        return sanic.empty(
-            headers={"ETag": etag},
-            status=304
-        )
+
+    if not app.debug:
+        if_match = request.headers.get("If-None-Match")
+        if if_match is not None and if_match == etag:
+            # use cached response
+            return sanic.empty(
+                headers={"ETag": etag},
+                status=304
+            )
 
     recipes = await cookbook.get_recipes(collection)
 
@@ -184,13 +186,14 @@ async def recipe(request: Request, collection: str, id: str):
         recipe.sha,
         is_admin, is_user, username
     )
-    if_match = request.headers.get("If-None-Match")
-    if if_match is not None and if_match == etag:
-        # use cached response
-        return sanic.empty(
-            headers={"ETag": etag},
-            status=304
-        )
+    if not app.debug:
+        if_match = request.headers.get("If-None-Match")
+        if if_match is not None and if_match == etag:
+            # use cached response
+            return sanic.empty(
+                headers={"ETag": etag},
+                status=304
+            )
 
     if username is not None:
         requser = await users.get_user(username)

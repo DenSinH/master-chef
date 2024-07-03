@@ -15,8 +15,8 @@
     {%- if is_user or is_admin -%}
     <link rel="stylesheet" href="/static/likes.css">
     {%- endif -%}
-    <script src="/static/dropdown.js" defer></script>
-    <script src="/static/messages.js"></script>
+    <script defer src="/static/dropdown.js" defer></script>
+    <script defer src="/static/messages.js"></script>
 {% endblock head %}
 
 {% block body %}
@@ -133,12 +133,10 @@
         {% endfor %}
     </div>
 
-    <script src="/static/cookbook.js"></script>
-    <script src="/static/views.js"></script>
-    <script>getViews('{{ url_for("collection_views", collection=collection) }}')</script>
+    <script defer src="/static/cookbook.js"></script>
+    <script defer data-url="{{ url_for('collection_views', collection=collection) }}" src="/static/views.js"></script>
     {% if is_user or is_admin %}
-    <script src="/static/likes.js"></script>
-    <script>getSaved('{{ collection }}');</script>
+    <script defer data-url="{{ url_for('get_saved', collection=collection) }}" src="/static/likes.js"></script>
     {% endif %}
     </main>
 {% endblock body %}

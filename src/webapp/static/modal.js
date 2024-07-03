@@ -1,5 +1,4 @@
 $(document).ready(function() {
-    console.log('{{ url_for("login") }}');
     // Get all modal elements
     let modals = $("[data-modal]");
   
