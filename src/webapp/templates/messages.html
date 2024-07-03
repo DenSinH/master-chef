@@ -16,7 +16,7 @@
             <div class="message">
             {% if not is_user %}
                 Have you registered an account yet?<br>
-                Make one <a href="{{ url_for('register') }}">here</a>
+                <a href="{{ url_for('register') }}">Make one here</a>
             {% else %}
                 Welcome chef {{ username }}!
             {% endif %}

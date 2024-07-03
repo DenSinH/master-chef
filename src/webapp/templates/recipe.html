@@ -78,7 +78,7 @@
     <div class="recipe-details">
         <header>
             <div class="header">
-                <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('collection', collection=collection) }}'">
+                {{ clickable_icon(collection) }}
                 <h1 class="{{ collection }}">{{ recipe.name|capwords }}</h1>
             </div>
             <div class="buttons">

@@ -2,6 +2,17 @@
 
 <html lang="{{ 'en' if english else 'nl' }}">
 
+{% macro clickable_icon(col=None) %}
+  {% if col is none %}
+    {% set _target = url_for('index') %}
+  {% else %}
+    {% set _target = url_for('collection', collection=col) %}
+  {% endif %}
+  <a href="{{ _target }}">
+    <img id="icon" src="/static/icon.png" alt="icon">
+  </a>
+{% endmacro %}
+
 <head>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-PM28WPZ914"></script>

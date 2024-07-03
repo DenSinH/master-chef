@@ -15,7 +15,7 @@
         <div class="center-box">
         {% endif %}
             <div class="header">
-                <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('index') }}'">
+                {{ clickable_icon() }}
                 <h1>{{ title|title }}</h1>
             </div>
             {{ message|safe }}

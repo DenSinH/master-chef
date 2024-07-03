@@ -22,7 +22,7 @@
 {% block body %}
     <header>
         <div class="header">
-            <img id="icon" src="/static/icon.png" alt="icon" {% if collection != 'recipes' %}onclick="window.location.href='{{ url_for('index') }}'" {% endif %}>
+            {{ clickable_icon() }}
             <h1 class="{{ collection }}">{{ title }}</h1>
         </div>
         <div class="all-buttons">

@@ -13,7 +13,7 @@
     <div class="container">
         <header>
             <div class="header">
-                <img id="icon" src="/static/icon.png" alt="icon" onclick="window.location.href='{{ url_for('collection', collection=collection) }}'">
+                {{ clickable_icon(collection) }}
                 <h1>Add Recipe</h1>
             </div>
         </header>
