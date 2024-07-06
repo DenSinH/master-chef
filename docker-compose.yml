@@ -41,6 +41,7 @@ services:
       PERSIST_DIR: /cache
       MINIO_URL: minio:9000
       MINIO_PUBLIC_URL: https://cdn.dennishilhorst.nl/
+      MINIO_INSECURE: 1  # since it happens internally in the docker network
       MINIO_BUCKET: cookbook
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
