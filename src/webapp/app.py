@@ -1,13 +1,14 @@
 from sanic import Sanic, response
 from sanic_session import Session
 from sanic_jwt import initialize
-import msgspec
+import msgspec.json
 import datetime
 import string
 import os
 from utils.auth import JWT_TOKEN_NAME, authenticate, extend_scopes, JwtResonses
 from utils.compress import init_compression
 from utils.minifyloader import MinifyingFileSystemLoader
+from utils.imgupload import init_client
 
 import cookbook
 from data import init_db
@@ -73,6 +74,7 @@ initialize(
 )
 _session = Session(app)
 app.before_server_start(init_db)
+app.before_server_start(init_client)
 
 # global rate limit of 5 requests per second
 app.ctx.global_limiter = RateLimiter(times=5, seconds=1)

@@ -8,7 +8,7 @@ import asyncio
 import aiohttp
 from aiohttp.client_exceptions import ClientResponseError
 from data.models import *
-from utils.imgupload import upload_imgur
+from utils import imgupload
 import cookbook
 
 
@@ -181,10 +181,8 @@ def add_admin_routes(app: Sanic):
             if not file:
                 continue
             file = file[0]
-            try:
-                link = await upload_imgur(file.body, title=file.name)
-            except Exception as e:
-                raise e
+            link = await imgupload.upload_image(file.body, title=file.name)
+            print(link)
             break
 
         return sanic.json({"link": link})

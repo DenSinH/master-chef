@@ -5,7 +5,7 @@ import tldextract as tld
 import dataclasses
 import os
 import re
-import msgspec
+import msgspec.json
 
 from .utils import *
 from .meta import *

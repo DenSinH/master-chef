@@ -1,7 +1,7 @@
 import datetime
 import aiohttp
 import base64
-import msgspec
+import msgspec.json
 import string
 import random
 import dataclasses

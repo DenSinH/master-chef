@@ -1,5 +1,4 @@
 from collections import OrderedDict
-import datetime
 import sanic
 import asyncio
 import os
@@ -7,9 +6,7 @@ import hashlib
 from sanic import Request
 from sanic_ext import render
 from sanic.exceptions import NotFound
-from sanic_jwt import protected, scoped
-from utils.auth import validate_scopes, CookbookAuthFailed, get_username
-from utils.imgupload import upload_imgur
+from utils.auth import validate_scopes, get_username
 
 import cookbook
 import cookbook.instagram
@@ -70,7 +67,8 @@ async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLEC
     # check caching with collection SHA
     etag = _update_etag_reqinfo(
         hashlib.sha256(
-            (await cookbook.get_collection_etag(collection)).encode("ascii")
+            (await cookbook.get_collection_etag(collection)).encode("ascii"),
+            usedforsecurity=False
         ),
         is_admin, is_user, username
     )

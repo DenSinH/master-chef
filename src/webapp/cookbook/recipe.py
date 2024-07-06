@@ -3,7 +3,7 @@ import dataclasses
 import types
 import abc
 from .meta import *
-import msgspec
+import msgspec.json
 import hashlib
 from thefuzz import process
 
@@ -158,5 +158,6 @@ class Recipe(Fixable):
             msgspec.json.encode(
                 dataclasses.asdict(self), 
                 order="deterministic"
-            )
+            ),
+            usedforsecurity=False
         )
