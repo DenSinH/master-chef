@@ -124,10 +124,10 @@ function resizeAndCompressImage(file, maxWidth, callback) {
             // Draw the image on the canvas
             ctx.drawImage(img, 0, 0, newWidth, newHeight);
 
-            // Convert the canvas content to a compressed JPEG blob
+            // Convert the canvas content to a blob
             canvas.toBlob(function(blob) {
                 callback(blob);
-            }, 'image/jpeg', 0.8);
+            });
         };
 
         img.src = e.target.result;

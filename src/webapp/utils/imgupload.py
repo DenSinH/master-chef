@@ -4,7 +4,6 @@ from PIL import Image
 from io import BytesIO
 import hashlib
 import base64
-import msgspec.json
 from dataclasses import dataclass
 import dataclasses
 import re
@@ -38,7 +37,7 @@ DEFAULT_POLICY = {
         }
     ]
 }
-IMAGE_MAX_SIZE = 300 * 1024  # 300kb
+IMAGE_MAX_SIZE = 150 * 1024  # 150kb
 
 
 class MinioError(Exception):

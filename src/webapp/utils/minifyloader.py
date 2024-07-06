@@ -1,5 +1,5 @@
 import typing as t
-from jinja2 import FileSystemLoader, TemplateNotFound
+from jinja2 import FileSystemLoader
 from htmlmin import Minifier
 
 
