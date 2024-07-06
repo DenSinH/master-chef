@@ -53,13 +53,7 @@ class ImageMeta:
 
 async def init_client(*args):
     """ Initialize client """
-    if not await MINIO_CLIENT.bucket_exists(MINIO_BUCKET):
-        print(f"Creating bucket {MINIO_BUCKET} with default policy")
-        await MINIO_CLIENT.make_bucket(MINIO_BUCKET)
-        await MINIO_CLIENT.set_bucket_policy(
-            MINIO_BUCKET,
-            msgspec.json.encode(DEFAULT_POLICY)
-        )
+    pass
 
 
 async def _preprocess_image(filedata: bytes) -> tuple[BytesIO, ImageMeta]:
