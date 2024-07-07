@@ -75,7 +75,7 @@
                     {%- for step in recipe.preparation + [''] -%}
                     <div class="preparation-row">
                         <span class="handle"><i class="fas fa-grip-lines"></i></span>
-                        <textarea class="step" name="preparation" placeholder="Step">{{ step }}</textarea>
+                        <textarea class="step" name="preparation" placeholder="Step" value="{{ step }}">{{ step }}</textarea>
                         <div class="remove-row-container">
                             <span class="round-button remove-row"><i class="fas fa-minus"></i></span>
                         </div>
