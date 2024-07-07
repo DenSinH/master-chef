@@ -112,7 +112,7 @@ def _get_objname(imagedata: BytesIO, title: str | None):
     kebab_case = re.sub("[\s_-]", "-", only_alnum)
 
     # make sure filenames are not too long
-    title = textwrap.shorten(f"{sha}-{kebab_case.lower()}", width=80).strip("-")
+    title = textwrap.shorten(f"{sha}-{kebab_case.lower()}", width=80, placeholder="").strip("-")
     return title
 
 
