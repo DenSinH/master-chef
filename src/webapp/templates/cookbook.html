@@ -16,6 +16,10 @@
     {%- endif -%}
     <script defer src="/static/dropdown.js" defer></script>
     <script defer src="/static/messages.js"></script>
+    {%- if recipes -%}
+    {% set firstrecipe = recipes.values()|first %}
+    <link rel="preload" fetchpriority="high" as="image" href="{{ firstrecipe.thumbnail }}">
+    {%- endif -%}
 {% endblock head %}
 
 {% block body %}
@@ -102,6 +106,7 @@
                     src="{{ recipe.thumbnail or '/static/spaghet.png' }}" 
                     onerror="this.onerror=null; this.src='/static/spaghet.png'" 
                     alt="{{ recipe.name }}" 
+                    fetchpriority="{{ 'high' if loop.index0 < 2 else 'auto' }}"
                     loading="{{ 'eager' if loop.index0 < 8 else 'lazy'}}"
                 >
             </div>
