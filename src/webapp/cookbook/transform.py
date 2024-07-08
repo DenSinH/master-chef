@@ -6,6 +6,7 @@ import dataclasses
 import os
 import re
 import msgspec.json
+import logging
 
 from .utils import *
 from .meta import *
@@ -14,6 +15,7 @@ from .instagram import get_instagram_recipe
 from .thumbnail import get_thumbnail
 
 
+logger = logging.getLogger(__name__)
 client = openai.AsyncOpenAI(
     api_key=os.environ["OPENAI_API_KEY"]
 )
@@ -109,7 +111,7 @@ def _get_html_text(soup: BeautifulSoup):
 async def translate_url(url, user_agent=None) -> Recipe:
     """ Transform a recipe from a url, determining
     the thumbnail automatically """
-    print(f"Retrieving url {url}")
+    logging.info(f"Retrieving url {url}")
     domain = tld.extract(url).domain.lower()
     if domain in {"instagram", "ig", "cdninstagram"}:
         # instagram must be handled separately
@@ -140,6 +142,7 @@ async def _chatgpt_json_and_fix(cls, messages, temperature=0.7, **kwargs):
     # we may do a multi-shot recipe conversion if chatgpt
     # fails the first time around
     for i in range(1 + MAX_RETRIES):
+        logging.info(f"ChatGPT message attempt {i + 1}")
         try:
             chat_completion = await client.chat.completions.create(
                 model=MODEL,
@@ -156,7 +159,7 @@ async def _chatgpt_json_and_fix(cls, messages, temperature=0.7, **kwargs):
         try:
             return reply, cls.from_data(**msgspec.json.decode(reply, strict=False))
         except msgspec.DecodeError:
-            print("Conversion failed, retrying")
+            logger.warn("Conversion failed, retrying")
             messages.append({"role": "assistant", "content": reply})
             messages.append({"role": "user", "content": "this is not a parsable json object, "
                                                         "output only the json object"})
@@ -166,7 +169,7 @@ async def _chatgpt_json_and_fix(cls, messages, temperature=0.7, **kwargs):
 async def translate_page(text, url=None, thumbnail=None) -> Recipe:
     """ Tranform a recipe from text, filling in the url and thumbnail
     fields from the given parameters """
-    print(f"Converting with ChatGPT ({MODEL})")
+    logging.info(f"Converting with ChatGPT ({MODEL})")
     messages = [
         {"role": "system", "content": "You are a helpful AI cook that converts recipes into JSON objects."},
         {"role": "user", "content": PROMPT.format(text=text)}

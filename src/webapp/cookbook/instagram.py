@@ -2,12 +2,14 @@ import instagrapi
 import instagrapi.exceptions
 import tempfile
 import aiohttp
-import aiofiles
 import tempfile
 from pathlib import Path
 import os
+import logging
 
 from .utils import InstagramError, get_headers
+
+logger = logging.getLogger(__name__)
 
 
 _CLIENT = instagrapi.Client()
@@ -40,16 +42,16 @@ def _get_client() -> instagrapi.Client:
     """ Get (logged in) Instagram client """
     settings_file = _get_settings_file()
     if not os.path.exists(settings_file):
-        print("No instagram session found, logging in with username / password")
+        logger.info("No instagram session found, logging in with username / password")
         _login(dump_settings=True)
         return _CLIENT
 
-    print("Loading instagram session")
+    logger.info("Loading instagram session")
     session = _CLIENT.load_settings(settings_file)
 
     if session:
         try:
-            print("Logging in from session")
+            logger.info("Logging in from session")
             _CLIENT.set_settings(session)
             _login()
 
@@ -58,7 +60,7 @@ def _get_client() -> instagrapi.Client:
                 _CLIENT.get_timeline_feed()
                 return _CLIENT
             except instagrapi.exceptions.LoginRequired:
-                print("Session is invalid, need to login via username and password")
+                logger.warn("Session is invalid, need to login via username and password")
 
             old_session = _CLIENT.get_settings()
 
@@ -72,10 +74,10 @@ def _get_client() -> instagrapi.Client:
                 return _CLIENT
                 
         except Exception as e:
-            print(f"Couldn't login user using session information: {e}")
+            logger.warn(f"Couldn't login user using session information: {e}")
 
     try:
-        print("Attempting to login via username and password.")
+        logger.info("Attempting to login via username and password.")
         if _login(dump_settings=True):
             return _CLIENT
     except Exception as e:
@@ -113,7 +115,7 @@ async def post_instagram_recipe(recipe_name, image_url, user_agent=None):
     """ Post the image from image_url to the Instagram account
     from the environment credentials. """
     def _upload_from_path(path: Path):
-        print(f"Uploading from {path}")
+        logger.info(f"Uploading from {path}")
         client = _get_client()
         media = client.photo_upload(
             path,

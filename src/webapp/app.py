@@ -18,7 +18,7 @@ from limiter import init_limiter, close_limiter, RateLimiter
 """ Initialize all app components """
 response.BaseHTTPResponse._dumps = msgspec.json.encode
 
-app = Sanic(__name__)
+app = Sanic(__name__, configure_logging=False)
 app.ext.templating.environment.loader = MinifyingFileSystemLoader(
     "templates/"
 )
@@ -70,7 +70,7 @@ initialize(
     expiration_delta=60 * 60,
     algorithm="HS256",
     add_scopes_to_payload=extend_scopes,
-    scope_enabled=True,
+    scopes_enabled=True,
 )
 _session = Session(app)
 app.before_server_start(init_db)

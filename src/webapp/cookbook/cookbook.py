@@ -6,9 +6,12 @@ import string
 import random
 import dataclasses
 import os
+import logging
 
 from .recipe import Recipe
 from .utils import *
+
+logger = logging.getLogger(__name__)
 
 RECIPE_REPO_USER = os.environ["RECIPE_REPO_USER"]
 RECIPE_REPO_NAME = os.environ["RECIPE_REPO_NAME"]
@@ -66,6 +69,7 @@ async def _get_recipes(collection) -> CollectionCache:
     # check collection cache timeout
     if col.recipe_timeout is not None:
         if datetime.datetime.now() > col.recipe_timeout:
+            logger.info(f"Collection {collection} expired")
             col.recipe_timeout = None
 
     if col.recipes is not None and col.recipe_timeout is not None and col.sha is not None:
@@ -75,6 +79,7 @@ async def _get_recipes(collection) -> CollectionCache:
 
     # refresh cached collection
     async with aiohttp.ClientSession() as session:
+        logger.info(f"Retrieving collection {collection}")
         try:
             # get recipe collection from GitHub repo
             # use GitHub API, as the repo may be private
@@ -129,6 +134,7 @@ def _generate_key(recipes) -> str:
 async def _push_recipes(collection: str, message: str):
     """ Push an updated collection to the repository
     with a given message """
+    logger.info(f"Pushing collection {collection}")
     col = _get_collection(collection)
 
     async with aiohttp.ClientSession() as session:

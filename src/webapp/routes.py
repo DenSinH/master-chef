@@ -3,6 +3,7 @@ import sanic
 import asyncio
 import os
 import hashlib
+import logging
 from sanic import Request
 from sanic_ext import render
 from sanic.exceptions import NotFound

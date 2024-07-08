@@ -1,13 +1,12 @@
 import sanic
-from sanic import Request
+from sanic import Request, HTTPResponse
 import sanic_jwt
-from sanic_jwt import Responses
+from sanic_jwt import Responses, Authentication
 from sanic_jwt.responses import COOKIE_OPTIONS
 from sanic_jwt.validators import validate_scopes as _validate_scopes
 import os
 
 from data import users
-
 from cookbook import DEFAULT_COLLECTION
 
 JWT_TOKEN_NAME = "jwt_access_token"
@@ -17,7 +16,7 @@ class CookbookAuthFailed(Exception):
     pass
 
 
-def _set_cookie(response, key, value, config, force_httponly=None):
+def _set_cookie(response: HTTPResponse, key, value, config, force_httponly=None):
     """ Setting a cookie in the response """
     response.cookies.add_cookie(key, value)
     response.cookies.get_cookie(key).httponly = (
@@ -58,12 +57,13 @@ async def extend_scopes(user, *args, **kwargs):
 
 async def validate_scopes(request: Request, scopes):
     """ Override of sanic-jwt's scope validation """
+    auth: Authentication = request.app.ctx.auth
     return await _validate_scopes(
         request,
         scopes,
-        await request.app.ctx.auth.extract_scopes(request),
-        override=request.app.ctx.auth.override_scope_validator,
-        destructure=request.app.ctx.auth.destructure_scopes,
+        await auth.extract_scopes(request),
+        override=auth.override_scope_validator,
+        destructure=auth.destructure_scopes,
     )
 
 

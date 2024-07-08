@@ -8,9 +8,11 @@ from dataclasses import dataclass
 import dataclasses
 import re
 import textwrap
+import logging
 from urllib.parse import urlparse, urljoin
 import os
 
+logger = logging.getLogger(__name__)
 
 MINIO_INSECURE = bool(int(os.environ.get("MINIO_INSECURE", "0")))
 MINIO_CLIENT: Minio = Minio(
@@ -60,6 +62,7 @@ async def _preprocess_image(filedata: bytes) -> tuple[BytesIO, ImageMeta]:
     - WEBP compression down to IMAGE_MAX_SIZE 
     Return the image bytes, and metadata containing the
     final image quality """
+    logger.info(f"Compressing image of size {len(filedata)}")
     image = Image.open(BytesIO(filedata))
     output = BytesIO()
     size = -1
@@ -80,6 +83,7 @@ async def _preprocess_image(filedata: bytes) -> tuple[BytesIO, ImageMeta]:
         )
     
     # return data, seek 0 in output stream
+    logging.info(f"Compressed image to {size} with quality {quality}")
     output.seek(0)
     metadata = ImageMeta(
         size=size,
@@ -144,7 +148,7 @@ async def upload_image(filedata: bytes, title=None):
     
     try:
         await MINIO_CLIENT.stat_object(MINIO_BUCKET, objname)
-        print(f"Object {objname} already exists in {MINIO_BUCKET}")
+        logger.info(f"Object {objname} already exists in {MINIO_BUCKET}")
     except miniopy_async.error.MinioException:
         # file does not exist (?), upload file with metadata
         await MINIO_CLIENT.put_object(

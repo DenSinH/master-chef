@@ -1,6 +1,9 @@
-import typing as t
+from typing import Callable, TYPE_CHECKING
 from jinja2 import FileSystemLoader
 from htmlmin import Minifier
+
+if TYPE_CHECKING:
+    from jinja2.environment import Environment
 
 
 class MinifyingFileSystemLoader(FileSystemLoader):
@@ -14,7 +17,8 @@ class MinifyingFileSystemLoader(FileSystemLoader):
     )
 
     def get_source(
-        self, environment: "Environment", template: str
-    ) -> t.Tuple[str, str, t.Callable[[], bool]]:
+        self, environment: 'Environment', template: str
+    ) -> tuple[str, str, Callable[[], bool]]:
+        """ Load and minify source """
         contents, path, uptodate = super().get_source(environment, template)
         return self.minifier.minify(contents), path, uptodate
