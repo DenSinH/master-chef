@@ -5,6 +5,9 @@ import traceback
 from sanic.exceptions import NotFound
 from limiter import TooManyRequests
 from utils.auth import CookbookAuthFailed
+import logging 
+
+logger = logging.getLogger(__name__)
 
 
 def add_error_routes(app: Sanic):
@@ -39,12 +42,14 @@ def add_error_routes(app: Sanic):
     @app.exception(Exception)
     async def exception(request: Request, exc):
         """ Stacktrace page """
+        tb = traceback.format_exc()
+        logger.error(f"Error occurred in request to \"{request.url}\":\n{tb}")
         return await render(
             "sorry.html",
             500,
             context={
                 "title": "Whoops!",
                 "message": "<p>An error occurred:</p>"
-                        f"<pre>{traceback.format_exc()}</pre>"
+                        f"<pre>{tb}</pre>"
             }
         )
