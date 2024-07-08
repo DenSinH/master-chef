@@ -97,8 +97,9 @@ async def _download_image(url: str, callback: callable, user_agent=None):
     """ Helper function to download an image from a URL,
     save it to a temporary path and call a callback on it """
     # Check if the URL ends with .jpg or .jpeg
-    if not url.lower().endswith(('.jpg', '.jpeg')):
-        raise InstagramError(f"Instagram post image URL does not point to a .jpg or .jpeg image: '{url}'")
+    url_path = Path(url)
+    if url_path.suffix.lower() not in {".jpg", ".jpeg", ".webp", ".png", ".avif"}:
+        raise InstagramError(f"Instagram post image URL does not point to an image file: '{url}'")
     
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=get_headers(url=url, user_agent=user_agent)) as response:
@@ -106,9 +107,9 @@ async def _download_image(url: str, callback: callable, user_agent=None):
                 raise InstagramError(f"Failed to download image. HTTP status code: {response.status}")
             
             # Create a temporary file
-            with tempfile.NamedTemporaryFile(mode="wb", suffix='.jpg') as jpg:
-                jpg.write(await response.read())
-                return callback(Path(jpg.name))
+            with tempfile.NamedTemporaryFile(mode="wb", suffix=url_path.suffix) as img:
+                img.write(await response.read())
+                return callback(Path(img.name))
 
 
 async def post_instagram_recipe(recipe_name, image_url, user_agent=None):
