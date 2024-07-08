@@ -1,11 +1,11 @@
-from .StringMatcher import StringMatcher as SequenceMatcher
+from thefuzz.fuzz import ratio
 from typing import Iterable
 from functools import lru_cache
 import re
 from dataclasses import dataclass
 
 
-THRESHOLD = 0.8
+THRESHOLD = 80
 
 
 @dataclass
@@ -25,8 +25,8 @@ class _PartialMatch:
     
     def sort_val(self):
         """ Sorting value for how 'good' a match is
-            We replace the best matches first, and worse matches may be gone
-            since they may have been a part of a better match """
+        We replace the best matches first, and worse matches may be gone
+        since they may have been a part of a better match """
         return (self.target_score(), -self.total_length())
 
 
@@ -37,8 +37,8 @@ def _process_string(s: str):
 
 def _partial_search(s1: str, s2: str) -> Iterable[_PartialMatch]:
     """ Reimplemented from
-        https://github.com/seatgeek/fuzzywuzzy/blob/af443f918eebbccff840b86fa606ac150563f466/fuzzywuzzy/fuzz.py#L34
-        Rewritten to return the best matched substring """
+    https://github.com/seatgeek/fuzzywuzzy/blob/af443f918eebbccff840b86fa606ac150563f466/fuzzywuzzy/fuzz.py#L34
+    Rewritten to return the best matched substring """
     s1 = _process_string(s1).split(" ")
     s2 = _process_string(s2).split(" ")
 
@@ -53,8 +53,7 @@ def _partial_search(s1: str, s2: str) -> Iterable[_PartialMatch]:
     for i in range(len(longer)):
         for j in range(len(shorter) - 1, len(shorter) + 2):
             long_substr = " ".join(longer[i:i + j])
-            m2 = SequenceMatcher(None, shorter_str, long_substr)
-            r = m2.ratio()
+            r = ratio(shorter_str, long_substr)
 
             if r > THRESHOLD:
                 yield _PartialMatch(
@@ -84,9 +83,13 @@ def _replace_references(string: str, sorted_references: list[_PartialMatch]) -> 
     matches within matches. """
     if not len(sorted_references):
         return string
+    
+    # replace current match
     ref = sorted_references[0]
-    regex = re.compile(f"(^|\W)({'[^a-z]+'.join(ref.matched)})(\W|$)", flags=re.IGNORECASE)
+    regex = re.compile(fr"(^|\W)({r'[^a-z]+'.join(ref.matched)})(\W|$)", flags=re.IGNORECASE)
     split = regex.split(string)
+
+    # rebuild string with nested replacements
     new = ""
     while len(split) > 1:
         left, sepl, match, sepr, *split = split
