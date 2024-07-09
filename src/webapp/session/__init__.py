@@ -60,7 +60,6 @@ def init_session(app: Sanic, prefix="session", cookie_name="session", expiration
                 session = SessionDict(sid)
         
         # set session on request
-        print(f"Adding session {sid} to request")
         request.ctx.session = session
 
     @app.on_response
