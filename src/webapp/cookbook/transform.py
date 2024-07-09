@@ -115,7 +115,7 @@ async def translate_url(url, user_agent=None) -> Recipe:
     domain = tld.extract(url).domain.lower()
     if domain in {"instagram", "ig", "cdninstagram"}:
         # instagram must be handled separately
-        text, thumbnail = get_instagram_recipe(url)
+        text, thumbnail = await get_instagram_recipe(url)
     else:
         async with aiohttp.ClientSession(headers=get_headers(url, user_agent=user_agent)) as session:
             res = await session.get(url)
