@@ -132,6 +132,7 @@ h3.step-section-header {
 .instruction-controls {
     display: flex;
     flex-direction: row;
+    align-items: center;
 }
 
 table.nutrition td {
