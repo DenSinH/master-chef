@@ -207,7 +207,6 @@
         <div class="instructions-header">
             <h2>{{ 'Instructions' if english else 'Instructies' }}</h2>
             <div class="instruction-controls">
-                <button class="round-button" onclick="reset_instructions()"><i class="fas fa-sync-alt"></i></button>
                 <div class="switch-container">
                     <label class="switch">
                         <input type="checkbox" id="wakeLockSwitch">
@@ -224,6 +223,7 @@
                     </label>
                     <p class="mode-text">{{ 'Cooking mode' if english else 'Kookmodus' }}</p>
                 </div>
+                <button class="round-button" onclick="reset_instructions()"><i class="fas fa-sync-alt"></i></button>
             </div>
         </div>
         <ol class="instructions">
