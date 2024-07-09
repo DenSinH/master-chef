@@ -23,7 +23,5 @@ Some of these require some effort to obtain:
     - In the permissions tab for "Contents", select "Read & Write".
 - `INSTAGRAM_USER` / `INSTAGRAM_PASS` should just be Instagram credentials for an account that may be used for the cookbook (**This includes posting pictures as admin**).
 - `OPENAI_API_KEY`: This is just your OpenAI access token that you get when you have an OpenAI account. Make sure you have funds on there.
-- `IMGUR_...`: For these, we need to set up an ImGur account with credentials to post to an album in this account. You may follow [this documentation](https://api.imgur.com/oauth2) on the Imgur API.
-  - I think `IMGUR_ALBUM_ID` is broken...
-  - `IMGUR_CLIENT_ID` and `IMGUR_CLIENT_SECRET` are created when you register an app on ImGur.
-  - To obtain `IMGUR_REFRESH_TOKEN`, you must set a redirect URL in the Imgur app. This must be a secure website, but may just be imgur itself. Whenever you request access for the imgur app, you will be redirected to this URL and the refresh token will be in the URL encoded parameters (I think, this was a while ago).
+- `MINIO_...`: For these, we need to set up a Minio CDN. It should be fairly easy to replace everything with a different S3-compatible CDN. For setting this up, see 
+[this repository](https://github.com/densinh/minio-setup). You should create an account with access to the appropriate bucket. `MINIO_URL` and `MINIO_PUBLIC_URL` define the internal URL (within your docker environment) and the external URL (which is publicly accessible for anyone). I set it up this way so images can ONLY be uploaded either from within the docker environment (such as the cookbook), or from the Minio console.

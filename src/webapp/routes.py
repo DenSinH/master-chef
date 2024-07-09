@@ -133,9 +133,7 @@ async def collection_views(request: Request, collection: str = cookbook.DEFAULT_
 @app.ext.template("about.html")
 async def about(request: Request):
     """ About page """
-    return {
-        "album": os.environ["IMGUR_ALBUM_ID"]
-    }
+    return {}
 
 
 async def _get_or_increment_recipe_views(request: Request, collection: str, id: str):
