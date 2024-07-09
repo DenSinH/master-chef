@@ -145,12 +145,14 @@ function convert(amount, base, people) {
 
 function set_amounts(base, people) {
     if (people === base) {
+        $(".people-based-on").addClass("hidden");
         $(".ingredients .ingredient-amount").each(function() {
             let el = $(this);
             el.text(el.data("base"));
         });
     }
     else {
+        $(".people-based-on").removeClass("hidden");
         $(".ingredients .ingredient-amount").each(function() {
             let el = $(this);
             el.text(convert(el.data("base"), base, people));
@@ -161,6 +163,7 @@ function set_amounts(base, people) {
 function incr_people() {
     let people_amount = $("#people-amount");
     let people = parseInt(people_amount.text()) + 1;
+    localStorage.setItem('people', people);
     people_amount.text(people);
     let base = parseInt(people_amount.data("base"));
     set_amounts(base, people);
@@ -170,6 +173,7 @@ function decr_people() {
     let people_amount = $("#people-amount");
     let people = parseInt(people_amount.text()) - 1;
     if (people >= 1) {
+        localStorage.setItem('people', people);
         people_amount.text(people);
         let base = parseInt(people_amount.data("base"));
         set_amounts(base, people);
@@ -179,13 +183,57 @@ function decr_people() {
     }
 }
 
+function reset_ingredients() {
+  let people_amount = $("#people-amount");
+  let base = parseInt(people_amount.data("base"));
+  people_amount.text(base);
+  set_amounts(base, base);
+  $(".ingredients tr").each(function(index) {
+    $(this).removeClass("active");
+    localStorage.setItem("ingredients-" + index, false);
+  });
+}
+
+function reset_instructions() {
+  $(".instructions li").each(function(index) {
+    $(this).removeClass("active");
+    localStorage.setItem("instructions-" + index, false);
+  });
+}
+
 $(document).ready(function() {
+    // Load the toggled state from localStorage
+    $(".ingredients tr").each(function(index) {
+      if (localStorage.getItem("ingredients-" + index) === "true") {
+        $(this).addClass("active");
+      }
+    });
+
+    $(".instructions li").each(function(index) {
+      if (localStorage.getItem("instructions-" + index) === "true") {
+        $(this).addClass("active");
+      }
+    });
+
+    // Toggle the class and save the state to localStorage
     $(".ingredients tr").click(function() {
-        $(this).toggleClass("active");
+      $(this).toggleClass("active");
+      var index = $(".ingredients tr").index(this);
+      localStorage.setItem("ingredients-" + index, $(this).hasClass("active"));
     });
+
     $(".instructions li").click(function() {
-        $(this).toggleClass("active");
+      $(this).toggleClass("active");
+      var index = $(".instructions li").index(this);
+      localStorage.setItem("instructions-" + index, $(this).hasClass("active"));
     });
+    let people = localStorage.getItem('people');
+    if (people) {
+      let people_amount = $("#people-amount");
+      let base = parseInt(people_amount.data("base"));
+      people_amount.text(people);
+      set_amounts(base, people);
+    }
     $("#incr-people").click(incr_people);
     $("#decr-people").click(decr_people);
     $("ref").click(function(e) {

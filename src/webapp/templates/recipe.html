@@ -158,7 +158,10 @@
         <div class="recipe-info">
             {{ tags(meta) }}
         </div>
-        <h2>{{ 'Ingredients' if english else 'Ingrediënten'}}</h2>
+        <div class="ingredients-header">
+            <h2>{{ 'Ingredients' if english else 'Ingrediënten'}}</h2>
+            <button class="round-button" onclick="reset_ingredients()"><i class="fas fa-sync-alt"></i></button>
+        </div>
         {%- if recipe.people -%}
         <div class="ingredient-conversion">
             <div class="people">
@@ -167,6 +170,11 @@
                 </div>
                 <div class="people-text">
                     {{ 'People' if english else 'Personen' }}
+                    <span class="people-based-on hidden">
+                        {{ '(based on' if english else '(gebaseerd op' }}
+                        {{ recipe.people -}}
+                        )
+                    </span>
                 </div>
             </div>
             <div class="buttons">
@@ -198,21 +206,24 @@
         
         <div class="instructions-header">
             <h2>{{ 'Instructions' if english else 'Instructies' }}</h2>
-            <div class="switch-container">
-                <label class="switch">
-                    <input type="checkbox" id="wakeLockSwitch">
-                    <span class="slider">
-                        <svg class="utensils" viewBox="0 0 416 512" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Extracted from https://github.com/FortAwesome/Font-Awesome/blob/master/svgs/solid/utensils.svg -->
-                            <!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) -->
-                            <!-- Fork -->
-                            <path d="M 207.9 15.2 C 208.7 19.9 224 109.7 224 144 C 224 196.3 196.2 233.6 155.1 248.6 L 168 486.7 C 168.7 500.4 157.8 512 144 512 L 80 512 C 66.3 512 55.3 500.5 56 486.7 L 68.9 248.6 C 27.7 233.6 0 196.2 0 144 C 0 109.6 15.3 19.9 16.1 15.2 C 19.3 -5.1 61.4 -5.4 64 16.3 L 64 157.5 C 65.3 160.9 79.1 160.7 80 157.5 C 81.4 132.2 87.9 18.3 88 15.7 C 91.3 -5.1 132.7 -5.1 135.9 15.7 C 136.1 18.4 142.5 132.2 143.9 157.5 C 144.8 160.7 158.7 160.9 159.9 157.5 L 159.9 16.3 C 162.5 -5.3 204.7 -5.1 207.9 15.2 Z" style="transform-origin: 128px 416px;" class="utensil"/>
-                            <!-- Knife -->
-                            <path d="M 327.1 300.9 L 312.1 486 C 310.9 500 322 512 336 512 L 392 512 C 405.3 512 416 501.3 416 488 L 416 24 C 416 10.8 405.3 0 392 0 C 309.5 0 170.6 178.5 327.1 300.9 Z" style="transform-origin: 296px 600px;" class="utensil"/>
-                        </svg>
-                    </span>
-                </label>
-                <p class="mode-text">{{ 'Cooking mode' if english else 'Kookmodus' }}</p>
+            <div class="instruction-controls">
+                <button class="round-button" onclick="reset_instructions()"><i class="fas fa-sync-alt"></i></button>
+                <div class="switch-container">
+                    <label class="switch">
+                        <input type="checkbox" id="wakeLockSwitch">
+                        <span class="slider">
+                            <svg class="utensils" viewBox="0 0 416 512" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Extracted from https://github.com/FortAwesome/Font-Awesome/blob/master/svgs/solid/utensils.svg -->
+                                <!-- Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) -->
+                                <!-- Fork -->
+                                <path d="M 207.9 15.2 C 208.7 19.9 224 109.7 224 144 C 224 196.3 196.2 233.6 155.1 248.6 L 168 486.7 C 168.7 500.4 157.8 512 144 512 L 80 512 C 66.3 512 55.3 500.5 56 486.7 L 68.9 248.6 C 27.7 233.6 0 196.2 0 144 C 0 109.6 15.3 19.9 16.1 15.2 C 19.3 -5.1 61.4 -5.4 64 16.3 L 64 157.5 C 65.3 160.9 79.1 160.7 80 157.5 C 81.4 132.2 87.9 18.3 88 15.7 C 91.3 -5.1 132.7 -5.1 135.9 15.7 C 136.1 18.4 142.5 132.2 143.9 157.5 C 144.8 160.7 158.7 160.9 159.9 157.5 L 159.9 16.3 C 162.5 -5.3 204.7 -5.1 207.9 15.2 Z" style="transform-origin: 128px 416px;" class="utensil"/>
+                                <!-- Knife -->
+                                <path d="M 327.1 300.9 L 312.1 486 C 310.9 500 322 512 336 512 L 392 512 C 405.3 512 416 501.3 416 488 L 416 24 C 416 10.8 405.3 0 392 0 C 309.5 0 170.6 178.5 327.1 300.9 Z" style="transform-origin: 296px 600px;" class="utensil"/>
+                            </svg>
+                        </span>
+                    </label>
+                    <p class="mode-text">{{ 'Cooking mode' if english else 'Kookmodus' }}</p>
+                </div>
             </div>
         </div>
         <ol class="instructions">

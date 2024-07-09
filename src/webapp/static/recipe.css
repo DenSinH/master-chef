@@ -122,10 +122,16 @@ h3.step-section-header {
     font-weight: bold;
 }
 
-.instructions-header {
+.instructions-header,
+.ingredients-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+
+.instruction-controls {
+    display: flex;
+    flex-direction: row;
 }
 
 table.nutrition td {
