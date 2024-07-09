@@ -44,5 +44,5 @@ if __name__ == '__main__':
         debug=DEBUG, 
         auto_reload=DEBUG,
         access_log=DEBUG,
-        protocol=HTTP.VERSION_3
+        # protocol=HTTP.VERSION_3
     )
