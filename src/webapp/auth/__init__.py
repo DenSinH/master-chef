@@ -17,7 +17,7 @@ def init_jwt(app: Sanic, secret=None, expiration_delta=None):
         jwt_expiration_delta=expiration_delta or 30 * 60
     )
     
-    @app.middleware('request')
+    @app.on_request
     async def jwt_authentication(request: Request):
         """ Read userdata on request """
         token = request.cookies.get(JWT_COOKIE_NAME)

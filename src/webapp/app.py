@@ -1,5 +1,4 @@
 from sanic import Sanic, response
-from sanic_session import Session
 import msgspec.json
 import datetime
 import string
@@ -10,6 +9,7 @@ from utils.imgupload import init_client
 
 import cookbook
 import auth
+import session
 from data import init_db
 from limiter import init_limiter, close_limiter, RateLimiter
 
@@ -57,12 +57,17 @@ app.static("/static", "./static")
 app.static("/robots.txt", "./static/robots.txt", name="robots")
 app.static("/favicon.ico", "./static/favicon.ico", name="favicon")
 
+session.init_session(
+    app,
+    cookie_name="CookbookSession"
+)
+
 auth.init_jwt(
     app,
     app.config.SECRET,
     60 * 60
 )
-_session = Session(app)
+
 app.before_server_start(init_db)
 app.before_server_start(init_client)
 

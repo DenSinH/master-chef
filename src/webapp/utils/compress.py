@@ -69,6 +69,6 @@ async def _compress_response(request: Request, response: HTTPResponse):
 def init_compression(app: Sanic):
     """ Initialize compression middleware on response """
         
-    @app.middleware("response")
+    @app.on_response
     async def compress_response(request: Request, response: HTTPResponse):
         return await _compress_response(request, response)

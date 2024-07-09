@@ -3,6 +3,7 @@ from .depends import RateLimiter, WebSocketRateLimiter
 
 from sanic import Sanic, Request
 import redis.asyncio as redis
+import os
 
 
 async def init_limiter(app: Sanic, loop):
@@ -20,7 +21,7 @@ async def init_limiter(app: Sanic, loop):
             limiter = request.route.ctx.limiter
             await limiter(request)
 
-    await SanicLimiter.init(redis.from_url("redis://redis", port=6379, encoding="utf8"))
+    await SanicLimiter.init(redis.from_url(os.environ["REDIS_URL"], encoding="utf8"))
 
 
 async def close_limiter(app: Sanic, loop):
