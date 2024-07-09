@@ -144,7 +144,7 @@ function convert(amount, base, people) {
 }
 
 function set_amounts(base, people) {
-    if (people === base) {
+    if (people == base) {
         $(".people-based-on").addClass("hidden");
         $(".ingredients .ingredient-amount").each(function() {
             let el = $(this);
@@ -188,6 +188,7 @@ function reset_ingredients() {
   let base = parseInt(people_amount.data("base"));
   people_amount.text(base);
   set_amounts(base, base);
+  localStorage.setItem('people', base);
   $(".ingredients tr").each(function(index) {
     $(this).removeClass("active");
     localStorage.setItem("ingredients-" + index, false);
