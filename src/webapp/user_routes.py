@@ -3,8 +3,12 @@ from sanic import Sanic, Request
 from sanic_ext import render
 from limiter import RateLimiter
 
-from utils.auth import JWT_TOKEN_NAME, get_username
+import auth
 import data.users as users
+
+
+class CookbookAuthFailed(Exception):
+    pass
 
 
 def add_user_routes(app: Sanic):
@@ -16,6 +20,25 @@ def add_user_routes(app: Sanic):
         return {
             "redirect": dict(request.query_args).get("redirect", "/")
         }
+    
+
+    @app.post("/login")
+    async def login(request: Request):
+        """ User login post """
+        username = request.form.get("username").strip()
+        password = request.form.get("password")
+
+        if await users.login_user(username, password):
+            redirect = dict(request.query_args).get("redirect", "/")
+            response = sanic.json({
+                "redirect": redirect
+            })
+            auth.login_user(username, request, response)
+            return response
+        
+        return sanic.json({
+            "error": "Invalid username or password"
+        }, 401)
 
 
     @app.get("/register")
@@ -28,7 +51,6 @@ def add_user_routes(app: Sanic):
     @app.post("/register")
     async def register(request: Request):
         """ User registration endpoint """
-        
         username = request.form.get("username").strip()
 
         # username validation
@@ -66,9 +88,11 @@ def add_user_routes(app: Sanic):
             return sanic.json({
                 "error": "Username already exists"
             }, 400)
-
-        return sanic.json({"redirect": app.url_for("registered")})
-
+        
+        # login user
+        response = sanic.json({"redirect": app.url_for("registered")})
+        auth.login_user(username, request, response)
+        return response
 
     @app.get("/forgot-password")
     async def forgot_password(request: Request):
@@ -119,7 +143,7 @@ def add_user_routes(app: Sanic):
     @app.ext.template("users/registered.html")
     async def registered(request: Request):
         """ Registration form landing page """
-        username = (await get_username(request)) or "there"
+        username = auth.get_username(request) or "there"
         return {
             "username": username
         }
@@ -129,5 +153,5 @@ def add_user_routes(app: Sanic):
     async def logout(request: Request):
         """ User logout page """
         response = sanic.redirect(request.app.url_for("index"))
-        response.cookies.delete_cookie(JWT_TOKEN_NAME)
+        auth.logout_user(response)
         return response

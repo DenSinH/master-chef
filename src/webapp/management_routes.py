@@ -1,7 +1,7 @@
 import sanic
 from sanic import Sanic, Request
-from sanic_jwt import protected, scoped
 import datetime
+import auth
 from data.models import *
 import data
 from sqlalchemy import select
@@ -53,8 +53,7 @@ def add_management_routes(app: Sanic):
 
     @app.route("/manage/<table_name>")
     @app.ext.template("/manage/table.html")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def manage(request, table_name):
         """ Data management table view """
         return {
@@ -68,8 +67,7 @@ def add_management_routes(app: Sanic):
 
 
     @app.get("/api/<table_name>")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def api_get_all(request, table_name):
         """ Data management table contents """
         async with data.Session() as session:
@@ -81,8 +79,7 @@ def add_management_routes(app: Sanic):
 
 
     @app.get("/api/<table_name>/<id>")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def api_get_one(request, table_name, id: int):
         """ Data management get single row by id """
         async with data.Session() as session:
@@ -96,8 +93,7 @@ def add_management_routes(app: Sanic):
 
 
     @app.post("/api/<table_name>")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def api_create(request: Request, table_name):
         """ Data management create row """
         async with data.Session() as session:
@@ -119,8 +115,7 @@ def add_management_routes(app: Sanic):
 
 
     @app.put("/api/<table_name>/<id>")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def api_update(request, table_name, id: int):
         """ Data management update single row """
         async with data.Session() as session:
@@ -145,8 +140,7 @@ def add_management_routes(app: Sanic):
 
 
     @app.delete("/api/<table_name>/<id>")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def api_delete(request, table_name, id: int):
         """ Data management delete single row """
         async with data.Session() as session:

@@ -1,16 +1,15 @@
 from sanic import Sanic, response
 from sanic_session import Session
-from sanic_jwt import initialize
 import msgspec.json
 import datetime
 import string
 import os
-from utils.auth import JWT_TOKEN_NAME, authenticate, extend_scopes, JwtResonses
 from utils.compress import init_compression
 from utils.minifyloader import MinifyingFileSystemLoader
 from utils.imgupload import init_client
 
 import cookbook
+import auth
 from data import init_db
 from limiter import init_limiter, close_limiter, RateLimiter
 
@@ -58,19 +57,10 @@ app.static("/static", "./static")
 app.static("/robots.txt", "./static/robots.txt", name="robots")
 app.static("/favicon.ico", "./static/favicon.ico", name="favicon")
 
-initialize(
+auth.init_jwt(
     app,
-    authenticate=authenticate,
-    cookie_set=True,
-    cookie_access_token_name=JWT_TOKEN_NAME,
-    url_prefix="/login",  # post to authenticate function from .auth
-    login_redirect_url="/login",
-    secret=app.config.SECRET,
-    responses_class=JwtResonses,
-    expiration_delta=60 * 60,
-    algorithm="HS256",
-    add_scopes_to_payload=extend_scopes,
-    scopes_enabled=True,
+    app.config.SECRET,
+    60 * 60
 )
 _session = Session(app)
 app.before_server_start(init_db)

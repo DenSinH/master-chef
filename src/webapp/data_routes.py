@@ -1,7 +1,7 @@
 import sanic
 from sanic import Sanic, Request
-from sanic_jwt import protected, scoped
 import re
+import auth
 import data.users as users
 import data.comments as comments
 import data.saves as saves
@@ -11,11 +11,10 @@ from limiter import RateLimiter
 
 def add_data_routes(app: Sanic):
     @app.get("/saved/<collection>")
-    @protected()
-    @scoped("user")
+    @auth.protected("user")
     async def get_saved(request: Request, collection):
         """ Get saved recipes in collection for active user """
-        username = await app.ctx.auth.extract_user_id(request)
+        username = auth.get_username(request)
         user = await users.get_user(username)
         if user is None:
             return sanic.json({"error": "Unknown user"}, 400)
@@ -26,11 +25,10 @@ def add_data_routes(app: Sanic):
 
 
     @app.post("/saved/<collection>/<id>", ctx_limiter=RateLimiter(times=1, seconds=1))
-    @protected()
-    @scoped("user")
+    @auth.protected("user")
     async def post_save(request: Request, collection, id):
         """ Save the recipe for the active user """
-        username = await app.ctx.auth.extract_user_id(request)
+        username = auth.get_username(request)
         user = await users.get_user(username)
         if user is None:
             return sanic.json({"error": "Unknown user"}, 400)
@@ -39,11 +37,10 @@ def add_data_routes(app: Sanic):
 
 
     @app.delete("/saved/<collection>/<id>", ctx_limiter=RateLimiter(times=1, seconds=1))
-    @protected()
-    @scoped("user")
+    @auth.protected("user")
     async def delete_save(request: Request, collection, id):
         """ Unsave the recipe for the active user """
-        username = await app.ctx.auth.extract_user_id(request)
+        username = auth.get_username(request)
         user = await users.get_user(username)
         if user is None:
             return sanic.json({"error": "Unknown user"}, 400)
@@ -53,11 +50,10 @@ def add_data_routes(app: Sanic):
 
 
     @app.post("/comment/<collection>/<id>", ctx_limiter=RateLimiter(times=5, minutes=1))
-    @protected()
-    @scoped("user")
+    @auth.protected("user")
     async def post_comment(request: Request, collection, id):
         """ Post a comment on the recipe for the active user """
-        username = await app.ctx.auth.extract_user_id(request)
+        username = auth.get_username(request)
         user = await users.get_user(username)
         if user is None:
             return sanic.json({"error": "Unknown user"}, 400)
@@ -73,11 +69,10 @@ def add_data_routes(app: Sanic):
 
 
     @app.delete("/comment/<collection>/<id>", ctx_limiter=RateLimiter(times=5, minutes=1))
-    @protected()
-    @scoped("user")
+    @auth.protected("user")
     async def delete_comment(request: Request, collection, id):
         """ Delete a comment on the recipe for the active user """
-        username = await app.ctx.auth.extract_user_id(request)
+        username = auth.get_username(request)
         user = await users.get_user(username)
         if user is None:
             return sanic.json({"error": "Unknown user"}, 400)

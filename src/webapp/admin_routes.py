@@ -2,13 +2,13 @@ import sanic
 from sanic import Sanic, Request
 from sanic.exceptions import NotFound
 from sanic_ext import render
-from sanic_jwt import protected, scoped
 import datetime
 import asyncio
 import aiohttp
 from aiohttp.client_exceptions import ClientResponseError
 from data.models import *
 from utils import imgupload
+import auth
 import cookbook
 
 
@@ -16,8 +16,7 @@ def add_admin_routes(app: Sanic):
     """ Add admin routes (cookbook editing) """
 
     @app.get("/get-usage")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def get_usage(request: Request):
         """ Get OpenAI usage data """
         date = request.args.get("date")
@@ -36,8 +35,7 @@ def add_admin_routes(app: Sanic):
 
     @app.get("/usage")
     @app.ext.template("usage.html")
-    @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/usage"))
-    @scoped("admin")
+    @auth.protected("admin")
     async def usage(request: Request):
         """ OpenAI usage page """
         today = datetime.date.today()
@@ -62,9 +60,7 @@ def add_admin_routes(app: Sanic):
 
     @app.get("/recipe/<collection:str>/<id>/update")
     @app.ext.template("add/form.html")
-    # recipe id is obtained from last visited recipe page in cookies
-    @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="recipe"))
-    @scoped("admin")
+    @auth.protected("admin")
     async def update_recipe_form(request: Request, collection: str, id: str):
         """ Update recipe form page """
         recipes = await cookbook.get_recipes(collection)
@@ -79,8 +75,7 @@ def add_admin_routes(app: Sanic):
 
 
     @app.post("/recipe/<collection:str>/<id>/update")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def update_recipe(request: Request, collection: str, id: str):
         """ Update recipe """
         recipe = _parse_recipe_form(request.form)
@@ -90,8 +85,7 @@ def add_admin_routes(app: Sanic):
 
     # todo: fix login redirect to recipe page
     @app.post("/recipe/<collection:str>/<id>/delete")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def delete_recipe(request: Request, collection: str, id: str):
         """ Delete recipe """
         recipes = await cookbook.get_recipes(collection)
@@ -110,8 +104,7 @@ def add_admin_routes(app: Sanic):
 
     @app.get("/collection/<collection:str>/add/url")
     @app.ext.template("add/url.html")
-    @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/url"))
-    @scoped("admin")
+    @auth.protected("admin")
     async def add_recipe_url_form(request: Request, collection: str):
         """ Add recipe with URL form page """
         return {
@@ -121,8 +114,7 @@ def add_admin_routes(app: Sanic):
 
 
     @app.post("/collection/<collection:str>/add/url")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def add_recipe_url(request: Request, collection: str):
         """ Add recipe with URL """
         url = request.form["url"][0]
@@ -145,8 +137,7 @@ def add_admin_routes(app: Sanic):
 
     @app.get("/collection/<collection:str>/add/text")
     @app.ext.template("add/text.html")
-    @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/text"))
-    @scoped("admin")
+    @auth.protected("admin")
     async def add_recipe_text_form(request: Request, collection: str):
         """ Add recipe from text form page """
         return {
@@ -157,8 +148,7 @@ def add_admin_routes(app: Sanic):
 
     @app.post("/collection/<collection:str>/add/text")
     @app.ext.template("add/form.html")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def add_recipe_text(request: Request, collection: str):
         """ Add recipe from text """
         recipe = await cookbook.translate_page(request.form["text"][0])
@@ -171,8 +161,7 @@ def add_admin_routes(app: Sanic):
 
 
     @app.post("/add/upload-image")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def upload_image(request: Request):
         """ Upload an image, and return the url of the
             uploaded image """
@@ -190,8 +179,7 @@ def add_admin_routes(app: Sanic):
 
     @app.get("/collection/<collection:str>/add/form")
     @app.ext.template("add/form.html")
-    @protected(redirect_on_fail=True, redirect_url=app.url_for("login_form", redirect="/add/form"))
-    @scoped("admin")
+    @auth.protected("admin")
     async def add_recipe_form_form(request: Request, collection: str):
         """ Add recipe from form, form page """
         return {
@@ -257,8 +245,7 @@ def add_admin_routes(app: Sanic):
 
 
     @app.post("/collection/<collection:str>/add/form")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def add_recipe_form(request: Request, collection: str):
         """ Add recipe from form """
         recipe = _parse_recipe_form(request.form)
@@ -267,8 +254,7 @@ def add_admin_routes(app: Sanic):
 
 
     @app.post("/post/<collection:str>/<id>")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def post_recipe(request: Request, collection: str, id: str):
         """ Post a recipe to instagram
             Triggers a refresh on the page """
@@ -301,8 +287,7 @@ def add_admin_routes(app: Sanic):
 
 
     @app.post("/move/<collectionfrom:str>/<collectionto:str>/<id>")
-    @protected()
-    @scoped("admin")
+    @auth.protected("admin")
     async def move_recipe(request: Request, collectionfrom: str, collectionto: str, id: str):
         """ Move recipe to other collection """
         recipe = await cookbook.delete_recipe(collectionfrom, id)

@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DEBUG = False  # "--debug" in sys.argv
+DEBUG = "--debug" in sys.argv
 
 logging.basicConfig(
     level=logging.DEBUG if DEBUG else logging.INFO,

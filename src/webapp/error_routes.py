@@ -2,9 +2,8 @@ import sanic
 from sanic import Sanic, Request
 from sanic_ext import render
 import traceback
-from sanic.exceptions import NotFound
+from sanic.exceptions import NotFound, Unauthorized, Forbidden
 from limiter import TooManyRequests
-from utils.auth import CookbookAuthFailed
 import logging 
 
 logger = logging.getLogger(__name__)
@@ -19,16 +18,29 @@ def add_error_routes(app: Sanic):
         """ 404 page """
         return {
             "title": "Resource not found",
-            "message": f"<p>{' '.join(exc.args)}</p>"
+            "message": f"<p>{' '.join(exc.args)}</p>",
+            "centering": True,
         }
 
 
-    @app.exception(CookbookAuthFailed)
-    async def auth_failed(request: Request, exc):
-        """ Authentication failed default response """
-        return sanic.json({
-            "error": str(exc)
-        }, 401)
+    @app.exception(Unauthorized)
+    async def unauthorized(request: Request, exc: Unauthorized):
+        """ Unauthorized request, redirect to login for GET,
+        For POST (or other methods), just return a 401 unauthorized status code. """
+        if request.method == "GET":
+            return sanic.redirect(request.app.url_for("login_form", redirect=request.url))
+        return sanic.empty(exc.status_code)
+
+
+    @app.exception(Forbidden)
+    @app.ext.template("sorry.html")
+    async def forbidden(request: Request, exc: Forbidden):
+        """ Insufficient scope """
+        return {
+            "title": "You do not have access to this page",
+            "message": "<p>Perhaps you tried accessing an admin-only route as a user.</p>",
+            "centering": True,
+        }
 
 
     @app.exception(TooManyRequests)

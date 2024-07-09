@@ -3,12 +3,11 @@ import sanic
 import asyncio
 import os
 import hashlib
-import logging
 from sanic import Request
 from sanic_ext import render
 from sanic.exceptions import NotFound
-from utils.auth import validate_scopes, get_username
 
+import auth
 import cookbook
 import cookbook.instagram
 import data.views as views
@@ -59,11 +58,9 @@ def _update_etag_reqinfo(etag: 'hashlib._Hash', is_admin: bool, is_user: bool, u
 async def collection(request: Request, collection: str = cookbook.DEFAULT_COLLECTION):
     """ Get a recipe collection """
     # get request info
-    is_admin, is_user, username = await asyncio.gather(
-        validate_scopes(request, "admin"),
-        validate_scopes(request, "user"),
-        get_username(request)
-    )
+    is_admin = auth.is_admin(request)
+    is_user = auth.is_user(request)
+    username = auth.get_username(request)
 
     # check caching with collection SHA
     etag = _update_etag_reqinfo(
@@ -173,11 +170,9 @@ async def recipe(request: Request, collection: str, id: str):
         raise NotFound("No such recipe exists on this website")
 
     # user specific data
-    is_admin, is_user, username = await asyncio.gather(
-        validate_scopes(request, "admin"),
-        validate_scopes(request, "user"),
-        get_username(request)
-    )
+    is_admin = auth.is_admin(request)
+    is_user = auth.is_user(request)
+    username = auth.get_username(request)
 
     # update recipe sha with user info
     recipe = recipes[id]

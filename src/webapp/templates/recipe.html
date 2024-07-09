@@ -28,7 +28,7 @@
                 .fail(function(resp) {
                     if (resp.status === 401) {
                         // unauthorized, redirect to login page
-                        window.location.href = "{{ url_for('login_form', redirect='recipe') }}";
+                        window.location.href = "{{ url_for('login_form', redirect=url_for('recipe', collection=collection, id=recipe_id)) }}";
                     }
                     else {
                         show_popup("Failed to delete recipe");
@@ -45,7 +45,7 @@
                 .fail(function(resp) {
                     if (resp.status === 401) {
                         // unauthorized, redirect to login page
-                        window.location.href = "{{ url_for('login_form', redirect='recipe') }}";
+                        window.location.href = "{{ url_for('login_form', redirect=url_for('recipe', collection=collection, id=recipe_id)) }}";
                     }
                     else {
                         show_popup("Failed to move recipe");
@@ -62,7 +62,7 @@
                 .fail(function(resp) {
                     if (resp.status === 401) {
                         // unauthorized, redirect to login page
-                        window.location.href = "{{ url_for('login_form', redirect='recipe') }}";
+                        window.location.href = "{{ url_for('login_form', redirect=url_for('recipe', collection=collection, id=recipe_id)) }}";
                     }
                     else {
                         show_popup("Failed to post recipe");
@@ -97,7 +97,7 @@
                 {%- endif -%}
                 <a onclick="share_recipe()" class="round-button"><i class="fas fa-share"></i></a>
                 {%- if not (is_user or is_admin) -%}
-                <a href="{{ url_for('login_form', redirect='recipe') }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
+                <a href="{{ url_for('login_form', redirect=url_for('recipe', collection=collection, id=recipe_id)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
                 {%- else -%}
                 <a href="{{ url_for('logout') }}" class="round-button"><i class="fas fa-sign-out-alt"></i></a>
                 {%- endif -%}
