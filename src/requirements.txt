@@ -17,7 +17,7 @@ asyncpg==0.29.0
 pydantic>=2.6.0
 redis>=5.0.1
 python-Levenshtein==0.25.0
-instagrapi>=2.1.2
+aiograpi==0.0.3
 Pillow>=10.4.0
 thefuzz==0.22.1
 msgspec==0.18.6

@@ -50,6 +50,6 @@ def add_error_routes(app: Sanic):
             context={
                 "title": "Whoops!",
                 "message": "<p>An error occurred:</p>"
-                        f"<pre>{tb}</pre>"
+                          f"<pre>{tb}</pre>"
             }
         )
