@@ -34,6 +34,9 @@ class CollectionCache:
             for recipe_id, recipe in self.recipes.items()
         }
 
+    def reset_timeout(self):
+        self.recipe_timeout = datetime.datetime.now() + datetime.timedelta(minutes=15)
+
     def clear(self):
         self.recipes = None
         self.sha = None
@@ -74,7 +77,7 @@ async def _get_recipes(collection) -> CollectionCache:
 
     if col.recipes is not None and col.recipe_timeout is not None and col.sha is not None:
         # invalid timeout, reset it
-        col.recipe_timeout = datetime.datetime.now() + datetime.timedelta(minutes=15)
+        col.reset_timeout()
         return col
 
     # refresh cached collection
@@ -111,6 +114,7 @@ async def _get_recipes(collection) -> CollectionCache:
             recipe_id: Recipe.from_data(**recipe)
             for recipe_id, recipe in recipes.items()
         }
+        col.reset_timeout()
         return col
 
 
@@ -167,7 +171,9 @@ async def _push_recipes(collection: str, message: str):
         if not res.ok:
             col.clear()
             raise CookbookError(f"Error pushing recipe: {res.status} ({await res.text()})")
-
+        
+        # reset timeout on successful push
+        col.reset_timeout()
 
 async def add_recipe(collection: str, recipe: Recipe):
     """ Add recipe to collection by name """
