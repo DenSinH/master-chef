@@ -3,7 +3,8 @@ import aiograpi.exceptions
 import aiohttp
 import aiofiles.os
 import aiofiles.tempfile
-import tempfile
+from PIL import Image
+from io import BytesIO
 from pathlib import Path
 import os
 import logging
@@ -109,12 +110,16 @@ async def _download_image(url: str, callback: callable, user_agent=None):
             
             # Create a temporary file
             try:
-                async with aiofiles.tempfile.NamedTemporaryFile(mode="wb", suffix=url_path.suffix, delete=False) as img:
+                async with aiofiles.tempfile.NamedTemporaryFile(mode="wb", suffix="jpg", delete=False) as img:
                     img_name = Path(img.name)
-                    await img.write(await response.read())
+                    image_data = Image.open(BytesIO(await response.read())).convert("RGB")
+                    jpg = BytesIO()
+                    image_data.save(jpg, format="jpeg", quality=95, optimize=True)
+                    jpg.seek(0)
+                    await img.write(await jpg.read())
                 return await callback(img_name)
             finally:
-                os.remove(img_name)
+                await aiofiles.os.remove(img_name)
 
 
 async def post_instagram_recipe(recipe_name, image_url, user_agent=None):
