@@ -113,10 +113,15 @@ async def _download_image(url: str, callback: callable, user_agent=None):
                 async with aiofiles.tempfile.NamedTemporaryFile(mode="wb", suffix="jpg", delete=False) as img:
                     img_name = Path(img.name)
                     image_data = Image.open(BytesIO(await response.read())).convert("RGB")
+                    
+                    # first output to memory for less load on the server during
+                    # request processing
                     jpg = BytesIO()
                     image_data.save(jpg, format="jpeg", quality=95, optimize=True)
                     jpg.seek(0)
-                    await img.write(await jpg.read())
+                    
+                    # actual IO awaiting
+                    await img.write(jpg.read())
                 return await callback(img_name)
             finally:
                 await aiofiles.os.remove(img_name)
