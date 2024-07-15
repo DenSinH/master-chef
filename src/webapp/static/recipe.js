@@ -144,19 +144,21 @@ function convert(amount, base, people) {
 }
 
 function set_amounts(base, people) {
-    if (people == base) {
-        $(".people-based-on").addClass("hidden");
-        $(".ingredients .ingredient-amount").each(function() {
-            let el = $(this);
-            el.text(el.data("base"));
-        });
-    }
-    else {
-        $(".people-based-on").removeClass("hidden");
-        $(".ingredients .ingredient-amount").each(function() {
-            let el = $(this);
-            el.text(convert(el.data("base"), base, people));
-        });
+    if (typeof base === 'number' && !isNaN(base) && typeof people === 'number' && !isNaN(people)) {
+        if (people == base) {
+            $(".people-based-on").addClass("hidden");
+            $(".ingredients .ingredient-amount").each(function() {
+                let el = $(this);
+                el.text(el.data("base"));
+            });
+        }
+        else {
+            $(".people-based-on").removeClass("hidden");
+            $(".ingredients .ingredient-amount").each(function() {
+                let el = $(this);
+                el.text(convert(el.data("base"), base, people));
+            });
+        }
     }
 }
 
