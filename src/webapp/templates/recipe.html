@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="/static/modal.css">
     {% include "tags.html" %}
 
-    <script defer src="/static/recipe.js"></script>
+    <script defer recipe-id="{{ recipe_id }}" src="/static/recipe.js"></script>
     <script defer src="/static/wakelock.js"></script>
     <script defer src="/static/modal.js"></script>
     {%- if is_user or is_admin -%}
@@ -31,7 +31,7 @@
                         window.location.href = "{{ url_for('login_form', redirect=url_for('recipe', collection=collection, id=recipe_id)) }}";
                     }
                     else {
-                        show_popup("Failed to delete recipe");
+                        showPopup("Failed to delete recipe");
                     }
                 });
             }
@@ -48,7 +48,7 @@
                         window.location.href = "{{ url_for('login_form', redirect=url_for('recipe', collection=collection, id=recipe_id)) }}";
                     }
                     else {
-                        show_popup("Failed to move recipe");
+                        showPopup("Failed to move recipe");
                     }
                 });
             }
@@ -65,7 +65,7 @@
                         window.location.href = "{{ url_for('login_form', redirect=url_for('recipe', collection=collection, id=recipe_id)) }}";
                     }
                     else {
-                        show_popup("Failed to post recipe");
+                        showPopup("Failed to post recipe");
                     }
                 });
             }
@@ -95,7 +95,7 @@
                 {%- if recipe.igcode -%}
                     <a href="https://www.instagram.com/p/{{ recipe.igcode }}/" class="round-button" target="_blank"><i class="fab fa-instagram"></i></a>
                 {%- endif -%}
-                <a onclick="share_recipe()" class="round-button"><i class="fas fa-share"></i></a>
+                <a onclick="shareRecipe()" class="round-button"><i class="fas fa-share"></i></a>
                 {%- if not (is_user or is_admin) -%}
                 <a href="{{ url_for('login_form', redirect=url_for('recipe', collection=collection, id=recipe_id)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
                 {%- else -%}
@@ -160,7 +160,7 @@
         </div>
         <div class="ingredients-header">
             <h2>{{ 'Ingredients' if english else 'Ingrediënten'}}</h2>
-            <button class="round-button" onclick="reset_ingredients()"><i class="fas fa-sync-alt"></i></button>
+            <button class="round-button" onclick="resetIngredients()"><i class="fas fa-sync-alt"></i></button>
         </div>
         {%- if recipe.people -%}
         <div class="ingredient-conversion">
@@ -223,7 +223,7 @@
                     </label>
                     <p class="mode-text">{{ 'Cooking mode' if english else 'Kookmodus' }}</p>
                 </div>
-                <button class="round-button" onclick="reset_instructions()"><i class="fas fa-sync-alt"></i></button>
+                <button class="round-button" onclick="resetInstructions()"><i class="fas fa-sync-alt"></i></button>
             </div>
         </div>
         <ol class="instructions">

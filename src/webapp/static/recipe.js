@@ -1,4 +1,6 @@
-function share_recipe() {
+const recipe_id = document.currentScript.getAttribute("recipe-id");
+
+function shareRecipe() {
     if (navigator.share) {
         try {
             const title = document.title;
@@ -18,23 +20,17 @@ function share_recipe() {
                 url: url
             });
         } catch (error) {
-            copy_url();
+            copyUrl();
         }
     } else {
         // Fallback for browsers that do not support the Web Share API
-        copy_url();
+        copyUrl();
     }
 }
 
-function copy_url() {
-    const textArea = document.createElement('textarea');
-    textArea.value = window.location.href;
-    document.body.appendChild(textArea);
-    textArea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textArea);
-
-    show_popup('URL Copied!');
+function copyUrl() {
+  navigator.clipboard.writeText(window.location.href);
+  showPopup('URL Copied!');
 }
 
 function reduce(numerator, denominator) {
@@ -143,7 +139,13 @@ function convert(amount, base, people) {
   }
 }
 
-function set_amounts(base, people) {
+function setAmounts(base, people) {
+    let people_amount = $("#people-amount");
+    people_amount.text(people);
+
+    people = parseInt(people);
+    base = parseInt(base);
+
     if (typeof base === 'number' && !isNaN(base) && typeof people === 'number' && !isNaN(people)) {
         if (people == base) {
             $(".people-based-on").addClass("hidden");
@@ -162,58 +164,64 @@ function set_amounts(base, people) {
     }
 }
 
-function incr_people() {
-    let people_amount = $("#people-amount");
-    let people = parseInt(people_amount.text()) + 1;
-    localStorage.setItem('people', people);
-    people_amount.text(people);
-    let base = parseInt(people_amount.data("base"));
-    set_amounts(base, people);
+function setValue(key, value) {
+  localStorage.setItem(`${recipe_id}:${key}`, value);
 }
 
-function decr_people() {
+function getValue(key) {
+  return localStorage.getItem(`${recipe_id}:${key}`);
+}
+
+
+function incrPeople() {
+    let people_amount = $("#people-amount");
+    let people = parseInt(people_amount.text()) + 1;
+    setValue('people', people);
+    let base = parseInt(people_amount.data("base"));
+    setAmounts(base, people);
+}
+
+function decrPeople() {
     let people_amount = $("#people-amount");
     let people = parseInt(people_amount.text()) - 1;
     if (people >= 1) {
-        localStorage.setItem('people', people);
-        people_amount.text(people);
+        setValue('people', people);
         let base = parseInt(people_amount.data("base"));
-        set_amounts(base, people);
+        setAmounts(base, people);
     }
     else {
         // cannot go below 1 person
     }
 }
 
-function reset_ingredients() {
+function resetIngredients() {
   let people_amount = $("#people-amount");
   let base = parseInt(people_amount.data("base"));
-  people_amount.text(base);
-  set_amounts(base, base);
-  localStorage.setItem('people', base);
+  setAmounts(base, base);
+  setValue('people', base);
   $(".ingredients tr").each(function(index) {
     $(this).removeClass("active");
-    localStorage.setItem("ingredients-" + index, false);
+    setValue("ingredients-" + index, false);
   });
 }
 
-function reset_instructions() {
+function resetInstructions() {
   $(".instructions li").each(function(index) {
     $(this).removeClass("active");
-    localStorage.setItem("instructions-" + index, false);
+    setValue("instructions-" + index, false);
   });
 }
 
 $(document).ready(function() {
     // Load the toggled state from localStorage
     $(".ingredients tr").each(function(index) {
-      if (localStorage.getItem("ingredients-" + index) === "true") {
+      if (getValue("ingredients-" + index) === "true") {
         $(this).addClass("active");
       }
     });
 
     $(".instructions li").each(function(index) {
-      if (localStorage.getItem("instructions-" + index) === "true") {
+      if (getValue("instructions-" + index) === "true") {
         $(this).addClass("active");
       }
     });
@@ -222,26 +230,27 @@ $(document).ready(function() {
     $(".ingredients tr").click(function() {
       $(this).toggleClass("active");
       var index = $(".ingredients tr").index(this);
-      localStorage.setItem("ingredients-" + index, $(this).hasClass("active"));
+      setValue("ingredients-" + index, $(this).hasClass("active"));
     });
 
     $(".instructions li").click(function() {
       $(this).toggleClass("active");
       var index = $(".instructions li").index(this);
-      localStorage.setItem("instructions-" + index, $(this).hasClass("active"));
+      setValue("instructions-" + index, $(this).hasClass("active"));
     });
-    let people = localStorage.getItem('people');
+
+
+    let people = getValue('people');
     if (people) {
       let people_amount = $("#people-amount");
       let base = parseInt(people_amount.data("base"));
-      people_amount.text(people);
-      set_amounts(base, people);
+      setAmounts(base, people);
     }
-    $("#incr-people").click(incr_people);
-    $("#decr-people").click(decr_people);
+    $("#incr-people").click(incrPeople);
+    $("#decr-people").click(decrPeople);
     $("ref").click(function(e) {
       e.stopPropagation();
       let ingredient = $("#ingredient-" + $(this).attr('data-ingredient'));
-      show_popup(`${ingredient.find('.ingredient-amount').text()} ${ingredient.find(':not(.ingredient-amount)').text()}`.trim());
+      showPopup(`${ingredient.find('.ingredient-amount').text()} ${ingredient.find(':not(.ingredient-amount)').text()}`.trim());
     });
 });

@@ -1,5 +1,5 @@
 
-function show_popup(message) {
+function showPopup(message) {
     $('.popup').remove();
 
     const popup = document.createElement('div');

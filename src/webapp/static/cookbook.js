@@ -8,7 +8,7 @@ function toggleOnlySaved() {
     showPages(true);
 }
 
-function get_active_recipes(ignoreSearch) {
+function getActiveRecipes(ignoreSearch) {
     let selector = ".recipe-item";
     if (searching && !ignoreSearch) {
         selector += ".search-result";
@@ -19,8 +19,8 @@ function get_active_recipes(ignoreSearch) {
     return $(selector);
 }
 
-function random_recipe() {
-    let recipes = get_active_recipes();
+function randomRecipe() {
+    let recipes = getActiveRecipes();
     let randomIndex = Math.floor(Math.random() * recipes.length);
     recipes[randomIndex].click();
 }
@@ -29,7 +29,7 @@ function showPages(doHide) {
     if (doHide) {
         $(".recipe-item").hide();
     }
-    get_active_recipes().slice(0, numPages * pageSize).show();
+    getActiveRecipes().slice(0, numPages * pageSize).show();
 }
 
 $(window).scroll(function() {
@@ -72,7 +72,7 @@ $(document).ready(function () {
     showPages(false);
 
     const searchBar = $('#searchBar');
-    const recipeItems = get_active_recipes(true);
+    const recipeItems = getActiveRecipes(true);
 
     searchBar.on('input', function () {
         const searchTerm = $(this).val().toLowerCase().trim();

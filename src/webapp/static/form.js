@@ -1,4 +1,4 @@
-function add_element(parent, selector, index, element, after=true) {
+function addElement(parent, selector, index, element, after=true) {
     if (after) {
         if (!$(`${parent} ${selector}`).eq(index).after(element).length) {
             $(parent).append(element);
@@ -12,7 +12,7 @@ function add_element(parent, selector, index, element, after=true) {
 }
 
 
-function add_ingredient(index=-1, text="", after=true) {
+function addIngredient(index=-1, text="", after=true) {
     const row = $('<div class="ingredient-row">' +
         '<span class="handle"><i class="fas fa-grip-lines"></i></span>' +
         '<input type="text" class="amount" name="ingredient-amount" placeholder="Amount">' +
@@ -21,11 +21,11 @@ function add_ingredient(index=-1, text="", after=true) {
             '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
         '</div>' +
         '</div>');
-    add_element('#ingredientRows', '.ingredient-row', index, row, after);
-    set_callbacks();
+    addElement('#ingredientRows', '.ingredient-row', index, row, after);
+    setCallbacks();
 }
 
-function add_step(index=-1, text="", after=true) {
+function addStep(index=-1, text="", after=true) {
     const row = $('<div class="preparation-row">' +
         '<span class="handle"><i class="fas fa-grip-lines"></i></span>' +
         `<textarea class="step" name="preparation" placeholder="Step">${text}</textarea>` +
@@ -33,11 +33,11 @@ function add_step(index=-1, text="", after=true) {
             '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
         '</div>' +
         '</div>');
-    add_element('#preparationRows', '.preparation-row', index, row, after);
-    set_callbacks();
+    addElement('#preparationRows', '.preparation-row', index, row, after);
+    setCallbacks();
 }
 
-function add_group(index=-1, text="", after=true) {
+function addGroup(index=-1, text="", after=true) {
     const row = $('<div class="nutrition-row">' +
         '<span class="handle"><i class="fas fa-grip-lines"></i></span>' +
         '<input type="text" class="amount" name="nutrition-amount" placeholder="Amount">' +
@@ -46,11 +46,11 @@ function add_group(index=-1, text="", after=true) {
             '<span class="round-button remove-row"><i class="fas fa-minus"></i></span>' +
         '</div>' +
         '</div>');
-    add_element('#nutritionRows', '.nutrition-row', index, row, after);
-    set_callbacks();
+    addElement('#nutritionRows', '.nutrition-row', index, row, after);
+    setCallbacks();
 }
 
-function get_cursor_pos(element) {
+function getCursorPos(element) {
     if (element.selectionStart !== undefined) {
         return element.selectionStart;
     } else {
@@ -61,9 +61,9 @@ function get_cursor_pos(element) {
     }
 }
 
-function set_callbacks() {
+function setCallbacks() {
     const classes = [".ingredient", ".step", ".group"];
-    const callbacks = [add_ingredient, add_step, add_group];
+    const callbacks = [addIngredient, addStep, addGroup];
     for (i in classes) {
         const inputs = $(classes[i]);
         const callback = callbacks[i];
@@ -79,7 +79,7 @@ function set_callbacks() {
                 const index = inputs.index(this);
 
                 if (e.shiftKey) {
-                    let cursor_pos = get_cursor_pos(this);
+                    let cursor_pos = getCursorPos(this);
                     let input_value = $(this).val();
                     let after_cursor = input_value.substring(cursor_pos);
                     $(this).val(input_value.substring(0, cursor_pos));
@@ -137,13 +137,13 @@ function resizeAndCompressImage(file, maxWidth, callback) {
 }
 
 $(document).ready(function () {
-    $('.add-ingredient').first().click(() => add_ingredient(0, "", false));
-    $('.add-ingredient').last().click(add_ingredient);
-    $('.add-step').first().click(() => add_step(0, "", false));
-    $('.add-step').last().click(add_step);
-    $('.add-group').first().click(() => add_group(0, "", false));
-    $('.add-group').last().click(add_group);
-    set_callbacks();
+    $('.add-ingredient').first().click(() => addIngredient(0, "", false));
+    $('.add-ingredient').last().click(addIngredient);
+    $('.add-step').first().click(() => addStep(0, "", false));
+    $('.add-step').last().click(addStep);
+    $('.add-group').first().click(() => addGroup(0, "", false));
+    $('.add-group').last().click(addGroup);
+    setCallbacks();
 
     $(document).on('click', '.remove-row', function () {
         $(this).parent().parent().remove();
@@ -248,7 +248,7 @@ $(document).ready(function () {
                     else {
                         // allow retrying same image
                         this.value = "";
-                        show_popup("Did not get URL for uploaded image");
+                        showPopup("Did not get URL for uploaded image");
                         $("#thumbnailField").val(old_val);
                     }
                 })
@@ -256,7 +256,7 @@ $(document).ready(function () {
                     // allow retrying same image
                     this.value = "";
                     console.error('Error uploading file:', error);
-                    show_popup('Error uploading file: ' + error);
+                    showPopup('Error uploading file: ' + error);
                     $("#thumbnailField").val(old_val);
                 })
                 .finally(() => {

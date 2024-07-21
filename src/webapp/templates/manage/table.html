@@ -128,11 +128,11 @@
                 body: JSON.stringify(data),
             }).then((response) => {
                 if (!response.ok) {
-                    show_popup('Error creating row');
+                    showPopup('Error creating row');
                     throw new Error("Bad response from server");
                 }
                 else {
-                    show_popup('Created row');
+                    showPopup('Created row');
                 }
                 fetchData();
             });
@@ -155,11 +155,11 @@
                 body: JSON.stringify(data)
             }).then((response) => {
                 if (!response.ok) {
-                    show_popup('Error updating row');
+                    showPopup('Error updating row');
                     throw new Error("Bad response from server");
                 }
                 else {
-                    show_popup('Updated row');
+                    showPopup('Updated row');
                 }
                 fetchData();
             });
@@ -170,11 +170,11 @@
                 method: "DELETE"
             }).then((response) => {
                 if (!response.ok) {
-                    show_popup('Error deleting row');
+                    showPopup('Error deleting row');
                     throw new Error("Bad response from server");
                 }
                 else {
-                    show_popup('Deleted row');
+                    showPopup('Deleted row');
                 }
                 fetchData();
             });
@@ -197,11 +197,11 @@
                 body: JSON.stringify(data)
             }).then((response) => {
                 if (!response.ok) {
-                    show_popup('Error deleting row');
+                    showPopup('Error deleting row');
                     throw new Error("Bad response from server");
                 }
                 else {
-                    show_popup('Deleted row');
+                    showPopup('Deleted row');
                 }
                 fetchData();
             });

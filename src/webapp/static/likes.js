@@ -12,7 +12,7 @@ function getSaved() {
             $(".save-icon").removeClass('hidden');
         },
         error: function(xhr, status, error) {
-            show_popup('Failed to retrieve saved recipes, are you still logged in?')
+            showPopup('Failed to retrieve saved recipes, are you still logged in?')
         }
     });
 }
@@ -33,10 +33,10 @@ function toggleSave(event, collection, recipeId) {
             },
             error: function(xhr, status, error) {
                 if (xhr.status == 429) {
-                    show_popup('You are doing that too fast!');
+                    showPopup('You are doing that too fast!');
                 }
                 else {
-                    show_popup('Failed to unsave recipe, are you still logged in?');
+                    showPopup('Failed to unsave recipe, are you still logged in?');
                 }
             }
         });
@@ -51,10 +51,10 @@ function toggleSave(event, collection, recipeId) {
             },
             error: function(xhr, status, error) {
                 if (xhr.status == 429) {
-                    show_popup('You are doing that too fast!');
+                    showPopup('You are doing that too fast!');
                 }
                 else {
-                    show_popup('Failed to save recipe, are you still logged in?');
+                    showPopup('Failed to save recipe, are you still logged in?');
                 }
             }
         });

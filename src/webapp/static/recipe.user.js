@@ -43,12 +43,12 @@ function submitReview() {
     let userRating = $('#userRating');
     let selectedRating = parseInt(userRating.attr('data-rating'));
     if (selectedRating === 0) {
-        show_popup("You must give at least 1 star");
+        showPopup("You must give at least 1 star");
         return;
     }
 
     if (selectedRating == userRating.attr('data-last-rating') && userReviewContent == userReview.attr('data-last-review')) {
-        show_popup('Comment posted!');
+        showPopup('Comment posted!');
         return;
     }
 
@@ -63,12 +63,12 @@ function submitReview() {
         success: function(response) {
             userRating.attr('data-last-rating', selectedRating);
             userReview.attr('data-last-review', userReviewContent);
-            show_popup('Comment posted!');
+            showPopup('Comment posted!');
             stopEditReview();
         },
         error: function(xhr, status, error) {
             if (xhr.status == 429) {
-                show_popup('You are doing that too fast! Try again later...');
+                showPopup('You are doing that too fast! Try again later...');
             }
             else {
                 try {
@@ -76,7 +76,7 @@ function submitReview() {
                     $("#errors").html(`<p>${errorResponse.error}</p>`);
                 } catch (e) {
                     console.error("Error parsing JSON response:", e);
-                    show_popup('There was a problem posting your review...');
+                    showPopup('There was a problem posting your review...');
                 }
             }
         }
@@ -93,12 +93,12 @@ function deleteReview() {
             $('#userRating').attr('data-last-rating', 0);
             $('#userReview').text('');
             $('#userReview').attr('data-last-review', '');
-            show_popup('Comment deleted!');
+            showPopup('Comment deleted!');
             editReview();
         },
         error: function(error) {
             if (xhr.status == 429) {
-                show_popup('You are doing that too fast! Try again later...');
+                showPopup('You are doing that too fast! Try again later...');
             }
             else {
                 try {
@@ -106,7 +106,7 @@ function deleteReview() {
                     $("#errors").html(`<p>${errorResponse.error}</p>`);
                 } catch (e) {
                     console.error("Error parsing JSON response:", e);
-                    show_popup('There was a problem deleting your review...');
+                    showPopup('There was a problem deleting your review...');
                 }
             }
         }
