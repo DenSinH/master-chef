@@ -94,9 +94,10 @@ async def get_instagram_recipe(url):
     try:
         media_pk = await client.media_pk_from_url(url)
         media = await client.media_info(media_pk)
+        return media.caption_text, str(media.thumbnail_url)
     except aiograpi.exceptions.ChallengeRequired as e:
         pprint(vars(e))
-    return media.caption_text, str(media.thumbnail_url)
+        raise
 
 
 async def _download_image(url: str, callback: callable, user_agent=None):
