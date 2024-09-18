@@ -8,6 +8,7 @@ from io import BytesIO
 from pathlib import Path
 import os
 import logging
+from pprint import pprint
 
 from .utils import InstagramError, get_headers
 
@@ -90,8 +91,11 @@ async def get_instagram_recipe(url):
     """ Get recipe from Instagram media caption,
     as well as the thumbnail url """
     client = await _get_client()
-    media_pk = await client.media_pk_from_url(url)
-    media = await client.media_info(media_pk)
+    try:
+        media_pk = await client.media_pk_from_url(url)
+        media = await client.media_info(media_pk)
+    except aiograpi.exceptions.ChallengeRequired as e:
+        pprint(vars(e))
     return media.caption_text, str(media.thumbnail_url)
 
 
