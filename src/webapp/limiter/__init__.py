@@ -10,7 +10,7 @@ async def init_limiter(app: Sanic, loop):
     @app.on_request
     async def on_request(request: Request):
         # todo: this is not very future proof
-        if request.route.name == f"{app.name}.static":
+        if getattr(request.route, "name", None) == f"{app.name}.static":
             # exempt static files
             return
 
