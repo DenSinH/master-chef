@@ -1,23 +1,87 @@
-from dataclasses import dataclass, field
-import dataclasses
-import types
 import abc
-from .meta import *
-import msgspec.json
+import dataclasses
 import hashlib
+import types
+import typing
+from dataclasses import dataclass, field
+from typing import Any
+
+import msgspec.json
 from thefuzz import process
+
+from .meta import *
 
 
 class RecipeError(Exception):
     pass
 
 
-class Fixable(abc.ABC):
+def _is_list_of_single_keyed_dicts(value: list) -> bool:
+    """Check whether the given value is a list of single keyed dicts. We want to check this,
+    since sometimes ChatGPT returns a list of {'step' : 'step text'} dicts for recipe steps,
+    which get converted to string literals directly."""
+    return all(isinstance(v, dict) for v in value) and len({k for v in value for k in v}) == 1
 
+
+class Fixable(abc.ABC):
     """
     Abstract (data)class that can be instantiated from a dictionary,
     loosely parsing the dictionary into its fields.
     """
+
+    @staticmethod
+    def _fix_field(field: dataclasses.Field, value: Any) -> Any:
+        if value is None:
+            # assume None means the default value
+            return None
+        elif isinstance(field.type, types.GenericAlias):
+            origin = typing.get_origin(field.type) or field.type
+            field_args = typing.get_args(field.type)
+
+            if origin is list:
+                # iterate through field values
+                subscript, = field_args
+
+                # the subscript may be subscripted itself
+                subscript = typing.get_origin(subscript) or subscript
+                if not isinstance(value, list):
+                    # make list of value
+                    value = [value]
+
+                # initialize elementwise
+                if issubclass(subscript, Fixable):
+                    assert all(isinstance(v, dict) for v in value)
+                    return [subscript.from_data(**v) for v in value]
+                elif dataclasses.is_dataclass(subscript):
+                    assert all(isinstance(v, dict) for v in value)
+                    return [subscript(**v) for v in value]
+                elif subscript is not dict and _is_list_of_single_keyed_dicts(value):
+                    # all single-keyed dicts with the same key, take the value
+                    # this fixes an issue where ChatGPT returns a list of
+                    # {'step': 'step text'} dicts for the recipe steps
+                    # instead of converting to subscript directly, we take the first
+                    # (and only) dict value
+                    return [subscript(next(iter(v.values()))) for v in value]
+                else:
+                    return list(subscript(v) for v in value)
+            else:
+                raise NotImplementedError(f"GenericAlias {field.type} loading")
+        else:
+            # value may be a list, like in a form submission
+            if isinstance(value, list):
+                if len(value) == 0:
+                    # assume default value again
+                    return None
+
+                # choose first value
+                value = value[0]
+
+            if issubclass(field.type, Fixable):
+                return field.type.from_data(**value)
+            elif dataclasses.is_dataclass(field.type):
+                return field.type(**value)
+            else:
+                return field.type(value)
 
     @classmethod
     def from_data(cls, **kwargs):
@@ -29,79 +93,38 @@ class Fixable(abc.ABC):
             if value is None:
                 # did not find field, extract best match
                 value, score, key = process.extractOne(key, kwargs)
-                
+
                 if score < 90:
                     # no match, use default value
                     continue
-                
-            if value is None:
-                # assume None means the default value
-                # so we skip it
-                continue
-            elif isinstance(field.type, types.GenericAlias):
-                if field.type.__origin__ is list:
-                    # iterate through field values
-                    subscript, = field.type.__args__
-                    if not isinstance(value, list):
-                        # make list of value
-                        if isinstance(value, subscript):
-                            value = [value]
-                        else:
-                            raise RecipeError(f"Expected list for field {key}, got {value}")
-                    
-                    # initialize elementwise
-                    if issubclass(subscript, Fixable):
-                        fixed[key] = [subscript.from_data(**v) for v in value]
-                    elif dataclasses.is_dataclass(subscript):
-                        fixed[key] = [subscript(**v) for v in value]
-                    else:
-                        fixed[key] = list(subscript(v) for v in value)
-                else:
-                    raise NotImplementedError(f"GenericAlias {field.type} loading")
-            else:
-                # value may be a list, like in a form submission
-                if isinstance(value, list):
-                    if len(value) == 0:
-                        # assume default value again
-                        continue
 
-                    # choose first value
-                    value = value[0]
-
-                if issubclass(field.type, Fixable):
-                    fixed[key] = field.type.from_data(**value)
-                elif dataclasses.is_dataclass(field.type):
-                    fixed[key] = field.type(**value)
-                else:
-                    fixed[key] = field.type(value)
+            fixed[key] = Fixable._fix_field(field, value)
 
         # validate allowed values
         for key, value in fixed.items():
             if value is None:
                 continue
-            
+
             # get allowed values
             field = fields[key]
             allowed_values = field.metadata.get("allowed_values")
             if allowed_values is None:
                 continue
-            
+
             def _fix_value(v):
-                """ Fix a single value v to one of the allowed
-                    values for this field """
+                """Fix a single value v to one of the allowed values for this field"""
                 if v is None:
                     return v
-                
+
                 # v may already be allowed
                 if v in allowed_values:
                     return v
-                process.extractOne(v, allowed_values)[0]
+                return process.extractOne(v, allowed_values)[0]
 
             if isinstance(value, list):
                 value = [_fix_value(v) for v in value]
             else:
                 value = _fix_value(value)
-
             fixed[key] = value
 
         return cls(**fixed)
@@ -111,7 +134,7 @@ class Fixable(abc.ABC):
 class RecipeMeta(Fixable):
     language: str = field(default=None, metadata={"allowed_values": LANGUAGES})
     meal_type: str = field(default="other", metadata={"allowed_values": MEAL_TYPES})
-    meat_type: list[str] = field(default_factory=lambda: ["other"], metadata={"allowed_values": MEAT_TYPES})
+    meat_type: list[str] = field(default_factory=lambda: ["other"],  metadata={"allowed_values": MEAT_TYPES})
     carb_type: list[str] = field(default_factory=lambda: ["other"], metadata={"allowed_values": CARB_TYPES})
     cuisine: str = field(default=None, metadata={"allowed_values": CUISINE_TYPES})
     temperature: str = field(default="any", metadata={"allowed_values": TEMPERATURE_TYPES})
@@ -156,7 +179,7 @@ class Recipe(Fixable):
     def sha(self) -> 'hashlib._Hash':
         return hashlib.sha256(
             msgspec.json.encode(
-                dataclasses.asdict(self), 
+                dataclasses.asdict(self),
                 order="deterministic"
             ),
             usedforsecurity=False
