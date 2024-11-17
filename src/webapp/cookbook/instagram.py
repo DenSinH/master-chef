@@ -63,7 +63,7 @@ async def _get_client() -> aiograpi.Client:
                 await _CLIENT.get_timeline_feed()
                 return _CLIENT
             except aiograpi.exceptions.LoginRequired:
-                logger.warn("Session is invalid, need to login via username and password")
+                logger.warning("Session is invalid, need to login via username and password")
 
             old_session = _CLIENT.get_settings()
 
@@ -77,7 +77,7 @@ async def _get_client() -> aiograpi.Client:
                 return _CLIENT
                 
         except Exception as e:
-            logger.warn(f"Couldn't login user using session information: {e}")
+            logger.warning(f"Couldn't login user using session information: {e}")
 
     try:
         logger.info("Attempting to login via username and password.")

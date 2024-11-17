@@ -69,8 +69,7 @@ Please output only the JSON object and nothing else. You can do this!
 
 
 def _get_tiktok_text(soup: BeautifulSoup):
-    """ Get description of tiktok page 
-    We cannot use simple scraping, since the 
+    """ Get description of tiktok page. We cannot use simple scraping, since the
     caption is loaded lazily. """
     data = soup.find("script", {"id": "__UNIVERSAL_DATA_FOR_REHYDRATION__"})
     json_data = msgspec.json.decode(data.contents[0], strict=False)
@@ -97,8 +96,9 @@ def _get_html_text(soup: BeautifulSoup):
     
     # remove comment sections from website
     COMMENTS = ["comment", "opmerking"]
+    COMMENTS_RE = re.compile(fr".*({'|'.join(COMMENTS)}).*", flags=re.IGNORECASE)
     for attr in ["class", "id"]:
-        for element in soup.find_all(attrs={attr: re.compile(fr".*({'|'.join(COMMENTS)}).*", flags=re.IGNORECASE)}):
+        for element in soup.find_all(attrs={attr: COMMENTS_RE}):
             # only remove "small" text sections
             if len(_get_text(element)) < 0.1 * text_length:
                 element.decompose()
@@ -108,9 +108,8 @@ def _get_html_text(soup: BeautifulSoup):
     return text
 
 
-async def translate_url(url, user_agent=None) -> Recipe:
-    """ Transform a recipe from a url, determining
-    the thumbnail automatically """
+async def translate_url(url: str, user_agent=None) -> Recipe:
+    """ Transform a recipe from a url, determining the thumbnail automatically """
     logging.info(f"Retrieving url {url}")
     domain = tld.extract(url).domain.lower()
     if domain in {"instagram", "ig", "cdninstagram"}:
@@ -134,7 +133,7 @@ async def translate_url(url, user_agent=None) -> Recipe:
     return recipe
 
 
-async def _chatgpt_json_and_fix(cls, messages, temperature=0.7, **kwargs):
+async def _chatgpt_json_and_fix(cls: type[Fixable], messages, temperature=0.7, **kwargs):
     """ Send message to chatgpt, and load object of type 'cls'
     from the response. 'cls' should be a subclass of Fixable """
     assert issubclass(cls, Fixable)
@@ -159,19 +158,24 @@ async def _chatgpt_json_and_fix(cls, messages, temperature=0.7, **kwargs):
         try:
             return reply, cls.from_data(**msgspec.json.decode(reply, strict=False))
         except msgspec.DecodeError:
-            logger.warn("Conversion failed, retrying")
+            logger.warning("Conversion failed, retrying")
             messages.append({"role": "assistant", "content": reply})
-            messages.append({"role": "user", "content": "this is not a parsable json object, "
-                                                        "output only the json object"})
+            messages.append({
+                "role": "user",
+                "content": "this is not a parsable json object, output only the json object"
+            })
     raise CookbookError("ChatGPT did not return a parsable json object, please try again")
 
 
-async def translate_page(text, url=None, thumbnail=None) -> Recipe:
+async def translate_page(text: str, url=None, thumbnail=None) -> Recipe:
     """ Tranform a recipe from text, filling in the url and thumbnail
     fields from the given parameters """
     logging.info(f"Converting with ChatGPT ({MODEL})")
     messages = [
-        {"role": "system", "content": "You are a helpful AI cook that converts recipes into JSON objects."},
+        {
+            "role": "system",
+            "content": "You are a helpful AI cook that converts recipes into JSON objects."
+        },
         {"role": "user", "content": PROMPT.format(text=text)}
     ]
 
