@@ -291,6 +291,16 @@
                 </div>
             </div>
         </div>
+        {%- else -%}
+        <a href="{{ url_for('login_form', redirect=url_for('recipe', collection=collection, id=recipe_id)) }}" style="color: gray">
+            <i>
+                {%- if english -%}
+                    Log in to post your own review
+                {%- else -%}
+                    Log in om je eigen beoordeling te plaatsen
+                {% endif %}
+            </i>
+        </a>
         {%- endif -%}
 
         {% for comment, user in comments_users %}
