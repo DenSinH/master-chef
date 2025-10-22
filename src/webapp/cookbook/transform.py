@@ -133,7 +133,7 @@ async def translate_url(url: str, user_agent=None) -> Recipe:
     return recipe
 
 
-async def _chatgpt_json_and_fix(cls: type[Fixable], messages, temperature=0.7, **kwargs):
+async def _chatgpt_json_and_fix(cls: type[Fixable], messages, temperature=1, **kwargs):
     """ Send message to chatgpt, and load object of type 'cls'
     from the response. 'cls' should be a subclass of Fixable """
     assert issubclass(cls, Fixable)
