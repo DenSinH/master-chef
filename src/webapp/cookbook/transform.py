@@ -23,6 +23,7 @@ client = openai.AsyncOpenAI(
 
 MAX_RETRIES = 1
 MODEL = "gpt-5-nano"
+DEFAULT_TEMPERATURE = 1
 PROMPT = """
 The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text from the webpage.
 The recipe contains information on the ingredients, the preparation and possibly nutritional information.
@@ -133,7 +134,7 @@ async def translate_url(url: str, user_agent=None) -> Recipe:
     return recipe
 
 
-async def _chatgpt_json_and_fix(cls: type[Fixable], messages, temperature=1, **kwargs):
+async def _chatgpt_json_and_fix(cls: type[Fixable], messages, temperature=DEFAULT_TEMPERATURE, **kwargs):
     """ Send message to chatgpt, and load object of type 'cls'
     from the response. 'cls' should be a subclass of Fixable """
     assert issubclass(cls, Fixable)
@@ -179,12 +180,12 @@ async def translate_page(text: str, url=None, thumbnail=None) -> Recipe:
         {"role": "user", "content": PROMPT.format(text=text)}
     ]
 
-    reply, fixed = await _chatgpt_json_and_fix(Recipe, messages, temperature=0.7)
+    reply, fixed = await _chatgpt_json_and_fix(Recipe, messages, temperature=DEFAULT_TEMPERATURE)
     messages.append({"role": "assistant", "content": reply})
     messages.append({"role": "user", "content": META_PROMPT})
     try:
         # higher temperature for interpreting the recipe for tags
-        _, meta = await _chatgpt_json_and_fix(RecipeMeta, messages, temperature=0.7)
+        _, meta = await _chatgpt_json_and_fix(RecipeMeta, messages, temperature=DEFAULT_TEMPERATURE)
     except Exception as e:
         meta = {}
 
