@@ -1,12 +1,17 @@
-import jwt
 import datetime
+import os
 from functools import wraps
+
+import jwt
 from sanic import Sanic, Request, HTTPResponse
 from sanic.exceptions import Unauthorized, Forbidden
-import os
 
 JWT_ALGORITHM = "HS256"
 JWT_COOKIE_NAME = "CookbookToken"
+ADMIN_USERS = set(
+    name.strip() for name in
+    os.environ.get("ADMIN_USER", "admin").split(",")
+)
 
 
 def init_jwt(app: Sanic, secret=None, expiration_delta=None):
@@ -16,7 +21,7 @@ def init_jwt(app: Sanic, secret=None, expiration_delta=None):
         jwt_secret=secret,
         jwt_expiration_delta=expiration_delta or 30 * 60
     )
-    
+
     @app.on_request
     async def jwt_authentication(request: Request):
         """ Read userdata on request """
@@ -38,14 +43,15 @@ def _encode_jwt(app: Sanic, username: str):
     payload = {
         "username": username,
         "scopes": ['user'],
-        "exp": datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=app.config["jwt_expiration_delta"])
+        "exp": datetime.datetime.now(datetime.UTC) + datetime.timedelta(
+            seconds=app.config["jwt_expiration_delta"])
     }
-    if username == os.environ.get("ADMIN_USER", "admin"):
+    if username in ADMIN_USERS:
         payload["scopes"].append("admin")
 
     token = jwt.encode(
-        payload, 
-        app.config["jwt_secret"], 
+        payload,
+        app.config["jwt_secret"],
         algorithm=JWT_ALGORITHM
     )
     return token
@@ -55,8 +61,8 @@ def _decode_jwt(app: Sanic, token: str):
     """ Decode a JWT token belonging to the given app """
     try:
         payload = jwt.decode(
-            token, 
-            app.config["jwt_secret"], 
+            token,
+            app.config["jwt_secret"],
             algorithms=[JWT_ALGORITHM]
         )
         return payload
@@ -64,24 +70,27 @@ def _decode_jwt(app: Sanic, token: str):
         return None
     except jwt.InvalidTokenError:
         return None
-    
+
 
 def protected(*required_scopes):
     """ Validate scope decorator """
+
     def decorator(f):
         @wraps(f)
         async def decorated_function(request: Request, *args, **kwargs):
             # validate user is logged in at all
             if not request.ctx.user:
                 raise Unauthorized("Token required")
-            
+
             # validate scopes
             user_scopes = request.ctx.user.get("scopes", [])
             if not all(scope in user_scopes for scope in required_scopes):
                 raise Forbidden("Insufficient scope")
-            
+
             return await f(request, *args, **kwargs)
+
         return decorated_function
+
     return decorator
 
 

@@ -1,28 +1,26 @@
-import openai
-import aiohttp
-from bs4 import BeautifulSoup
-import tldextract as tld
 import dataclasses
+import logging
 import os
 import re
-import msgspec.json
-import logging
 
-from .utils import *
+import aiohttp
+import msgspec.json
+import openai
+from bs4 import BeautifulSoup
+
+from .instagram import get_instagram_recipe
 from .meta import *
 from .recipe import Recipe, RecipeMeta, Fixable
-from .instagram import get_instagram_recipe
 from .thumbnail import get_thumbnail
-
+from .utils import *
 
 logger = logging.getLogger(__name__)
 client = openai.AsyncOpenAI(
     api_key=os.environ["OPENAI_API_KEY"]
 )
 
-
 MAX_RETRIES = 1
-MODEL = "gpt-5-nano"
+MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
 DEFAULT_TEMPERATURE = 1
 PROMPT = """
 The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text from the webpage.
@@ -74,7 +72,8 @@ def _get_tiktok_text(soup: BeautifulSoup):
     caption is loaded lazily. """
     data = soup.find("script", {"id": "__UNIVERSAL_DATA_FOR_REHYDRATION__"})
     json_data = msgspec.json.decode(data.contents[0], strict=False)
-    return json_data["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["desc"]
+    return json_data["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"][
+        "desc"]
 
 
 def _get_text(soup: BeautifulSoup):
@@ -87,14 +86,14 @@ def _get_html_text(soup: BeautifulSoup):
     First, we try to just get all the text. If this is too long,
     we attempt to strip away any 'small' comment sections. """
     text = _get_text(soup)
-    
+
     # text is "short enough", do not remove comments
     if len(text) < 8000:
         return text
-    
+
     # get initial text length
     text_length = len(text)
-    
+
     # remove comment sections from website
     COMMENTS = ["comment", "opmerking"]
     COMMENTS_RE = re.compile(fr".*({'|'.join(COMMENTS)}).*", flags=re.IGNORECASE)
@@ -103,7 +102,7 @@ def _get_html_text(soup: BeautifulSoup):
             # only remove "small" text sections
             if len(_get_text(element)) < 0.1 * text_length:
                 element.decompose()
-    
+
     # return reduced text
     text = _get_text(soup)
     return text
@@ -117,10 +116,12 @@ async def translate_url(url: str, user_agent=None) -> Recipe:
         # instagram must be handled separately
         text, thumbnail = await get_instagram_recipe(url)
     else:
-        async with aiohttp.ClientSession(headers=get_headers(url, user_agent=user_agent)) as session:
+        async with aiohttp.ClientSession(
+            headers=get_headers(url, user_agent=user_agent)) as session:
             res = await session.get(url)
             if not res.ok:
-                headers = "\n".join(f"{header}: {value}" for header, value in res.headers.items())
+                headers = "\n".join(
+                    f"{header}: {value}" for header, value in res.headers.items())
                 message = f"Could not get the specified url, status code {res.status}\n" + headers
                 raise CookbookError(message)
             soup = BeautifulSoup(await res.text(), features="html.parser")
@@ -134,7 +135,8 @@ async def translate_url(url: str, user_agent=None) -> Recipe:
     return recipe
 
 
-async def _chatgpt_json_and_fix(cls: type[Fixable], messages, temperature=DEFAULT_TEMPERATURE, **kwargs):
+async def _chatgpt_json_and_fix(cls: type[Fixable], messages, temperature=DEFAULT_TEMPERATURE,
+                                **kwargs):
     """ Send message to chatgpt, and load object of type 'cls'
     from the response. 'cls' should be a subclass of Fixable """
     assert issubclass(cls, Fixable)
@@ -185,7 +187,8 @@ async def translate_page(text: str, url=None, thumbnail=None) -> Recipe:
     messages.append({"role": "user", "content": META_PROMPT})
     try:
         # higher temperature for interpreting the recipe for tags
-        _, meta = await _chatgpt_json_and_fix(RecipeMeta, messages, temperature=DEFAULT_TEMPERATURE)
+        _, meta = await _chatgpt_json_and_fix(RecipeMeta, messages,
+                                              temperature=DEFAULT_TEMPERATURE)
     except Exception as e:
         meta = {}
 
