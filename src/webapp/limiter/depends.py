@@ -42,7 +42,8 @@ class RateLimiter:
         identifier = self.identifier or SanicLimiter.identifier
         callback = self.callback or SanicLimiter.http_callback
         rate_key = await identifier(request)
-        key = f"{SanicLimiter.prefix}:{rate_key}:{request.route.name}:{self.times}:{self.milliseconds}"
+        route_name = getattr(request.route, "name", "unknown")
+        key = f"{SanicLimiter.prefix}:{rate_key}:{route_name}:{self.times}:{self.milliseconds}"
         try:
             pexpire = await self._check(key)
         except pyredis.exceptions.NoScriptError:
