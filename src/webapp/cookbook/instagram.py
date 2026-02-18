@@ -21,6 +21,7 @@ _CLIENT = instagrapi.Client()
 _CLIENT.set_user_agent(
     "Instagram 410.0.0.0.96 Android (33/13; 480dpi; 1080x2400; xiaomi; M2007J20CG; surya; qcom; en_US; 641123490)"
 )
+_INITIAL_LOGIN = True
 _PERSIST_DIR = os.getenv("PERSIST_DIR")
 
 
@@ -48,9 +49,14 @@ async def _login(dump_settings=False) -> bool:
 
 async def _get_client() -> instagrapi.Client:
     """ Get (logged in) Instagram client """
+    global _INITIAL_LOGIN
     settings_file = await _get_settings_file()
-    if not os.path.exists(settings_file):
-        logger.info("No instagram session found, logging in with username / password")
+    if _INITIAL_LOGIN or not os.path.exists(settings_file):
+        _INITIAL_LOGIN = True
+        logger.info(
+            "Initial login or not instagram session found, "
+            "logging in with username / password"
+        )
         await _login(dump_settings=True)
         return _CLIENT
 
