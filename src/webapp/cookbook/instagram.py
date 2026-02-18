@@ -18,6 +18,9 @@ from .utils import InstagramError, get_headers
 logger = logging.getLogger(__name__)
 
 _CLIENT = instagrapi.Client()
+_CLIENT.set_user_agent(
+    "Instagram 410.0.0.0.96 Android (33/13; 480dpi; 1080x2400; xiaomi; M2007J20CG; surya; qcom; en_US; 641123490)"
+)
 _PERSIST_DIR = os.getenv("PERSIST_DIR")
 
 
