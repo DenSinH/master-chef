@@ -28,6 +28,8 @@ def get_client_address(request: Union[Request, Websocket]):
 
 async def default_identifier(request: Union[Request, Websocket]):
     ip = get_client_address(request)
+    if request.route is None:
+        return ip + ":unknown"
     return ip + ":" + request.route.path
 
 
