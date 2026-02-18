@@ -5,13 +5,26 @@ from collections.abc import Callable, Coroutine
 from io import BytesIO
 from pathlib import Path
 from pprint import pprint
+from typing import Optional
 
 import aiofiles.os
 import aiofiles.tempfile
 import aiohttp
+from PIL import Image
+# monkey-patch the ClipsMetadata model to make some fields optional, since they are not always
+# present in the media info response and the library does not handle that well
+from instagrapi.types import ClipsMetadata, Media
+
+for name in ["content_appreciation_info", "original_sound_info"]:
+    field = ClipsMetadata.model_fields[name]
+    field.annotation = Optional[field.annotation]
+    field.default = None
+
+ClipsMetadata.model_rebuild(force=True)
+Media.model_rebuild(force=True)
+
 import instagrapi
 import instagrapi.exceptions
-from PIL import Image
 
 from .utils import InstagramError, get_headers
 
