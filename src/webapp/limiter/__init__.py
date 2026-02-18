@@ -17,7 +17,7 @@ async def init_limiter(app: Sanic, loop):
         if hasattr(app.ctx, "global_limiter"):
             await app.ctx.global_limiter(request)
 
-        if hasattr(request.route.ctx, "limiter"):
+        if request.route is not None and hasattr(request.route.ctx, "limiter"):
             limiter = request.route.ctx.limiter
             await limiter(request)
 
