@@ -24,7 +24,7 @@ async def _get_settings_file() -> Path:
         if not await aiofiles.os.path.exists(_PERSIST_DIR):
             await aiofiles.os.makedirs(_PERSIST_DIR, exist_ok=True)
         return Path(_PERSIST_DIR) / "instagram-session.json"
-    return "instagram-session.json"
+    return Path("instagram-session.json")
 
 
 async def _login(dump_settings=False) -> bool:
@@ -85,6 +85,7 @@ async def _get_client() -> aiograpi.Client:
             return _CLIENT
     except Exception as e:
         raise InstagramError(f"Couldn't login user with either password or session: {e}")
+    raise InstagramError(f"Couldn't login user with either password or session")
 
 
 async def get_instagram_recipe(url):
