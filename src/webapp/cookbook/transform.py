@@ -1,3 +1,4 @@
+import asyncio
 import dataclasses
 import logging
 import os
@@ -210,7 +211,6 @@ async def translate_page(text: str, url=None, thumbnail=None) -> Recipe:
 
 
 if __name__ == '__main__':
-    import asyncio
     from pprint import pprint
 
     recipe = asyncio.run(translate_url("https://www.tiktok.com/t/ZT8VYSJYd/"))
