@@ -157,6 +157,11 @@ async def _chatgpt_json_and_fix(cls: type[Fixable], messages, temperature=DEFAUL
             if e.code == "context_length_exceeded":
                 raise
             raise
+        except asyncio.exceptions.CancelledError:
+            # retry because timeout, use longer timeout
+            kwargs["timeout"] = kwargs.get("timeout", 60) * 2
+            continue
+
         reply = chat_completion.choices[0].message.content
         try:
             return reply, cls.from_data(**msgspec.json.decode(reply, strict=False))
