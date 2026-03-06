@@ -14,6 +14,7 @@ from PIL import Image
 # monkey-patch the ClipsMetadata model to make some fields optional, since they are not always
 # present in the media info response and the library does not handle that well
 from instagrapi.types import ClipsOriginalSoundInfo, ClipsMetadata, Media
+from pydantic.fields import FieldInfo
 
 # make anything optional in these classes
 # must be in order of composition, since model_rebuild needs to be called after changes are made
@@ -25,10 +26,10 @@ _PATCHED_CLASSES = [
 
 for klazz in _PATCHED_CLASSES:
     for field, info in klazz.model_fields.items():
-        if info.required:
+        info: FieldInfo
+        if info.is_required():
             info.annotation = Optional[info.annotation]
             info.default = None
-            info.required = False
 
     klazz.model_rebuild(force=True)
 
