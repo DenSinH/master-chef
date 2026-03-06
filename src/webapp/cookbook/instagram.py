@@ -15,11 +15,13 @@ from PIL import Image
 from instagrapi.types import Media
 
 
-def bypass_validate(cls, data, *args, **kwargs):
-    return cls.model_construct(**data)
+def patched_init(self, **data):
+    obj = Media.model_construct(**data)  # create without validation
+    self.__dict__.update(obj.__dict__)
+    self.__pydantic_fields_set__ = set(data.keys())
 
 
-Media.model_validate = classmethod(bypass_validate)
+Media.__init__ = patched_init
 
 import instagrapi
 import instagrapi.exceptions
