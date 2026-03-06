@@ -5,33 +5,21 @@ from collections.abc import Callable, Coroutine
 from io import BytesIO
 from pathlib import Path
 from pprint import pprint
-from typing import Optional
 
 import aiofiles.os
 import aiofiles.tempfile
 import aiohttp
 from PIL import Image
-# monkey-patch the ClipsMetadata model to make some fields optional, since they are not always
+# monkey-patch the Media model to bypass validation, since they are not always
 # present in the media info response and the library does not handle that well
-from instagrapi.types import ClipsOriginalSoundInfo, ClipsMetadata, Media
-from pydantic.fields import FieldInfo
+from instagrapi.types import Media
 
-# make anything optional in these classes
-# must be in order of composition, since model_rebuild needs to be called after changes are made
-_PATCHED_CLASSES = [
-    ClipsOriginalSoundInfo,
-    ClipsMetadata,
-    Media,
-]
 
-for klazz in _PATCHED_CLASSES:
-    for field, info in klazz.model_fields.items():
-        info: FieldInfo
-        if info.is_required():
-            info.annotation = Optional[info.annotation]
-            info.default = None
+def bypass_validate(cls, data, *args, **kwargs):
+    return cls.model_construct(**data)
 
-    klazz.model_rebuild(force=True)
+
+Media.model_validate = classmethod(bypass_validate)
 
 import instagrapi
 import instagrapi.exceptions
