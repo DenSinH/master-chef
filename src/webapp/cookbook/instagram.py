@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 from collections.abc import Callable, Coroutine
+from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 from pprint import pprint
@@ -21,7 +22,14 @@ def patched_init(self, **data):
     self.__pydantic_fields_set__ = set(data.keys())
 
 
+def patched_deepcopy(self, memo=None):
+    cls = type(self)
+    data = deepcopy(self.__dict__, memo)
+    return cls.model_construct(**data)
+
+
 Media.__init__ = patched_init
+Media.__deepcopy__ = patched_deepcopy
 
 import instagrapi
 import instagrapi.exceptions
