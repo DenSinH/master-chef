@@ -23,24 +23,21 @@ client = openai.AsyncOpenAI(
 MAX_RETRIES = 1
 MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
 DEFAULT_TEMPERATURE = 1
-PROMPT = """
-The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text from the webpage.
+PROMPT = """The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text from the webpage.
 The recipe contains information on the ingredients, the preparation and possibly nutritional information.
 Convert the recipe to a JSON object with the following keys:
 "name": the name of this recipe.
-"ingredients": a list of dictionaries, with keys "ingredient", mapping to the name of the ingredient, and "amount" which is a string containing the amount of this ingredient needed including the unit, or 
-               a null value if no specific amount is given.
-               For example, the ingredient "one onion" should yield {{'amount': '1', 'ingredient': 'onion'}}, and the ingredient "zout" should yield {{'amount': null, 'ingredient': 'zout'}}
-               and the ingredient "1el Komijn" should yield {{'amount': '1el', 'ingredient': 'Komijn'}}, and "400gr tomaat" should yield {{'amount': '400gr', 'ingredient': 'tomaat'}}
-               and "packet of noodles" should yield {{'amount': '1 packet', 'ingredient': 'noodles'}}.
-               In case there are multiple 'sections' of ingredients, insert an ingredient object with 'ingredient' value '#name of section'. For
-               example, if there is a section of ingredients for the sauce, insert {{ 'amount': null, 'ingredient': '#For the sauce' }}.
-               So for example, Chicken marinade: - 10g cumin - one onion should yield [{{'amount': null, 'ingredient': '#Chicken marinade:'}}, {{'amount': '10g', 'ingredient': 'cumin'}}, {{'amount': 'one', 'ingredient': 'onion'}}]
-"preparation": a list of strings containing the steps of the recipe. Split the steps from the original recipe up into multiple steps
-               if they are more than 2 or 3 sentences. If there are sections, insert steps with the value '#name of section'.
-               For example, if there are steps for making rice, insert a step '#For the rice'. 
+"ingredients": a list of dictionaries, with keys "ingredient", mapping to the name of the ingredient, and "amount" which is a string containing the amount of this ingredient needed including the unit, or a null value if no specific amount is given.
+For example, the ingredient "one onion" should yield {{'amount': '1', 'ingredient': 'onion'}}, and the ingredient "zout" should yield {{'amount': null, 'ingredient': 'zout'}}
+and the ingredient "1el Komijn" should yield {{'amount': '1el', 'ingredient': 'Komijn'}}, and "400gr tomaat" should yield {{'amount': '400gr', 'ingredient': 'tomaat'}}
+and "packet of noodles" should yield {{'amount': '1 packet', 'ingredient': 'noodles'}}.
+In case there are multiple 'sections' of ingredients, insert an ingredient object with 'ingredient' value '#name of section'. For
+example, if there is a section of ingredients for the sauce, insert {{ 'amount': null, 'ingredient': '#For the sauce' }}.
+So for example, Chicken marinade: - 10g cumin - one onion should yield [{{'amount': null, 'ingredient': '#Chicken marinade:'}}, {{'amount': '10g', 'ingredient': 'cumin'}}, {{'amount': 'one', 'ingredient': 'onion'}}]
+"preparation": a list of strings containing the steps of the recipe. Split the steps from the original recipe up into multiple steps if they are more than 2 or 3 sentences. If there are sections, insert steps with the value '#name of section'.
+For example, if there are steps for making rice, insert a step '#For the rice'. 
 "nutrition": null if there is no nutritional information in the recipe, or a list of dictionaries containing the keys "group", with the type
-of nutrional information, and "amount": with the amount of this group that is contained in the recipe, as a string including the unit, so
+of nutritional information, and "amount": with the amount of this group that is contained in the recipe, as a string including the unit, so
 "Fats 12gr" should yield {{'group': 'fats', 'amount': '12 gr'}}.
 "people": the amount of people that can be fed from this meal as an integer, in case this information is present, otherwise null
 "time": the time that this recipe takes to make in minutes as an integer, in case this information is present, otherwise null
@@ -49,8 +46,7 @@ Keep the language the same, and do not change anything about the text in the rec
 Only output the JSON object, and nothing else. You can do this!
 Here comes the text:
 
-{text}
-"""
+{text}"""
 
 META_PROMPT = f"""
 For this recipe, generate a JSON object containing meta information that classifies the recipe.
