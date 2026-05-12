@@ -52,20 +52,17 @@ Here comes the text:
 {text}
 """
 
-META_PROMPT = f"""
-For this recipe, generate a JSON object containing meta information that classifies the recipe.
+META_PROMPT = f"""For this recipe, generate a JSON object containing meta information that classifies the recipe.
 It should contain the following keys and values:
 "language": One of {LANGUAGES}, depending on the language of the recipe.
 "meal_type": One of {MEAL_TYPES} that best describes the meal.
-"meat_type": A list of at most two of {MEAT_TYPES} that best describe the meal. Note that it is impossible for a recipe
-             to be both vegetarian and contain meat, and that "other" should never go with another meat type.
+"meat_type": A list of at most two of {MEAT_TYPES} that best describe the meal. Note that it is impossible for a recipe to be both vegetarian and contain meat, and that "other" should never go with another meat type.
 "carb_type": A list of at most two of {CARB_TYPES} that best describe the meal. Note that it is impossible for a recipe
-             to be have both "none" or "other" and any other carb type.
+to be have both "none" or "other" and any other carb type.
 "cuisine": One of {CUISINE_TYPES} that best describes the meal.
 "temperature": One of {TEMPERATURE_TYPES} that best describes the meal.
 
-Please output only the JSON object and nothing else. You can do this!
-"""
+Please output only the JSON object and nothing else. You can do this!"""
 
 
 def _get_tiktok_text(soup: BeautifulSoup):
