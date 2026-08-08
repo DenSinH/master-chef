@@ -6,7 +6,7 @@ from pathlib import Path
 import msgspec.json
 from sanic import Sanic, response
 
-from . import auth, cookbook, session
+from . import auth, cookbook
 from .utils.compress import init_compression
 from .utils.imgupload import init_client
 from .utils.minifyloader import MinifyingFileSystemLoader
@@ -54,8 +54,6 @@ here = Path(__file__).parent
 app.static("/static", here / "static")
 app.static("/robots.txt", here / "static" / "robots.txt", name="robots")
 app.static("/favicon.ico", here / "static" / "favicon.ico", name="favicon")
-
-session.init_session(app, cookie_name="CookbookSession")
 
 auth.init_jwt(app, app.config.SECRET, 60 * 60)
 
