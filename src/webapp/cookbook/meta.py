@@ -1,5 +1,5 @@
-""" This file contains the allowed values
-for the recipe metadata. """
+"""This file contains the allowed values
+for the recipe metadata."""
 
 LANGUAGES = ["nl", "en"]
 MEAL_TYPES = [
@@ -13,17 +13,9 @@ MEAL_TYPES = [
     "beverage",
     "soup",
     "salad",
-    "other"
+    "other",
 ]
-MEAT_TYPES = [
-    "chicken",
-    "beef",
-    "pork",
-    "fish",
-    "seafood",
-    "vegetarian",
-    "other"
-]
+MEAT_TYPES = ["chicken", "beef", "pork", "fish", "seafood", "vegetarian", "other"]
 CARB_TYPES = [
     "rice",
     "pasta",
@@ -34,7 +26,7 @@ CARB_TYPES = [
     "legumes",
     "noodles",
     "none",
-    "other"
+    "other",
 ]
 CUISINE_TYPES = [
     "italian",
@@ -50,12 +42,7 @@ CUISINE_TYPES = [
     "middle eastern",
     "spanish",
     "eastern",
-    "other"
+    "other",
 ]
 
-TEMPERATURE_TYPES = [
-    "warm",
-    "cold",
-    "room temperature",
-    "any"
-]
+TEMPERATURE_TYPES = ["warm", "cold", "room temperature", "any"]

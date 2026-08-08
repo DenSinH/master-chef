@@ -20,7 +20,10 @@ def _is_list_of_single_keyed_dicts(value: list) -> bool:
     """Check whether the given value is a list of single keyed dicts. We want to check this,
     since sometimes ChatGPT returns a list of {'step' : 'step text'} dicts for recipe steps,
     which get converted to string literals directly."""
-    return all(isinstance(v, dict) for v in value) and len({k for v in value for k in v}) == 1
+    return (
+        all(isinstance(v, dict) for v in value)
+        and len({k for v in value for k in v}) == 1
+    )
 
 
 class Fixable(abc.ABC):
@@ -30,17 +33,17 @@ class Fixable(abc.ABC):
     """
 
     @staticmethod
-    def _fix_field(field: dataclasses.Field, value: Any) -> Any:
+    def _fix_field(fld: dataclasses.Field, value: Any) -> Any:
         if value is None:
             # assume None means the default value
             return None
-        elif isinstance(field.type, types.GenericAlias):
-            origin = typing.get_origin(field.type) or field.type
-            field_args = typing.get_args(field.type)
+        elif isinstance(fld.type, types.GenericAlias):
+            origin = typing.get_origin(fld.type) or fld.type
+            field_args = typing.get_args(fld.type)
 
             if origin is list:
                 # iterate through field values
-                subscript, = field_args
+                (subscript,) = field_args
 
                 # the subscript may be subscripted itself
                 subscript = typing.get_origin(subscript) or subscript
@@ -63,9 +66,9 @@ class Fixable(abc.ABC):
                     # (and only) dict value
                     return [subscript(next(iter(v.values()))) for v in value]
                 else:
-                    return list(subscript(v) for v in value)
+                    return [subscript(v) for v in value]
             else:
-                raise NotImplementedError(f"GenericAlias {field.type} loading")
+                raise NotImplementedError(f"GenericAlias {fld.type} loading")
         else:
             # value may be a list, like in a form submission
             if isinstance(value, list):
@@ -76,18 +79,18 @@ class Fixable(abc.ABC):
                 # choose first value
                 value = value[0]
 
-            if issubclass(field.type, Fixable):
-                return field.type.from_data(**value)
-            elif dataclasses.is_dataclass(field.type):
-                return field.type(**value)
+            if issubclass(fld.type, Fixable):
+                return fld.type.from_data(**value)
+            elif dataclasses.is_dataclass(fld.type):
+                return fld.type(**value)
             else:
-                return field.type(value)
+                return fld.type(value)
 
     @classmethod
     def from_data(cls, **kwargs):
-        fields = {field.name: field for field in dataclasses.fields(cls)}
+        fields = {fld.name: fld for fld in dataclasses.fields(cls)}
         fixed = {}
-        for key, field in fields.items():
+        for key, fld in fields.items():
             value = kwargs.get(key)
 
             if value is None:
@@ -98,7 +101,7 @@ class Fixable(abc.ABC):
                     # no match, use default value
                     continue
 
-            fixed[key] = Fixable._fix_field(field, value)
+            fixed[key] = Fixable._fix_field(fld, value)
 
         # validate allowed values
         for key, value in fixed.items():
@@ -106,20 +109,20 @@ class Fixable(abc.ABC):
                 continue
 
             # get allowed values
-            field = fields[key]
-            allowed_values = field.metadata.get("allowed_values")
+            fld = fields[key]
+            allowed_values = fld.metadata.get("allowed_values")
             if allowed_values is None:
                 continue
 
-            def _fix_value(v):
+            def _fix_value(v: Any, _allowed_values=allowed_values):
                 """Fix a single value v to one of the allowed values for this field"""
                 if v is None:
                     return v
 
                 # v may already be allowed
-                if v in allowed_values:
+                if v in _allowed_values:
                     return v
-                return process.extractOne(v, allowed_values)[0]
+                return process.extractOne(v, _allowed_values)[0]
 
             if isinstance(value, list):
                 value = [_fix_value(v) for v in value]
@@ -134,15 +137,21 @@ class Fixable(abc.ABC):
 class RecipeMeta(Fixable):
     language: str = field(default=None, metadata={"allowed_values": LANGUAGES})
     meal_type: str = field(default="other", metadata={"allowed_values": MEAL_TYPES})
-    meat_type: list[str] = field(default_factory=lambda: ["other"],  metadata={"allowed_values": MEAT_TYPES})
-    carb_type: list[str] = field(default_factory=lambda: ["other"], metadata={"allowed_values": CARB_TYPES})
+    meat_type: list[str] = field(
+        default_factory=lambda: ["other"], metadata={"allowed_values": MEAT_TYPES}
+    )
+    carb_type: list[str] = field(
+        default_factory=lambda: ["other"], metadata={"allowed_values": CARB_TYPES}
+    )
     cuisine: str = field(default=None, metadata={"allowed_values": CUISINE_TYPES})
-    temperature: str = field(default="any", metadata={"allowed_values": TEMPERATURE_TYPES})
+    temperature: str = field(
+        default="any", metadata={"allowed_values": TEMPERATURE_TYPES}
+    )
 
     def __post_init__(self):
         # ensure max length
-        object.__setattr__(self, 'carb_type', self.carb_type[:2])
-        object.__setattr__(self, 'meat_type', self.meat_type[:2])
+        object.__setattr__(self, "carb_type", self.carb_type[:2])
+        object.__setattr__(self, "meat_type", self.meat_type[:2])
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
@@ -176,11 +185,8 @@ class Recipe(Fixable):
     igcode: str = None
 
     @property
-    def sha(self) -> 'hashlib._Hash':
+    def sha(self) -> hashlib._Hash:
         return hashlib.sha256(
-            msgspec.json.encode(
-                dataclasses.asdict(self),
-                order="deterministic"
-            ),
-            usedforsecurity=False
+            msgspec.json.encode(dataclasses.asdict(self), order="deterministic"),
+            usedforsecurity=False,
         )

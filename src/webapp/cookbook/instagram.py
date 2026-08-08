@@ -10,10 +10,11 @@ from pprint import pprint
 import aiofiles.os
 import aiofiles.tempfile
 import aiohttp
-from PIL import Image
+
 # monkey-patch the Media model to bypass validation, since they are not always
 # present in the media info response and the library does not handle that well
 from instagrapi.types import Media
+from PIL import Image
 
 
 def patched_init(self, **data):
@@ -55,12 +56,12 @@ async def _get_settings_file() -> Path:
 
 
 async def _login(dump_settings=False) -> bool:
-    """ Do login with global client """
+    """Do login with global client"""
     logged_in = await asyncio.to_thread(
         _CLIENT.login,
         os.environ["INSTAGRAM_USER"],
         os.environ["INSTAGRAM_PASS"],
-        relogin=False
+        relogin=False,
     )
     if logged_in and dump_settings:
         _CLIENT.dump_settings(await _get_settings_file())
@@ -69,7 +70,7 @@ async def _login(dump_settings=False) -> bool:
 
 
 async def _get_client() -> instagrapi.Client:
-    """ Get (logged in) Instagram client """
+    """Get (logged in) Instagram client"""
     global _INITIAL_LOGIN
     settings_file = await _get_settings_file()
     if _INITIAL_LOGIN or not os.path.exists(settings_file):
@@ -95,7 +96,9 @@ async def _get_client() -> instagrapi.Client:
                 await asyncio.to_thread(_CLIENT.get_timeline_feed)
                 return _CLIENT
             except instagrapi.exceptions.LoginRequired:
-                logger.warning("Session is invalid, need to login via username and password")
+                logger.warning(
+                    "Session is invalid, need to login via username and password"
+                )
 
             old_session = _CLIENT.get_settings()
 
@@ -108,21 +111,23 @@ async def _get_client() -> instagrapi.Client:
                 await asyncio.to_thread(_CLIENT.get_timeline_feed)
                 return _CLIENT
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"Couldn't login user using session information: {e}")
 
     try:
         logger.info("Attempting to login via username and password.")
         if await _login(dump_settings=True):
             return _CLIENT
-    except Exception as e:
-        raise InstagramError(f"Couldn't login user with either password or session: {e}")
-    raise InstagramError(f"Couldn't login user with either password or session")
+    except Exception as e:  # noqa: BLE001
+        raise InstagramError(
+            f"Couldn't login user with either password or session: {e}"
+        )
+    raise InstagramError("Couldn't login user with either password or session")
 
 
 async def get_instagram_recipe(url):
-    """ Get recipe from Instagram media caption,
-    as well as the thumbnail url """
+    """Get recipe from Instagram media caption,
+    as well as the thumbnail url"""
     client = await _get_client()
     try:
         media_pk = await asyncio.to_thread(client.media_pk_from_url, url)
@@ -133,9 +138,11 @@ async def get_instagram_recipe(url):
         raise
 
 
-async def _download_image(url: str, callback: Callable[[Path], Coroutine], user_agent=None):
-    """ Helper function to download an image from a URL,
-    save it to a temporary path and call a callback on it """
+async def _download_image(
+    url: str, callback: Callable[[Path], Coroutine], user_agent=None
+):
+    """Helper function to download an image from a URL,
+    save it to a temporary path and call a callback on it"""
     # Check if the URL ends with .jpg or .jpeg
     url_path = Path(url)
     if url_path.suffix.lower() not in {".jpg", ".jpeg", ".webp", ".png", ".avif"}:
@@ -143,53 +150,52 @@ async def _download_image(url: str, callback: Callable[[Path], Coroutine], user_
             f"Instagram post image URL does not point to an image file: '{url}'"
         )
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
-            url,
-            headers=get_headers(url=url, user_agent=user_agent)
-        ) as response:
-            if not response.ok:
-                raise InstagramError(
-                    f"Failed to download image. HTTP status code: {response.status}")
+    async with (
+        aiohttp.ClientSession() as session,
+        session.get(
+            url, headers=get_headers(url=url, user_agent=user_agent)
+        ) as response,
+    ):
+        if not response.ok:
+            raise InstagramError(
+                f"Failed to download image. HTTP status code: {response.status}"
+            )
 
-            # Create a temporary file
-            try:
-                async with aiofiles.tempfile.NamedTemporaryFile(mode="wb", suffix="jpg",
-                                                                delete=False) as img:
-                    img_name = Path(img.name)
-                    image_data = Image.open(BytesIO(await response.read())).convert("RGB")
+        # Create a temporary file
+        try:
+            async with aiofiles.tempfile.NamedTemporaryFile(
+                mode="wb", suffix="jpg", delete=False
+            ) as img:
+                img_name = Path(img.name)
+                image_data = Image.open(BytesIO(await response.read())).convert("RGB")
 
-                    # first output to memory for less load on the server during
-                    # request processing
-                    jpg = BytesIO()
-                    image_data.save(jpg, format="jpeg", quality=95, optimize=True)
-                    jpg.seek(0)
+                # first output to memory for less load on the server during
+                # request processing
+                jpg = BytesIO()
+                image_data.save(jpg, format="jpeg", quality=95, optimize=True)
+                jpg.seek(0)
 
-                    # actual IO awaiting
-                    await img.write(jpg.read())
-                return await callback(img_name)
-            finally:
-                await aiofiles.os.remove(img_name)
+                # actual IO awaiting
+                await img.write(jpg.read())
+            return await callback(img_name)
+        finally:
+            await aiofiles.os.remove(img_name)
 
 
 async def post_instagram_recipe(recipe_name, image_url, user_agent=None):
-    """ Post the image from image_url to the Instagram account
-    from the environment credentials. """
+    """Post the image from image_url to the Instagram account
+    from the environment credentials."""
 
     async def _upload_from_path(path: Path):
         logger.info(f"Uploading from {path}")
         client = await _get_client()
-        media = await asyncio.to_thread(
-            client.photo_upload,
-            path,
-            recipe_name
-        )
+        media = await asyncio.to_thread(client.photo_upload, path, recipe_name)
         return media.code
 
     return await _download_image(image_url, _upload_from_path, user_agent=user_agent)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # install instagrapi, Pillow
     url = "https://www.instagram.com/reel/C8KpFGsoKC3/?igsh=aDdhdGRxc25qcmZk"
     get_instagram_recipe(url)

@@ -1,25 +1,16 @@
 import requests
 from bs4 import BeautifulSoup
 
+IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "gif"]
 
-IMAGE_EXTENSIONS = [
-    "jpg",
-    "jpeg",
-    "png",
-    "webp",
-    "gif"
-]
-
-THUMBNAIL_META_ATTR = [
-    {"property": "og:image"},
-    {"name": "twitter:image:src"}
-]
+THUMBNAIL_META_ATTR = [{"property": "og:image"}, {"name": "twitter:image:src"}]
 
 
 def get_thumbnail(url):
     res = requests.get(url)
     if not res.ok:
-        raise Exception(f"Could not get the specified url, status code {res.status_code}")
+        msg = f"Could not get the specified url, status code {res.status_code}"
+        raise RuntimeError(msg)
 
     # try to find known meta attributes for thumbnails
     soup = BeautifulSoup(res.text, features="html.parser")
@@ -40,6 +31,8 @@ def get_thumbnail(url):
     return None
 
 
-if __name__ == '__main__':
-    thumbnail = get_thumbnail("https://www.ah.nl/allerhande/video/R-V4312248/eenpans-mozzarella-stokbrood-schotel")
+if __name__ == "__main__":
+    thumbnail = get_thumbnail(
+        "https://www.ah.nl/allerhande/video/R-V4312248/eenpans-mozzarella-stokbrood-schotel"
+    )
     print(thumbnail)

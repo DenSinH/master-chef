@@ -5,10 +5,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import json
 import os
 import re
-import json
-
 
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
@@ -47,7 +46,9 @@ def translate_page(url):
     print("Retrieving URL")
     res = requests.get(url)
     if not res.ok:
-        raise RecipeConversionError(f"Could not get the specified url, status code {res.status_code}")
+        raise RecipeConversionError(
+            f"Could not get the specified url, status code {res.status_code}"
+        )
     soup = BeautifulSoup(res.text, features="html.parser")
 
     # COMMENTS = ["comment", "opmerking"]
@@ -60,8 +61,11 @@ def translate_page(url):
 
     print(f"Converting with ChatGPT ({MODEL})")
     messages = [
-        {"role": "system", "content": "You are a helpful assistant that converts recipies into JSON format."},
-        {"role": "user", "content": prompt}
+        {
+            "role": "system",
+            "content": "You are a helpful assistant that converts recipies into JSON format.",
+        },
+        {"role": "user", "content": prompt},
     ]
     for i in range(1 + MAX_RETRIES):
         # todo: acreate
@@ -74,12 +78,19 @@ def translate_page(url):
         except json.JSONDecodeError:
             print("Conversion failed, retrying")
             messages.append({"role": "assistant", "content": reply})
-            messages.append({"role": "user", "content": "this is not a parseable json object, "
-                                                        "only output the json object"})
-    raise RecipeConversionError("ChatGPT did not return a parsable json object, please try again")
+            messages.append(
+                {
+                    "role": "user",
+                    "content": "this is not a parseable json object, "
+                    "only output the json object",
+                }
+            )
+    raise RecipeConversionError(
+        "ChatGPT did not return a parsable json object, please try again"
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from pprint import pprint
 
     recipe = translate_page("https://www.eefkooktzo.nl/wrap-mango-en-kip/")

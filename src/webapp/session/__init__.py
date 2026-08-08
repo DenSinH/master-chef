@@ -1,8 +1,9 @@
-from sanic import Sanic, Request, HTTPResponse
-import redis.asyncio as redis
-import msgspec.json
-import uuid
 import os
+import uuid
+
+import msgspec.json
+import redis.asyncio as redis
+from sanic import HTTPResponse, Request, Sanic
 
 
 class SessionDict(dict):
@@ -15,11 +16,11 @@ class SessionDict(dict):
     def __setitem__(self, key, value) -> None:
         self.modified = True
         return super().__setitem__(key, value)
-    
+
     def __delitem__(self, key) -> None:
         self.modified = True
         return super().__delitem__(key)
-    
+
     def setdefault(self, key, default=None):
         self.modified = True
         return super().setdefault(key, default=default)
@@ -31,22 +32,24 @@ class SessionDict(dict):
     def popitem(self) -> tuple:
         self.modified = True
         return super().popitem()
-    
+
     def pop(self, key, **kwargs):
         self.modified = True
         return super().pop(key, **kwargs)
-    
+
     def update(self, *args, **kwargs):
         self.modified = True
         return super().update(*args, **kwargs)
 
 
-def init_session(app: Sanic, prefix="session", cookie_name="session", expiration_delta=2592000):
+def init_session(
+    app: Sanic, prefix="session", cookie_name="session", expiration_delta=2592000
+):
     _redis = redis.from_url(os.environ["REDIS_URL"], encoding="utf8")
 
     @app.on_request
     async def open_session(request: Request):
-        """ Try to read session on request """
+        """Try to read session on request"""
         sid = request.cookies.get(cookie_name, None)
         if sid is None:
             sid = uuid.uuid4().hex
@@ -58,28 +61,29 @@ def init_session(app: Sanic, prefix="session", cookie_name="session", expiration
                 session = SessionDict(sid, data)
             else:
                 session = SessionDict(sid)
-        
+
         # set session on request
         request.ctx.session = session
 
     @app.on_response
     async def save_session(request: Request, response: HTTPResponse):
-        """ Save session on response """
+        """Save session on response"""
         if not hasattr(request.ctx, "session"):
             return
-        
+
         session: SessionDict = request.ctx.session
         if not session:
             await _redis.delete(f"{prefix}:{session.sid}")
             response.delete_cookie(cookie_name)
             return
-        
+
         if session.modified:
             data = msgspec.json.encode(session)
             await _redis.setex(f"{prefix}:{session.sid}", expiration_delta, data)
-        
+
         response.add_cookie(
-            cookie_name, session.sid,
+            cookie_name,
+            session.sid,
             httponly=True,
             max_age=expiration_delta,
             secure=True,

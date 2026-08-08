@@ -1,9 +1,9 @@
-from thefuzz.fuzz import ratio
-from typing import Iterable
-from functools import lru_cache
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
+from functools import lru_cache
 
+from thefuzz.fuzz import ratio
 
 THRESHOLD = 80
 
@@ -16,29 +16,29 @@ class _PartialMatch:
     ingredient_idx: int = None
 
     def target_score(self):
-        """ Score to determine the accuracy of the match (lower is better) """
+        """Score to determine the accuracy of the match (lower is better)"""
         return abs(len(self.matched) - self.target_words)
-    
+
     def total_length(self):
-        """ Total length of the matched string """
+        """Total length of the matched string"""
         return len(" ".join(self.matched))
-    
+
     def sort_val(self):
-        """ Sorting value for how 'good' a match is
+        """Sorting value for how 'good' a match is
         We replace the best matches first, and worse matches may be gone
-        since they may have been a part of a better match """
+        since they may have been a part of a better match"""
         return (self.target_score(), -self.total_length())
 
 
 def _process_string(s: str):
-    """ Convert string to lowercase and replace non-letter characters and multiple spaces """
+    """Convert string to lowercase and replace non-letter characters and multiple spaces"""
     return re.sub(" +", " ", re.sub(r"[^a-z ]+", " ", s.lower())).strip()
 
 
 def _partial_search(s1: str, s2: str) -> Iterable[_PartialMatch]:
-    """ Reimplemented from
+    """Reimplemented from
     https://github.com/seatgeek/fuzzywuzzy/blob/af443f918eebbccff840b86fa606ac150563f466/fuzzywuzzy/fuzz.py#L34
-    Rewritten to return the best matched substring """
+    Rewritten to return the best matched substring"""
     s1 = _process_string(s1).split(" ")
     s2 = _process_string(s2).split(" ")
 
@@ -52,20 +52,20 @@ def _partial_search(s1: str, s2: str) -> Iterable[_PartialMatch]:
     shorter_str = " ".join(shorter)
     for i in range(len(longer)):
         for j in range(len(shorter) - 1, len(shorter) + 2):
-            long_substr = " ".join(longer[i:i + j])
+            long_substr = " ".join(longer[i : i + j])
             r = ratio(shorter_str, long_substr)
 
             if r > THRESHOLD:
                 yield _PartialMatch(
-                    matched=tuple(longer[i:i + j]),
+                    matched=tuple(longer[i : i + j]),
                     target_words=len(shorter),
-                    score=int(round(100 * r))
+                    score=round(100 * r),
                 )
 
 
 def _fuzzy_extract(query: str, text: str) -> Iterable[_PartialMatch]:
-    """  Fuzzy extract 'query' from 'text'
-    Yields all _PartialMatches """
+    """Fuzzy extract 'query' from 'text'
+    Yields all _PartialMatches"""
     query = _process_string(query)
     words = query.split(" ")
 
@@ -74,19 +74,20 @@ def _fuzzy_extract(query: str, text: str) -> Iterable[_PartialMatch]:
         # match at least half the words
         for j in reversed(range(i + ((len(words) + 1) // 2), len(words) + 1)):
             substr = " ".join(words[i:j])
-            for match in _partial_search(substr, text):
-                yield match
+            yield from _partial_search(substr, text)
 
 
 def _replace_references(string: str, sorted_references: list[_PartialMatch]) -> str:
-    """ Replace all partial references, without replacing 
-    matches within matches. """
+    """Replace all partial references, without replacing
+    matches within matches."""
     if not len(sorted_references):
         return string
-    
+
     # replace current match
     ref = sorted_references[0]
-    regex = re.compile(fr"(^|\W)({r'[^a-z]+'.join(ref.matched)})(\W|$)", flags=re.IGNORECASE)
+    regex = re.compile(
+        rf"(^|\W)({r'[^a-z]+'.join(ref.matched)})(\W|$)", flags=re.IGNORECASE
+    )
     split = regex.split(string)
 
     # rebuild string with nested replacements
@@ -94,14 +95,16 @@ def _replace_references(string: str, sorted_references: list[_PartialMatch]) -> 
     while len(split) > 1:
         left, sepl, match, sepr, *split = split
         new += _replace_references(left, sorted_references[1:])
-        new += sepl + f'<ref data-ingredient="{ref.ingredient_idx}">{match}</ref>' + sepr
+        new += (
+            sepl + f'<ref data-ingredient="{ref.ingredient_idx}">{match}</ref>' + sepr
+        )
     return new + _replace_references(split[0], sorted_references[1:])
 
 
 @lru_cache(maxsize=1024)
 def replace_ingredient_references(recipe_step: str, ingredients: tuple[str]) -> str:
-    """ Find ingredient references in a recipe step,
-    given an (ordered!) list of ingredients """
+    """Find ingredient references in a recipe step,
+    given an (ordered!) list of ingredients"""
     ingredient_references = {}
     for i, ingredient in enumerate(ingredients):
         if ingredient.startswith("#"):
@@ -120,10 +123,9 @@ def replace_ingredient_references(recipe_step: str, ingredients: tuple[str]) -> 
     # no matches, no need to replace, just return the original string
     if not ingredient_references:
         return recipe_step
-    
+
     # sort the references and replace them in order
     sorted_references: list[_PartialMatch] = sorted(
-        ingredient_references.values(), 
-        key=lambda ref: ref.sort_val()
+        ingredient_references.values(), key=lambda ref: ref.sort_val()
     )
     return _replace_references(recipe_step, sorted_references)

@@ -13,14 +13,11 @@
             <div class="message">
                 Get a random recipe suggestion with the <i class="fa fa-random"></i> button!
             </div>
+            {% if is_admin %}
             <div class="message">
-            {% if not is_user %}
-                Have you registered an account yet?<br>
-                <a href="{{ url_for('register') }}">Make one here</a>
-            {% else %}
                 Welcome chef {{ username }}!
-            {% endif %}
             </div>
+            {% endif %}
             {% if latest is not none %}
             <div class="message">Check out the <a href="{{ url_for('recipe', id=latest, collection=collection) }}">latest recipe!</a></div>
             {% endif %}

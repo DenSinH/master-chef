@@ -1,18 +1,4 @@
 services:
-  db:
-    image: postgres
-    volumes:
-      - dbdata:/var/lib/postgresql/data
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    hostname: chef-db
-    networks:
-      - pgadmin-net
-      - local-net
-    expose:
-      - 5432
   redis:
     image: redis:latest
     expose:
@@ -36,7 +22,6 @@ services:
   web:
     build: .
     depends_on:
-      - db
       - redis
     environment:
       RECIPE_REPO_USER: ${RECIPE_REPO_USER}
@@ -56,7 +41,6 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_INSECURE: 1
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       PORT: 5000
       PYTHONUNBUFFERED: 1
     networks:
@@ -64,19 +48,14 @@ services:
       - minio-net
     ports:
       - '80:5000'
-    working_dir: /app/webapp
     volumes:
       - cache-volume:/cache
       - ./src/webapp:/app/webapp
-    entrypoint: ["python", "main.py", "--debug"]
 volumes:
   minio-data:
   cache-volume:
-  dbdata:
 networks:
   minio-net:
     name: minio-net
     driver: bridge
-  pgadmin-net:
-    external: true
   local-net:

@@ -11,14 +11,12 @@ from bs4 import BeautifulSoup
 
 from .instagram import get_instagram_recipe
 from .meta import *
-from .recipe import Recipe, RecipeMeta, Fixable
+from .recipe import Fixable, Recipe, RecipeMeta
 from .thumbnail import get_thumbnail
 from .utils import *
 
 logger = logging.getLogger(__name__)
-client = openai.AsyncOpenAI(
-    api_key=os.environ["OPENAI_API_KEY"]
-)
+client = openai.AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 MAX_RETRIES = 1
 MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
@@ -69,23 +67,24 @@ Please output only the JSON object and nothing else. You can do this!
 
 
 def _get_tiktok_text(soup: BeautifulSoup):
-    """ Get description of tiktok page. We cannot use simple scraping, since the
-    caption is loaded lazily. """
+    """Get description of tiktok page. We cannot use simple scraping, since the
+    caption is loaded lazily."""
     data = soup.find("script", {"id": "__UNIVERSAL_DATA_FOR_REHYDRATION__"})
     json_data = msgspec.json.decode(data.contents[0], strict=False)
-    return json_data["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"][
-        "desc"]
+    return json_data["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"][
+        "itemStruct"
+    ]["desc"]
 
 
 def _get_text(soup: BeautifulSoup):
-    """ Get text from soup. We remove any unnecessary spacing. """
+    """Get text from soup. We remove any unnecessary spacing."""
     return re.sub(r"(\n\s*)+", "\n", soup.get_text(separator=" ", strip=True))
 
 
 def _get_html_text(soup: BeautifulSoup):
-    """ Get text from html page
+    """Get text from html page
     First, we try to just get all the text. If this is too long,
-    we attempt to strip away any 'small' comment sections. """
+    we attempt to strip away any 'small' comment sections."""
     text = _get_text(soup)
 
     # text is "short enough", do not remove comments
@@ -97,7 +96,7 @@ def _get_html_text(soup: BeautifulSoup):
 
     # remove comment sections from website
     COMMENTS = ["comment", "opmerking"]
-    COMMENTS_RE = re.compile(fr".*({'|'.join(COMMENTS)}).*", flags=re.IGNORECASE)
+    COMMENTS_RE = re.compile(rf".*({'|'.join(COMMENTS)}).*", flags=re.IGNORECASE)
     for attr in ["class", "id"]:
         for element in soup.find_all(attrs={attr: COMMENTS_RE}):
             # only remove "small" text sections
@@ -110,20 +109,25 @@ def _get_html_text(soup: BeautifulSoup):
 
 
 async def translate_url(url: str, user_agent=None) -> Recipe:
-    """ Transform a recipe from a url, determining the thumbnail automatically """
-    logging.info(f"Retrieving url {url}")
+    """Transform a recipe from a url, determining the thumbnail automatically"""
+    logger.info(f"Retrieving url {url}")
     domain = tld.extract(url).domain.lower()
     if domain in {"instagram", "ig", "cdninstagram"}:
         # instagram must be handled separately
         text, thumbnail = await get_instagram_recipe(url)
     else:
         async with aiohttp.ClientSession(
-            headers=get_headers(url, user_agent=user_agent)) as session:
+            headers=get_headers(url, user_agent=user_agent)
+        ) as session:
             res = await session.get(url)
             if not res.ok:
                 headers = "\n".join(
-                    f"{header}: {value}" for header, value in res.headers.items())
-                message = f"Could not get the specified url, status code {res.status}\n" + headers
+                    f"{header}: {value}" for header, value in res.headers.items()
+                )
+                message = (
+                    f"Could not get the specified url, status code {res.status}\n"
+                    + headers
+                )
                 raise CookbookError(message)
             soup = BeautifulSoup(await res.text(), features="html.parser")
             if domain == "tiktok":
@@ -136,23 +140,24 @@ async def translate_url(url: str, user_agent=None) -> Recipe:
     return recipe
 
 
-async def _chatgpt_json_and_fix(cls: type[Fixable], messages, temperature=DEFAULT_TEMPERATURE,
-                                **kwargs):
-    """ Send message to chatgpt, and load object of type 'cls'
-    from the response. 'cls' should be a subclass of Fixable """
+async def _chatgpt_json_and_fix(
+    cls: type[Fixable], messages, temperature=DEFAULT_TEMPERATURE, **kwargs
+):
+    """Send message to chatgpt, and load object of type 'cls'
+    from the response. 'cls' should be a subclass of Fixable"""
     assert issubclass(cls, Fixable)
 
     # we may do a multi-shot recipe conversion if chatgpt
     # fails the first time around
     for i in range(1 + MAX_RETRIES):
-        logging.info(f"ChatGPT message attempt {i + 1}")
+        logger.info(f"ChatGPT message attempt {i + 1}")
         try:
             chat_completion = await client.chat.completions.create(
                 model=MODEL,
                 messages=messages,
                 response_format={"type": "json_object"},
                 temperature=temperature,
-                **kwargs
+                **kwargs,
             )
         except openai.BadRequestError as e:
             if e.code == "context_length_exceeded":
@@ -169,48 +174,50 @@ async def _chatgpt_json_and_fix(cls: type[Fixable], messages, temperature=DEFAUL
         except msgspec.DecodeError:
             logger.warning("Conversion failed, retrying")
             messages.append({"role": "assistant", "content": reply})
-            messages.append({
-                "role": "user",
-                "content": "this is not a parsable json object, output only the json object"
-            })
-    raise CookbookError("ChatGPT did not return a parsable json object, please try again")
+            messages.append(
+                {
+                    "role": "user",
+                    "content": "this is not a parsable json object, output only the json object",
+                }
+            )
+    raise CookbookError(
+        "ChatGPT did not return a parsable json object, please try again"
+    )
 
 
 async def translate_page(text: str, url=None, thumbnail=None) -> Recipe:
-    """ Tranform a recipe from text, filling in the url and thumbnail
-    fields from the given parameters """
-    logging.info(f"Converting with ChatGPT ({MODEL})")
+    """Tranform a recipe from text, filling in the url and thumbnail
+    fields from the given parameters"""
+    logger.info(f"Converting with ChatGPT ({MODEL})")
     messages = [
         {
             "role": "system",
-            "content": "You are a helpful AI cook that converts recipes into JSON objects."
+            "content": "You are a helpful AI cook that converts recipes into JSON objects.",
         },
-        {"role": "user", "content": PROMPT.format(text=text)}
+        {"role": "user", "content": PROMPT.format(text=text)},
     ]
 
-    reply, fixed = await _chatgpt_json_and_fix(Recipe, messages, temperature=DEFAULT_TEMPERATURE)
+    reply, fixed = await _chatgpt_json_and_fix(
+        Recipe, messages, temperature=DEFAULT_TEMPERATURE
+    )
     messages.append({"role": "assistant", "content": reply})
     messages.append({"role": "user", "content": META_PROMPT})
     try:
         # higher temperature for interpreting the recipe for tags
-        _, meta = await _chatgpt_json_and_fix(RecipeMeta, messages,
-                                              temperature=DEFAULT_TEMPERATURE)
-    except Exception as e:
+        _, meta = await _chatgpt_json_and_fix(
+            RecipeMeta, messages, temperature=DEFAULT_TEMPERATURE
+        )
+    except Exception:  # noqa: BLE001
         meta = {}
 
     # update meta and predetermined values
-    # add url / thumbnail after the fact, since we 
+    # add url / thumbnail after the fact, since we
     # want to use as few tokens as possible
-    fixed = dataclasses.replace(
-        fixed,
-        meta=meta,
-        url=url,
-        thumbnail=thumbnail
-    )
+    fixed = dataclasses.replace(fixed, meta=meta, url=url, thumbnail=thumbnail)
     return fixed
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from pprint import pprint
 
     recipe = asyncio.run(translate_url("https://www.tiktok.com/t/ZT8VYSJYd/"))

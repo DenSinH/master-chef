@@ -1,22 +1,12 @@
 from bs4 import BeautifulSoup
 
+IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "gif"]
 
-IMAGE_EXTENSIONS = [
-    "jpg",
-    "jpeg",
-    "png",
-    "webp",
-    "gif"
-]
-
-THUMBNAIL_META_ATTR = [
-    {"property": "og:image"},
-    {"name": "twitter:image:src"}
-]
+THUMBNAIL_META_ATTR = [{"property": "og:image"}, {"name": "twitter:image:src"}]
 
 
 def get_thumbnail(soup: BeautifulSoup):
-    """ Try to find a thumbnail image from an HTML page """
+    """Try to find a thumbnail image from an HTML page"""
     # try to find known meta attributes for thumbnails
     for attr in THUMBNAIL_META_ATTR:
         image = soup.find("meta", attr)

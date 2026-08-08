@@ -1,8 +1,5 @@
 User-agent: *
 Disallow: /login
-Disallow: /register
-Disallow: /forgot-password
-Disallow: /registered
 Disallow: /logout
 Disallow: /saved/
 Disallow: /comment/

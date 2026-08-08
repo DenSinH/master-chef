@@ -3,28 +3,38 @@ import os
 from functools import wraps
 
 import jwt
-from sanic import Sanic, Request, HTTPResponse
-from sanic.exceptions import Unauthorized, Forbidden
+from sanic import HTTPResponse, Request, Sanic
+from sanic.exceptions import Forbidden, Unauthorized
 
 JWT_ALGORITHM = "HS256"
 JWT_COOKIE_NAME = "CookbookToken"
-ADMIN_USERS = set(
-    name.strip() for name in
-    os.environ.get("ADMIN_USER", "admin").split(",")
-)
+
+# Load admin users from environment
+ADMIN_USERS: dict[str, str] = {}
+
+for user in os.environ.get("ADMIN_USER", "admin").split(","):
+    name, password = user.split(":", maxsplit=1)
+    name = name.strip()
+    password = password.strip()
+    if name and password:
+        ADMIN_USERS[name] = password
+
+
+def login(username: str, password: str | None) -> bool:
+    """Try to login admin user"""
+    return ADMIN_USERS.get(username) == password
 
 
 def init_jwt(app: Sanic, secret=None, expiration_delta=None):
-    """ Initialize JWT data by setting the secret and expiration delta options """
+    """Initialize JWT data by setting the secret and expiration delta options"""
     assert secret is not None
     app.config.update(
-        jwt_secret=secret,
-        jwt_expiration_delta=expiration_delta or 30 * 60
+        jwt_secret=secret, jwt_expiration_delta=expiration_delta or 30 * 60
     )
 
     @app.on_request
     async def jwt_authentication(request: Request):
-        """ Read userdata on request """
+        """Read userdata on request"""
         token = request.cookies.get(JWT_COOKIE_NAME)
         if token:
             payload = _decode_jwt(request.app, token)
@@ -39,31 +49,23 @@ def init_jwt(app: Sanic, secret=None, expiration_delta=None):
 
 
 def _encode_jwt(app: Sanic, username: str):
-    """ Encode a JWT token for the given username """
+    """Encode a JWT token for the given username"""
+    assert username in ADMIN_USERS, f"{username} is not admin, can't log them in!"
     payload = {
         "username": username,
-        "scopes": ['user'],
-        "exp": datetime.datetime.now(datetime.UTC) + datetime.timedelta(
-            seconds=app.config["jwt_expiration_delta"])
+        "scopes": ["admin"],
+        "exp": datetime.datetime.now(datetime.UTC)
+        + datetime.timedelta(seconds=app.config["jwt_expiration_delta"]),
     }
-    if username in ADMIN_USERS:
-        payload["scopes"].append("admin")
-
-    token = jwt.encode(
-        payload,
-        app.config["jwt_secret"],
-        algorithm=JWT_ALGORITHM
-    )
+    token = jwt.encode(payload, app.config["jwt_secret"], algorithm=JWT_ALGORITHM)
     return token
 
 
 def _decode_jwt(app: Sanic, token: str):
-    """ Decode a JWT token belonging to the given app """
+    """Decode a JWT token belonging to the given app"""
     try:
         payload = jwt.decode(
-            token,
-            app.config["jwt_secret"],
-            algorithms=[JWT_ALGORITHM]
+            token, app.config["jwt_secret"], algorithms=[JWT_ALGORITHM]
         )
         return payload
     except jwt.ExpiredSignatureError:
@@ -73,7 +75,7 @@ def _decode_jwt(app: Sanic, token: str):
 
 
 def protected(*required_scopes):
-    """ Validate scope decorator """
+    """Validate scope decorator"""
 
     def decorator(f):
         @wraps(f)
@@ -94,41 +96,34 @@ def protected(*required_scopes):
     return decorator
 
 
-def get_username(request: Request):
-    """ Helper function to retrieve username from request
-    context, without having to deal with the context manually. """
+def get_username(request: Request) -> str | None:
+    """Helper function to retrieve username from request
+    context, without having to deal with the context manually."""
     if not request.ctx.user:
         return None
     return request.ctx.user["username"]
 
 
 def is_admin(request: Request):
-    """ Helper function to retrieve admin role status from request
-    context, without having to deal with the context manually. """
+    """Helper function to retrieve admin role status from request
+    context, without having to deal with the context manually."""
     if not request.ctx.user:
         return False
     return "admin" in request.ctx.user["scopes"]
 
 
-def is_user(request: Request):
-    """ Helper function to retrieve user role status from request
-    context, without having to deal with the context manually. """
-    if not request.ctx.user:
-        return False
-    return "user" in request.ctx.user["scopes"]
-
-
 def login_user(username: str, request: Request, response: HTTPResponse):
-    """ Login the given user by setting the JWT token cookie """
+    """Login the given user by setting the JWT token cookie"""
     token = _encode_jwt(request.app, username)
     response.add_cookie(
-        JWT_COOKIE_NAME, token,
+        JWT_COOKIE_NAME,
+        token,
         httponly=True,
         samesite="Strict",
-        max_age=request.app.config["jwt_expiration_delta"]
+        max_age=request.app.config["jwt_expiration_delta"],
     )
 
 
 def logout_user(response: HTTPResponse):
-    """ Logout the user by removing the cookie """
+    """Logout the user by removing the cookie"""
     response.delete_cookie(JWT_COOKIE_NAME)

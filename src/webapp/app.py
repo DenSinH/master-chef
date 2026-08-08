@@ -1,38 +1,35 @@
-from sanic import Sanic, response
-import msgspec.json
 import datetime
-import string
 import os
-from utils.compress import init_compression
-from utils.minifyloader import MinifyingFileSystemLoader
-from utils.imgupload import init_client
+import string
+from pathlib import Path
 
-import cookbook
-import auth
-import session
-from data import init_db
-from limiter import init_limiter, close_limiter, RateLimiter
+import msgspec.json
+from sanic import Sanic, response
 
+from . import auth, cookbook, session
+from .utils.compress import init_compression
+from .utils.imgupload import init_client
+from .utils.minifyloader import MinifyingFileSystemLoader
 
 """ Initialize all app components """
 response.BaseHTTPResponse._dumps = msgspec.json.encode
 
-app = Sanic(__name__, configure_logging=False)
+app = Sanic("master-chef", configure_logging=False)
 app.ext.templating.environment.loader = MinifyingFileSystemLoader(
-    "templates/"
+    Path(__file__).parent / "templates"
 )
 
+
 def _strftimestamp(timestamp):
-    """ Format timestamp to text """
-    date = datetime.datetime.fromtimestamp(timestamp)
+    """Format timestamp to text"""
+    date = datetime.datetime.fromtimestamp(timestamp).astimezone()
     return date.strftime("%Y-%m-%d")
 
 
 def _addIngredient_references(step: str, recipe: cookbook.Recipe):
-    """ Add ingredient references to recipe step """
+    """Add ingredient references to recipe step"""
     return cookbook.replace_ingredient_references(
-        step, 
-        tuple(ingredient.ingredient for ingredient in recipe.ingredients)
+        step, tuple(ingredient.ingredient for ingredient in recipe.ingredients)
     )
 
 
@@ -49,31 +46,19 @@ app.ext.templating.environment.globals["CARB_TYPES"] = cookbook.CARB_TYPES
 app.ext.templating.environment.globals["TEMPERATURE_TYPES"] = cookbook.TEMPERATURE_TYPES
 app.ext.templating.environment.globals["LANGUAGES"] = {
     "nl": "Nederlands",
-    "en": "English"
+    "en": "English",
 }
 
 app.config.SECRET = os.environ.get("SECRET", os.environ["PASSWORD"])
-app.static("/static", "./static")
-app.static("/robots.txt", "./static/robots.txt", name="robots")
-app.static("/favicon.ico", "./static/favicon.ico", name="favicon")
+here = Path(__file__).parent
+app.static("/static", here / "static")
+app.static("/robots.txt", here / "static" / "robots.txt", name="robots")
+app.static("/favicon.ico", here / "static" / "favicon.ico", name="favicon")
 
-session.init_session(
-    app,
-    cookie_name="CookbookSession"
-)
+session.init_session(app, cookie_name="CookbookSession")
 
-auth.init_jwt(
-    app,
-    app.config.SECRET,
-    60 * 60
-)
+auth.init_jwt(app, app.config.SECRET, 60 * 60)
 
-app.before_server_start(init_db)
 app.before_server_start(init_client)
-
-# global rate limit of 5 requests per second
-app.ctx.global_limiter = RateLimiter(times=5, seconds=1)
-app.before_server_start(init_limiter)
-app.after_server_stop(close_limiter)
 
 init_compression(app)

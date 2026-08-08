@@ -1,6 +1,8 @@
-from typing import Callable, TYPE_CHECKING
-from jinja2 import FileSystemLoader
+from collections.abc import Callable
+from typing import TYPE_CHECKING
+
 from htmlmin import Minifier
+from jinja2 import FileSystemLoader
 
 if TYPE_CHECKING:
     from jinja2.environment import Environment
@@ -12,13 +14,11 @@ class MinifyingFileSystemLoader(FileSystemLoader):
     on load, reducing processing time for rendering
     """
 
-    minifier = Minifier(
-        remove_empty_space=True
-    )
+    minifier = Minifier(remove_empty_space=True)
 
     def get_source(
-        self, environment: 'Environment', template: str
+        self, environment: Environment, template: str
     ) -> tuple[str, str, Callable[[], bool]]:
-        """ Load and minify source """
+        """Load and minify source"""
         contents, path, uptodate = super().get_source(environment, template)
         return self.minifier.minify(contents), path, uptodate

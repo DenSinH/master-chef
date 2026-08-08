@@ -1,32 +1,26 @@
-from sanic import Sanic, Request, HTTPResponse
 import gzip
 
+from sanic import HTTPResponse, Request, Sanic
 
-COMPRESS_MIME_TYPES = frozenset([
-    "text/html",
-    "text/css",
-    "text/xml",
-    "application/json",
-    "application/javascript"
-])
+COMPRESS_MIME_TYPES = frozenset(
+    ["text/html", "text/css", "text/xml", "application/json", "application/javascript"]
+)
 COMPRESS_LEVEL = 6
 COMPRESS_MIN_SIZE = 500
 
 
 def _compress(response: HTTPResponse):
-    """ Perform actual compression on response """
-    out = gzip.compress(
-        response.body,
-        compresslevel=COMPRESS_LEVEL
-    )
+    """Perform actual compression on response"""
+    out = gzip.compress(response.body, compresslevel=COMPRESS_LEVEL)
 
     return out
 
-async def _compress_response(request: Request, response: HTTPResponse):
-    """ Compress the given response, or return None """
+
+def _compress_response(request: Request, response: HTTPResponse):
+    """Compress the given response, or return None"""
     if not response.body:
-        return None
-    
+        return
+
     # read response data
     accept_encoding = request.headers.get("Accept-Encoding", "")
     content_length = len(response.body)
@@ -38,13 +32,15 @@ async def _compress_response(request: Request, response: HTTPResponse):
     # - have a "successful" response status
     # - be large enough to warrant compressing
     # - not already be encoded in some other way
-    do_compress = content_type in COMPRESS_MIME_TYPES \
-                  and "gzip" in accept_encoding.lower() \
-                  and 200 <= response.status < 300 \
-                  and content_length > COMPRESS_MIN_SIZE \
-                  and "Content-Encoding" not in response.headers
+    do_compress = (
+        content_type in COMPRESS_MIME_TYPES
+        and "gzip" in accept_encoding.lower()
+        and 200 <= response.status < 300
+        and content_length > COMPRESS_MIN_SIZE
+        and "Content-Encoding" not in response.headers
+    )
     if not do_compress:
-        return None
+        return
 
     # compress response body
     gzip_content = _compress(response)
@@ -63,12 +59,12 @@ async def _compress_response(request: Request, response: HTTPResponse):
     else:
         response.headers["Vary"] = "Accept-Encoding"
 
-    return None
+    return
 
 
 def init_compression(app: Sanic):
-    """ Initialize compression middleware on response """
-        
+    """Initialize compression middleware on response"""
+
     @app.on_response
     async def compress_response(request: Request, response: HTTPResponse):
-        return await _compress_response(request, response)
+        return _compress_response(request, response)

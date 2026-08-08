@@ -1,16 +1,17 @@
-from miniopy_async import Minio
-import miniopy_async.error
-from PIL import Image
-from io import BytesIO
-import hashlib
 import base64
-from dataclasses import dataclass
 import dataclasses
+import hashlib
+import logging
+import os
 import re
 import textwrap
-import logging
-from urllib.parse import urlparse, urljoin
-import os
+from dataclasses import dataclass
+from io import BytesIO
+from urllib.parse import urljoin, urlparse
+
+import miniopy_async.error
+from miniopy_async import Minio
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ MINIO_CLIENT: Minio = Minio(
     os.environ["MINIO_SECRET_KEY"],
     # we may want to allow an insecure environment
     # for local development
-    secure=not MINIO_INSECURE
+    secure=not MINIO_INSECURE,
 )
 # parse public URL once
 MINIO_PUBLIC_URL = urlparse(os.environ.get("MINIO_PUBLIC_URL", os.environ["MINIO_URL"]))
@@ -31,13 +32,11 @@ DEFAULT_POLICY = {
     "Statement": [
         {
             "Effect": "Allow",
-            "Principal": {
-                "AWS": ["*"]
-            },
+            "Principal": {"AWS": ["*"]},
             "Action": ["s3:GetObject"],
-            "Resource": [f"arn:aws:s3:::{MINIO_BUCKET}/*"]
+            "Resource": [f"arn:aws:s3:::{MINIO_BUCKET}/*"],
         }
-    ]
+    ],
 }
 IMAGE_MAX_SIZE = 150 * 1024  # 150kb
 
@@ -53,22 +52,21 @@ class ImageMeta:
 
 
 async def init_client(*args):
-    """ Initialize client """
-    pass
+    """Initialize client"""
 
 
 async def _preprocess_image(filedata: bytes) -> tuple[BytesIO, ImageMeta]:
-    """ Prepare an image. This includes:
-    - WEBP compression down to IMAGE_MAX_SIZE 
+    """Prepare an image. This includes:
+    - WEBP compression down to IMAGE_MAX_SIZE
     Return the image bytes, and metadata containing the
-    final image quality """
+    final image quality"""
     logger.info(f"Compressing image of size {len(filedata)}")
     image = Image.open(BytesIO(filedata))
     output = BytesIO()
     size = -1
     quality = 0
 
-    # keep retrying lower quality rates compression 
+    # keep retrying lower quality rates compression
     # until we compressed enough or until the quality is too low
     for quality in range(100, 10, -5):
         output.seek(0)
@@ -81,22 +79,19 @@ async def _preprocess_image(filedata: bytes) -> tuple[BytesIO, ImageMeta]:
         raise MinioError(
             f"Uploaded image too large: {output.tell()} bytes with quality level {quality}"
         )
-    
+
     # return data, seek 0 in output stream
-    logging.info(f"Compressed image to {size} with quality {quality}")
+    logger.info(f"Compressed image to {size} with quality {quality}")
     output.seek(0)
-    metadata = ImageMeta(
-        size=size,
-        quality=quality
-    )
+    metadata = ImageMeta(size=size, quality=quality)
     return output, metadata
 
 
 def _get_objname(imagedata: BytesIO, title: str | None):
-    """ Generate an image title, unique to the image data
+    """Generate an image title, unique to the image data
     and title. It consists of a SHA256 hash of the image data,
     as well as the title converted to kebab-case, stripped of any
-    non-alphanumeric characters. """
+    non-alphanumeric characters."""
 
     # get sha of image
     sha256 = hashlib.sha256(imagedata.read(), usedforsecurity=False)
@@ -109,20 +104,22 @@ def _get_objname(imagedata: BytesIO, title: str | None):
     # no title, filename is just sha
     if title is None:
         return sha
-    
+
     # convert title to kebab case
-    single_space = re.sub("[\s_-]+", " ", title)
+    single_space = re.sub(r"[\s_-]+", " ", title)
     only_alnum = re.sub(r"[^\w\s-]", "", single_space.strip())
-    kebab_case = re.sub("[\s_-]", "-", only_alnum)
+    kebab_case = re.sub(r"[\s_-]", "-", only_alnum)
 
     # make sure filenames are not too long
-    title = textwrap.shorten(f"{sha}-{kebab_case.lower()}", width=80, placeholder="").strip("-")
+    title = textwrap.shorten(
+        f"{sha}-{kebab_case.lower()}", width=80, placeholder=""
+    ).strip("-")
     return title
 
 
 def _get_url(objname: str):
-    """ Get a valid (public) url for the given object,
-    in the MINIO_BUCKET. """
+    """Get a valid (public) url for the given object,
+    in the MINIO_BUCKET."""
     base_url = MINIO_PUBLIC_URL
 
     # append scheme if none is passed
@@ -137,15 +134,15 @@ def _get_url(objname: str):
 
 
 async def upload_image(filedata: bytes, title=None):
-    """ Upload image data to Minio CDN. We first preprocess the
-    image, compressing it to a small enough WEBP image. We then 
+    """Upload image data to Minio CDN. We first preprocess the
+    image, compressing it to a small enough WEBP image. We then
     compute a filename based on the (compressed) image data,
-    and the provided title. The result is uploaded to Minio. """
+    and the provided title. The result is uploaded to Minio."""
     # preprocess image
     processed, metadata = await _preprocess_image(filedata)
     objname = _get_objname(processed, title=title)
     objname += ".webp"
-    
+
     try:
         await MINIO_CLIENT.stat_object(MINIO_BUCKET, objname)
         logger.info(f"Object {objname} already exists in {MINIO_BUCKET}")
@@ -156,7 +153,7 @@ async def upload_image(filedata: bytes, title=None):
             objname,
             processed,
             length=metadata.size,
-            metadata=dataclasses.asdict(metadata)
+            metadata=dataclasses.asdict(metadata),
         )
 
     return _get_url(objname)

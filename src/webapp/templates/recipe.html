@@ -15,9 +15,6 @@
     <script defer recipe-id="{{ recipe_id }}" src="/static/recipe.js"></script>
     <script defer src="/static/wakelock.js"></script>
     <script defer src="/static/modal.js"></script>
-    {%- if is_user or is_admin -%}
-    <link rel="stylesheet" href="/static/likes.css">
-    {%- endif -%}
     {%- if is_admin -%}
     <script>
         function delete_recipe() {
@@ -96,7 +93,7 @@
                     <a href="https://www.instagram.com/p/{{ recipe.igcode }}/" class="round-button" target="_blank"><i class="fab fa-instagram"></i></a>
                 {%- endif -%}
                 <a onclick="shareRecipe()" class="round-button"><i class="fas fa-share"></i></a>
-                {%- if not (is_user or is_admin) -%}
+                {%- if not is_admin -%}
                 <a href="{{ url_for('login_form', redirect=url_for('recipe', collection=collection, id=recipe_id)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
                 {%- else -%}
                 <a href="{{ url_for('logout') }}" class="round-button"><i class="fas fa-sign-out-alt"></i></a>
@@ -104,15 +101,8 @@
             </div>
         </header>
 
-        <!-- Needs to be here to position save-icon properly-->
         <div class="recipe-container" id="recipe{{ recipe_id }}">
             <img src="{{ recipe.thumbnail or '/static/spaghet.png' }}" onerror="this.onerror=null; this.src='/static/spaghet.png'" alt="Preview">
-            {% if is_user or is_admin %}
-            <div class="save-icon hidden" onclick="toggleSave(event, '{{ collection }}', '{{ recipe_id }}')">
-                <i class="far fa-heart"></i>
-                <i class="fas fa-heart"></i>
-            </div>
-            {% endif %}
         </div>
 
         {%- if recipe.url -%}
@@ -122,16 +112,6 @@
         {%- endif -%}
 
         <div class="recipe-info">
-            <div class="recipe-info-detail">
-                <i class="fas fa-eye"></i><span class="info-item">
-                <span class="viewcount-value">{{ viewcount or 0 }}</span>
-                {% if english -%}
-                    views
-                {%- else -%}
-                    keer bekeken
-                {%- endif -%}
-            </span>
-            </div>
             {%- if recipe.time -%}
             <div class="recipe-info-detail">
                 <i class="fas fa-clock"></i> <span class="info-item">{{ recipe.time }} {{ 'minutes' if english else 'minuten' }}</span>
@@ -252,93 +232,6 @@
             <tr><td>{{ group.group|capitalize }}</td><td>{{ group.amount }}</td></tr>
             {%- endfor -%}
         </table>
-        {%- endif -%}
-
-        <h2>{{ 'Reviews' if english else 'Beoordelingen' }}</h2>
-        {%- if is_user -%}
-        <div class="review">
-            <p class="user-reviewer-name reviewer-name">Your Review:</p>
-            <div id="errors"></div>
-            {% set user_rating = user_comment.rating if user_comment is not none else 0 %}
-            {% set user_review = user_comment.text if user_comment is not none else '' %}
-            {% set review_editing = 'editing' if not user_review else '' %}
-            {% set review_editable = 'true' if not user_review else 'false' %}
-            <div class="user-review">
-                <div class="user-review-content">
-                    <div id="userRating" class="star-rating {{ review_editing }}" data-rating="{{ user_rating }}" data-last-rating="{{ user_rating }}">
-                        {% for i in range(user_rating) %}
-                        <span class="selected">&#9733;</span>
-                        {% endfor %}
-                        {% for i in range(5 - user_rating) %}
-                        <span>&#9733;</span>
-                        {% endfor %}
-                    </div>
-                        <div class="editable-review {{ review_editing }}"
-                             contenteditable="{{ review_editable }}"
-                             id="userReview"
-                             role="textbox"
-                             aria-multiline="true"
-                             placeholder="Write your review here..."
-                             data-last-review="{{ user_review }}"
-                        >
-                            {{- user_review -}}
-                        </div>
-                </div>
-                <div class="user-review-controls">
-                    <span id="reviewSubmitButton" onclick="submitReview()" class="round-button {{ 'hidden' if user_review else '' }}"><i class="fas fa-comment"></i></span>
-                    <span id="reviewEditButton" onclick="editReview()" class="round-button {{ 'hidden' if not user_review else '' }}"><i class="fas fa-edit"></i></span>
-                    <span onclick="deleteReview()" class="round-button"><i class="fas fa-trash"></i></span>
-                </div>
-            </div>
-        </div>
-        {%- else -%}
-        <a href="{{ url_for('login_form', redirect=url_for('recipe', collection=collection, id=recipe_id)) }}" style="color: gray">
-            <i>
-                {%- if english -%}
-                    Log in to post your own review
-                {%- else -%}
-                    Log in om je eigen beoordeling te plaatsen
-                {% endif %}
-            </i>
-        </a>
-        {%- endif -%}
-
-        {% for comment, user in comments_users %}
-        <div class="review">
-            {% if found_admin_comment and loop.index0 == 0 %}
-            <p class="reviewer-name admin">{{ user.username }} (Owner)</p>
-            {% else %}
-            <p class="reviewer-name">{{ user.username if user.verified else 'Unverified User' }}</p>
-            {% endif %}
-            {% if comment.date_edited is not none %}
-            <p class="review-date">Edited {{ comment.date_edited.strftime('%Y-%m-%d %H:%M') }}</p>
-            {% else %}
-            <p class="review-date">{{ comment.date_posted.strftime('%Y-%m-%d %H:%M') }}</p>
-            {% endif %}
-            <p class="star-rating">
-                {% for i in range(comment.rating) %}
-                <span class="selected">&#9733;</span>
-                {% endfor %}
-                {% for i in range(5 - comment.rating) %}
-                <span>&#9733;</span>
-                {% endfor %}
-            </p>
-            {% if user.verified %}
-            <p>{{ comment.text }}</p>
-            {% endif %}
-        </div>
-        {% endfor %}
-
-        {%- if is_user -%}
-        <script defer
-            post-url="{{ url_for('post_comment', collection=collection, id=recipe_id) }}"
-            delete-url="{{ url_for('delete_comment', collection=collection, id=recipe_id) }}"
-            src="/static/recipe.user.js"
-        ></script>
-        {%- endif -%}
-        <script defer data-url="{{ url_for('recipe_views', collection=collection, id=recipe_id) }}" src="/static/views.js"></script>
-        {%- if is_user or is_admin -%}
-        <script defer data-url="{{ url_for('get_saved', collection=collection) }}" src="/static/likes.js"></script>
         {%- endif -%}
     </div>
     {% include "units.html" %}

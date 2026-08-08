@@ -1,12 +1,13 @@
-FROM python:3.11-slim-bookworm
+FROM python:3.14-slim-bookworm
+COPY --from=docker.io/astral/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
-COPY ./src/requirements.txt .
-RUN pip install -r requirements.txt
+COPY ./pyproject.toml .
+COPY ./uv.lock .
+RUN uv sync --no-dev --frozen --no-progress --no-install-project
 
-COPY ./src .
+COPY . .
 
-WORKDIR /app/webapp
-
-ENTRYPOINT ["python", "main.py"]
+RUN uv sync --no-dev --frozen --no-progress
+ENTRYPOINT ["uv", "run", "--no-sync", "master-chef"]
