@@ -6,7 +6,11 @@
   {% if col is none %}
     {% set _target = url_for('index') %}
   {% else %}
-    {% set _target = url_for('collection', collection=col) %}
+    {% if col %}
+       {% set _target = url_for('collection', collection=col) %}
+    {% else %}
+       {% set _target = url_for('collection') %}
+    {% endif %}
   {% endif %}
   <a href="{{ _target }}">
     <img id="icon" src="/static/icon-min.png" alt="icon">

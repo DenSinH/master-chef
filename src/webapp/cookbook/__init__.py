@@ -16,7 +16,7 @@ from .meta import (
     MeatType,
     TemperatureType,
 )
-from .recipe import Recipe
+from .recipe import Recipe, RecipeMeta
 from .references import replace_ingredient_references
 from .title import generate_title
 from .transform import translate_page, translate_url

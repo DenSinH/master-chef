@@ -162,9 +162,9 @@
                     <select name="meat_type">
                         {%- for meat in MeatType -%}
                         {%- if meat == meta.meat_type[0] -%}
-                            <option selected value="{{ meat }}">{{ meat|capitalize }}</option>
+                            <option selected value="{{ meat }}">{{ meat.value|capitalize }}</option>
                         {%- else -%}
-                            <option value="{{ meat }}">{{ meat|capitalize }}</option>
+                            <option value="{{ meat }}">{{ meat.value|capitalize }}</option>
                         {%- endif -%}
                         {%- endfor -%}
                     </select>
@@ -173,9 +173,9 @@
                         {%- for meat in MeatType -%}
                             {%- if meat != 'other'-%}
                                 {%- if meat == meta.meat_type[1] -%}
-                                    <option selected value="{{ meat }}">{{ meat|capitalize }}</option>
+                                    <option selected value="{{ meat }}">{{ meat.value|capitalize }}</option>
                                 {%- else -%}
-                                    <option value="{{ meat }}">{{ meat|capitalize }}</option>
+                                    <option value="{{ meat }}">{{ meat.value|capitalize }}</option>
                                 {%- endif -%}
                             {%- endif -%}
                         {%- endfor -%}
@@ -188,9 +188,9 @@
                     <select name="carb_type">
                         {%- for carb in CarbType -%}
                         {%- if carb == meta.carb_type[0] -%}
-                            <option selected value="{{ carb }}">{{ carb|capitalize }}</option>
+                            <option selected value="{{ carb }}">{{ carb.value|capitalize }}</option>
                         {%- else -%}
-                            <option value="{{ carb }}">{{ carb|capitalize }}</option>
+                            <option value="{{ carb }}">{{ carb.value|capitalize }}</option>
                         {%- endif -%}
                         {%- endfor -%}
                     </select>
@@ -199,9 +199,9 @@
                         {%- for carb in CarbType -%}
                             {%- if carb != 'other' and carb != 'none' -%}
                                 {%- if carb == meta.carb_type[1] -%}
-                                    <option selected value="{{ carb }}">{{ carb|capitalize }}</option>
+                                    <option selected value="{{ carb }}">{{ carb.value|capitalize }}</option>
                                 {%- else -%}
-                                    <option value="{{ carb }}">{{ carb|capitalize }}</option>
+                                    <option value="{{ carb }}">{{ carb.value|capitalize }}</option>
                                 {%- endif -%}
                             {%- endif -%}
                         {%- endfor -%}
@@ -213,9 +213,9 @@
                 <select name="temperature">
                     {%- for temp in TemparatureType -%}
                         {%- if temp == meta.temperature -%}
-                            <option selected value="{{ temp }}">{{ temp|capitalize }}</option>
+                            <option selected value="{{ temp }}">{{ temp.value|capitalize }}</option>
                         {%- else -%}
-                            <option value="{{ temp }}">{{ temp|capitalize }}</option>
+                            <option value="{{ temp }}">{{ temp.value|capitalize }}</option>
                         {%- endif -%}
                     {%- endfor -%}
                 </select>

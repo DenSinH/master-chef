@@ -1,4 +1,6 @@
 import datetime
+from collections import defaultdict
+from typing import Any
 
 import aiohttp
 from aiohttp.client_exceptions import ClientResponseError
@@ -11,6 +13,17 @@ from webapp.app import templates
 from webapp.utils import s3
 
 router = APIRouter()
+
+
+def _form_to_dict(form: FormData) -> dict[str, Any]:
+    values: dict[str, list[Any]] = defaultdict(list)
+
+    for key, value in form.multi_items():
+        values[key].append(value)
+
+    return {
+        key: values[0] if len(values) == 1 else values for key, values in values.items()
+    }
 
 
 def _parse_recipe_form(form: FormData) -> cookbook.Recipe:
@@ -44,12 +57,21 @@ def _parse_recipe_form(form: FormData) -> cookbook.Recipe:
     if not nutrition:
         nutrition = []
 
+    preparation = form.getlist("preparation")
+
     # Recipe factory
-    recipe = cookbook.Recipe(
+    data = dict(
+        _form_to_dict(form),
         ingredients=ingredients,
         nutrition=nutrition,
-        **form,
+        preparation=preparation,
     )
+    data["meta"] = {
+        field: value
+        for field, value in data.items()
+        if field in cookbook.RecipeMeta.model_fields
+    }
+    recipe = cookbook.Recipe(**data)
     return recipe
 
 

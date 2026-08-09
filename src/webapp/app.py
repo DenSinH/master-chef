@@ -33,10 +33,15 @@ templates = Jinja2Templates(
 templates.env.loader = FileSystemLoader(HERE / "templates")
 
 
-def _strftimestamp(timestamp):
+def _strftime(dt: datetime.datetime):
     """Format timestamp to text."""
-    date = datetime.datetime.fromtimestamp(timestamp).astimezone()
-    return date.strftime("%Y-%m-%d")
+    return dt.strftime("%Y-%m-%d")
+
+
+def _strftimestamp(timestamp: float):
+    """Format timestamp to text."""
+    dt = datetime.datetime.fromtimestamp(timestamp).astimezone()
+    return _strftime(dt)
 
 
 def _add_ingredient_references(step: str, recipe: cookbook.Recipe):
@@ -48,6 +53,7 @@ def _add_ingredient_references(step: str, recipe: cookbook.Recipe):
 
 
 templates.env.filters["strftimestamp"] = _strftimestamp
+templates.env.filters["strftime"] = _strftime
 templates.env.filters["ingredientrefs"] = _add_ingredient_references
 templates.env.filters["capwords"] = string.capwords
 

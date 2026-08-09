@@ -145,7 +145,7 @@ class Collection:
             # preserved automatic fields
             update={
                 "date_created": old_recipe.date_created,
-                "date_updated": now(),
+                "date_updated": now().timestamp(),
                 "igcode": recipe.igcode or old_recipe.igcode,
             }
         )
@@ -217,7 +217,7 @@ COLLECTIONS = {DEFAULT_COLLECTION, "unmade"}
 _COLLECTIONS = {name: Collection(name=name) for name in COLLECTIONS}
 
 
-def _get_collection(collection) -> Collection:
+def _get_collection(collection: str) -> Collection:
     """Get (cached) recipe collection by name"""
     if collection not in COLLECTIONS:
         raise CookbookError(f"Collection {collection} not found")

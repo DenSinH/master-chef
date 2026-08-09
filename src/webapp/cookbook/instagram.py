@@ -5,11 +5,12 @@ from collections.abc import Callable, Coroutine
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-from pprint import pprint
+from urllib.parse import urlsplit, urlunsplit
 
 import aiofiles.os
 import aiofiles.tempfile
 import aiohttp
+from bs4 import BeautifulSoup
 
 # monkey-patch the Media model to bypass validation, since they are not always
 # present in the media info response and the library does not handle that well
@@ -131,17 +132,37 @@ async def _get_client() -> instagrapi.Client:
     raise InstagramError("Couldn't login user with either password or session")
 
 
-async def get_instagram_recipe(url):
-    """Get recipe from Instagram media caption,
-    as well as the thumbnail url"""
-    client = await _get_client()
-    try:
-        media_pk = await asyncio.to_thread(client.media_pk_from_url, url)
-        media = await asyncio.to_thread(client.media_info, media_pk)
-        return media.caption_text, str(media.thumbnail_url)
-    except instagrapi.exceptions.ChallengeRequired as e:
-        pprint(vars(e))
-        raise
+async def get_instagram_recipe(url: str, user_agent: str | None = None) -> str:
+    """Get recipe from Instagram media caption, as well as the thumbnail url"""
+
+    # remove query url
+    parts = urlsplit(url)
+    url = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+
+    # Gather headers (source user-agent and additional headers)
+    headers = get_headers(url, user_agent=user_agent)
+
+    # This header gives us the appropriate meta tag,
+    # ensure it is present
+    headers.update(
+        {
+            "Sec-Fetch-Site": "none",
+        }
+    )
+
+    async with aiohttp.ClientSession(headers=headers) as session:  # noqa: SIM117
+        async with session.get(url) as response:
+            response.raise_for_status()
+            html = await response.text()
+
+    soup = BeautifulSoup(html, "html.parser")
+    meta = soup.find("meta", attrs={"name": "description"})
+
+    if meta is None or (content := meta.get("content")) is None:
+        msg = f"Failed to get instagram recipe from HTML: {meta}"
+        raise RuntimeError(msg)
+
+    return content
 
 
 async def _download_image(
@@ -199,9 +220,3 @@ async def post_instagram_recipe(recipe_name, image_url, user_agent=None):
         return media.code
 
     return await _download_image(image_url, _upload_from_path, user_agent=user_agent)
-
-
-if __name__ == "__main__":
-    # install instagrapi, Pillow
-    url = "https://www.instagram.com/reel/C8KpFGsoKC3/?igsh=aDdhdGRxc25qcmZk"
-    get_instagram_recipe(url)

@@ -25,9 +25,11 @@ logging.basicConfig(
 
 add_error_handlers(app)
 
+# Order matters here, the 'admin_router' has update routes which should take precedence
+# over any public user-facing routes (e.g. recipes with pretty names for example)
+app.include_router(admin_router)
 app.include_router(public_router)
 app.include_router(user_router)
-app.include_router(admin_router)
 
 
 def main():

@@ -26,8 +26,8 @@ def _to_str_list(value: list) -> list[str]:
     for v in value:
         if isinstance(v, dict) and len(v) == 1:
             result.append(next(iter(v.values())))
-        else:
-            result.append(str(v))
+        elif v := str(v):
+            result.append(v)
     return result
 
 
@@ -70,7 +70,7 @@ def _fuzzy_enum_match(
     enum_type: type[_E], value: str, optional: bool = False
 ) -> _E | None:
     """Fuzzy match allowed enum values"""
-    if value is None and optional:
+    if not value and optional:
         return None
 
     allowed_values: list[str] = [val.value for val in enum_type]
@@ -121,6 +121,16 @@ def FriendlyEnum(enum_type: type[_E]) -> type[_E]:
     ]
 
 
+def FriendlyEnumList(enum_type: type[_E]) -> type[list[_E]]:
+    return Annotated[
+        list[
+            Annotated[enum_type, BeforeValidator(partial(_fuzzy_enum_match, enum_type))]
+        ],
+        # filter None / empty
+        BeforeValidator(lambda value: [v for v in value if v]),
+    ]
+
+
 class RecipeDataBase(BaseModel):
     model_config = ConfigDict(
         frozen=True,
@@ -138,12 +148,12 @@ class RecipeMeta(BaseModel):
         default=MealType.OTHER,
         description="Which meal in the day this recipe is for",
     )
-    meat_type: list[FriendlyEnum(MeatType)] = Field(
+    meat_type: FriendlyEnumList(MeatType) = Field(
         default_factory=lambda: [MeatType.OTHER],
         description="Type of meat used in this recipe",
         max_length=2,
     )
-    carb_type: list[FriendlyEnum(CarbType)] = Field(
+    carb_type: FriendlyEnumList(CarbType) = Field(
         default_factory=lambda: [CarbType.OTHER],
         description="Type of carbs used in this recipe",
         max_length=2,
