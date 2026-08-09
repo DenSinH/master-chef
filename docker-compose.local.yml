@@ -1,10 +1,4 @@
 services:
-  redis:
-    image: redis:latest
-    expose:
-      - 6379
-    networks:
-      - local-net
   minio:
     image: minio/minio:latest
     restart: unless-stopped
@@ -21,8 +15,7 @@ services:
     command: server /data --console-address ":9001"
   web:
     build: .
-    depends_on:
-      - redis
+    entrypoint: ["uv", "run", "--no-sync", "master-chef", "--debug"]
     environment:
       RECIPE_REPO_USER: ${RECIPE_REPO_USER}
       RECIPE_REPO_NAME: ${RECIPE_REPO_NAME}
@@ -34,7 +27,6 @@ services:
       INSTAGRAM_USER: ${INSTAGRAM_USER}
       INSTAGRAM_PASS: ${INSTAGRAM_PASS}
       PERSIST_DIR: /cache
-      REDIS_URL: redis://redis:6379
       MINIO_URL: minio:9000
       MINIO_PUBLIC_URL: http://localhost:9000
       MINIO_BUCKET: cookbook

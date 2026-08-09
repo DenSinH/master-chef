@@ -40,7 +40,7 @@
                 <span onclick="randomRecipe()" class="round-button"><i class="fas fa-random"></i></span>
                 {%- endif -%}
                 {%- if not is_admin -%}
-                <a href="{{ url_for('login_form', redirect=url_for('collection', collection=collection)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
+                <a href="{{ url_for('login_form').include_query_params(redirect=url_for('collection', collection=collection)) }}" class="round-button"><i class="fas fa-sign-in-alt"></i></a>
                 {%- else -%}
                 <a href="{{ url_for('logout') }}" class="round-button"><i class="fas fa-sign-out-alt"></i></a>
                 {%- endif -%}

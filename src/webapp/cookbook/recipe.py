@@ -1,192 +1,246 @@
-import abc
-import dataclasses
 import hashlib
-import types
-import typing
-from dataclasses import dataclass, field
-from typing import Any
+from enum import StrEnum
+from functools import partial
+from typing import Annotated, Any, Literal, TypeVar, overload
 
 import msgspec.json
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 from thefuzz import process
 
-from .meta import *
+from .meta import (
+    CarbType,
+    CuisineType,
+    Language,
+    MealType,
+    MeatType,
+    TemperatureType,
+)
+
+_E = TypeVar("_E", bound="StrEnum")
 
 
-class RecipeError(Exception):
-    pass
-
-
-def _is_list_of_single_keyed_dicts(value: list) -> bool:
-    """Check whether the given value is a list of single keyed dicts. We want to check this,
-    since sometimes ChatGPT returns a list of {'step' : 'step text'} dicts for recipe steps,
-    which get converted to string literals directly."""
-    return (
-        all(isinstance(v, dict) for v in value)
-        and len({k for v in value for k in v}) == 1
-    )
-
-
-class Fixable(abc.ABC):
-    """
-    Abstract (data)class that can be instantiated from a dictionary,
-    loosely parsing the dictionary into its fields.
-    """
-
-    @staticmethod
-    def _fix_field(fld: dataclasses.Field, value: Any) -> Any:
-        if value is None:
-            # assume None means the default value
-            return None
-        elif isinstance(fld.type, types.GenericAlias):
-            origin = typing.get_origin(fld.type) or fld.type
-            field_args = typing.get_args(fld.type)
-
-            if origin is list:
-                # iterate through field values
-                (subscript,) = field_args
-
-                # the subscript may be subscripted itself
-                subscript = typing.get_origin(subscript) or subscript
-                if not isinstance(value, list):
-                    # make list of value
-                    value = [value]
-
-                # initialize elementwise
-                if issubclass(subscript, Fixable):
-                    assert all(isinstance(v, dict) for v in value)
-                    return [subscript.from_data(**v) for v in value]
-                elif dataclasses.is_dataclass(subscript):
-                    assert all(isinstance(v, dict) for v in value)
-                    return [subscript(**v) for v in value]
-                elif subscript is not dict and _is_list_of_single_keyed_dicts(value):
-                    # all single-keyed dicts with the same key, take the value
-                    # this fixes an issue where ChatGPT returns a list of
-                    # {'step': 'step text'} dicts for the recipe steps
-                    # instead of converting to subscript directly, we take the first
-                    # (and only) dict value
-                    return [subscript(next(iter(v.values()))) for v in value]
-                else:
-                    return [subscript(v) for v in value]
-            else:
-                raise NotImplementedError(f"GenericAlias {fld.type} loading")
+def _to_str_list(value: list) -> list[str]:
+    """Friendly cast to list of strings, ensures single-keyed dictionaries will get converted
+    to a list of strings with their values."""
+    result = []
+    for v in value:
+        if isinstance(v, dict) and len(v) == 1:
+            result.append(next(iter(v.values())))
         else:
-            # value may be a list, like in a form submission
-            if isinstance(value, list):
-                if len(value) == 0:
-                    # assume default value again
-                    return None
-
-                # choose first value
-                value = value[0]
-
-            if issubclass(fld.type, Fixable):
-                return fld.type.from_data(**value)
-            elif dataclasses.is_dataclass(fld.type):
-                return fld.type(**value)
-            else:
-                return fld.type(value)
-
-    @classmethod
-    def from_data(cls, **kwargs):
-        fields = {fld.name: fld for fld in dataclasses.fields(cls)}
-        fixed = {}
-        for key, fld in fields.items():
-            value = kwargs.get(key)
-
-            if value is None:
-                # did not find field, extract best match
-                value, score, key = process.extractOne(key, kwargs)
-
-                if score < 90:
-                    # no match, use default value
-                    continue
-
-            fixed[key] = Fixable._fix_field(fld, value)
-
-        # validate allowed values
-        for key, value in fixed.items():
-            if value is None:
-                continue
-
-            # get allowed values
-            fld = fields[key]
-            allowed_values = fld.metadata.get("allowed_values")
-            if allowed_values is None:
-                continue
-
-            def _fix_value(v: Any, _allowed_values=allowed_values):
-                """Fix a single value v to one of the allowed values for this field"""
-                if v is None:
-                    return v
-
-                # v may already be allowed
-                if v in _allowed_values:
-                    return v
-                return process.extractOne(v, _allowed_values)[0]
-
-            if isinstance(value, list):
-                value = [_fix_value(v) for v in value]
-            else:
-                value = _fix_value(value)
-            fixed[key] = value
-
-        return cls(**fixed)
+            result.append(str(v))
+    return result
 
 
-@dataclass(kw_only=True, slots=True, frozen=True)
-class RecipeMeta(Fixable):
-    language: str = field(default=None, metadata={"allowed_values": LANGUAGES})
-    meal_type: str = field(default="other", metadata={"allowed_values": MEAL_TYPES})
-    meat_type: list[str] = field(
-        default_factory=lambda: ["other"], metadata={"allowed_values": MEAT_TYPES}
+def _friendly_optional(value: Any) -> Any | None:
+    """Friendly optional cast, from string null / None values"""
+    if isinstance(value, str) and value.lower() in ("null", "none", ""):
+        return None
+    return value
+
+
+def _friendly_from_list(value: Any) -> Any:
+    """Friendly cast from list, for example from form submissions."""
+    if isinstance(value, list | tuple):
+        if len(value) == 1:
+            return value[0]
+        if len(value) == 0:
+            return None
+
+    # no cast possible
+    return value
+
+
+@overload
+def _fuzzy_enum_match(
+    enum_type: type[_E],
+    value: str,
+    optional: Literal[False] = False,
+) -> _E: ...
+
+
+@overload
+def _fuzzy_enum_match(
+    enum_type: type[_E],
+    value: str,
+    optional: Literal[True],
+) -> _E | None: ...
+
+
+def _fuzzy_enum_match(
+    enum_type: type[_E], value: str, optional: bool = False
+) -> _E | None:
+    """Fuzzy match allowed enum values"""
+    if value is None and optional:
+        return None
+
+    allowed_values: list[str] = [val.value for val in enum_type]
+
+    # strict match
+    if value in allowed_values:
+        return enum_type(value)
+
+    match, score = process.extractOne(value, allowed_values)[0]
+    if score < 70:
+        if optional:
+            return None
+        msg = f"Invalid value {value!r}; expected one of {allowed_values}"
+        raise ValueError(msg)
+    return enum_type(match)
+
+
+FriendlyOptionalString = Annotated[
+    str | None,
+    BeforeValidator(_friendly_optional),
+    BeforeValidator(_friendly_from_list),
+]
+FriendlyString = Annotated[
+    str,
+    BeforeValidator(_friendly_from_list),
+]
+FriendlyOptionalInt = Annotated[
+    int | None,
+    BeforeValidator(_friendly_optional),
+    BeforeValidator(_friendly_from_list),
+]
+
+
+def FriendlyOptionalEnum(enum_type: type[_E]) -> type[_E]:
+    return Annotated[
+        enum_type | None,
+        BeforeValidator(partial(_fuzzy_enum_match, enum_type, optional=True)),
+        BeforeValidator(_friendly_optional),
+        BeforeValidator(_friendly_from_list),
+    ]
+
+
+def FriendlyEnum(enum_type: type[_E]) -> type[_E]:
+    return Annotated[
+        enum_type,
+        BeforeValidator(partial(_fuzzy_enum_match, enum_type)),
+        BeforeValidator(_friendly_from_list),
+    ]
+
+
+class RecipeDataBase(BaseModel):
+    model_config = ConfigDict(
+        frozen=True,
+        # don't want to be too strict
+        extra="allow",
     )
-    carb_type: list[str] = field(
-        default_factory=lambda: ["other"], metadata={"allowed_values": CARB_TYPES}
+
+
+class RecipeMeta(BaseModel):
+    language: FriendlyOptionalEnum(Language) = Field(
+        default=None,
+        description="Language in which this recipe is written",
     )
-    cuisine: str = field(default=None, metadata={"allowed_values": CUISINE_TYPES})
-    temperature: str = field(
-        default="any", metadata={"allowed_values": TEMPERATURE_TYPES}
+    meal_type: FriendlyEnum(MealType) = Field(
+        default=MealType.OTHER,
+        description="Which meal in the day this recipe is for",
+    )
+    meat_type: list[FriendlyEnum(MeatType)] = Field(
+        default_factory=lambda: [MeatType.OTHER],
+        description="Type of meat used in this recipe",
+        max_length=2,
+    )
+    carb_type: list[FriendlyEnum(CarbType)] = Field(
+        default_factory=lambda: [CarbType.OTHER],
+        description="Type of carbs used in this recipe",
+        max_length=2,
+    )
+    cuisine: FriendlyOptionalEnum(CuisineType) = Field(
+        default=None,
+        description="Which cuisine this recipe is from (or null if unknown / no fitting cuisine)",
+    )
+    temperature: FriendlyEnum(TemperatureType) = Field(
+        default=TemperatureType.ANY,
+        description="At what temperature this recipe is best served",
     )
 
-    def __post_init__(self):
-        # ensure max length
-        object.__setattr__(self, "carb_type", self.carb_type[:2])
-        object.__setattr__(self, "meat_type", self.meat_type[:2])
+
+class Ingredient(BaseModel):
+    ingredient: FriendlyString = Field(
+        description="Ingredient name OR title of this section of the ingredient list (starting with #)",
+    )
+    amount: FriendlyOptionalString = Field(
+        description="Amount to use of this ingredient, or null if unknown / unspecified",
+    )
 
 
-@dataclass(kw_only=True, slots=True, frozen=True)
-class Ingredient(Fixable):
-    ingredient: str
-    amount: str = None
+class Nutrition(BaseModel):
+    group: FriendlyString = Field(
+        description="Nutrition value group",
+    )
+    amount: FriendlyOptionalString = Field(
+        description="Amount of this nutrition group, or null if unknown",
+    )
 
 
-@dataclass(kw_only=True, slots=True, frozen=True)
-class Nutrition(Fixable):
-    group: str
-    amount: str = None
-
-
-@dataclass(kw_only=True, slots=True, frozen=True)
-class Recipe(Fixable):
-    name: str = ""
-    meta: RecipeMeta = field(default_factory=RecipeMeta)
-    time: int = None
-    people: int = None
-    url: str = None
-    ingredients: list[Ingredient] = field(default_factory=list)
-    preparation: list[str] = field(default_factory=list)
-    nutrition: list[Nutrition] = field(default_factory=list)
-    remarks: str = None
-    thumbnail: str = None
+class Recipe(BaseModel):
+    name: FriendlyString = Field(
+        description="Name of this dish",
+    )
+    meta: RecipeMeta = Field(default_factory=RecipeMeta)
+    time: FriendlyOptionalInt = Field(
+        default=None,
+        description="Time in minutes it takes to prepare this recipe, or null if unknown",
+    )
+    people: FriendlyOptionalInt = Field(
+        default=None,
+        description="Number of people / portions this recipe will make, or null if unknown",
+    )
+    url: FriendlyOptionalString = Field(
+        default=None,
+        description="Original URL of this recipe's source, or null if unknown",
+    )
+    ingredients: list[Ingredient] = Field(
+        default_factory=list,
+        description=(
+            "List of ingredients and amounts used in this recipe, for example 'one onion' corresponds to "
+            "{'amount': '1', 'ingredient': 'onion'} and 'a pinch of salt' corresponds to "
+            "{'amount': 'a pinch', 'ingredient': 'salt'}, or 'zout' corresponds to {'ingredient': 'zout'}."
+            "An ingriedent section might look like {'ingredient': '# For the sauce'}."
+        ),
+    )
+    preparation: Annotated[list[str], BeforeValidator(_to_str_list)] = Field(
+        default_factory=list,
+        description=(
+            "Steps to create this recipe, for example 'mix everything together in a big bowl'. Start with"
+            " # to turn it into a 'section header' for part of the recipe, for example "
+            "'# Creating the sauce'"
+        ),
+    )
+    nutrition: list[Nutrition] = Field(
+        default_factory=list,
+        description=("List of nutritional values for one serving of this recipe"),
+    )
+    remarks: FriendlyOptionalString = Field(
+        default=None,
+        description="Additional remarks for this recipe to be added by an admin",
+    )
+    thumbnail: FriendlyOptionalString = Field(
+        default=None,
+        description="Thumbnail URL for this recipe, injected automatically",
+    )
 
     # preserved fields
-    date_created: float = field(default=0.0, compare=False)
-    date_updated: float = field(default=0.0, compare=False)
-    igcode: str = None
+    date_created: float = Field(
+        default=0.0,
+        description="Timestamp this recipe was last updated in the cookbook, injected automatically",
+    )
+    date_updated: float = Field(
+        default=0.0,
+        description="Timestamp this recipe was created in the cookbook, injected automatically",
+    )
+    igcode: str | None = Field(
+        default=None,
+        description="Instagram post code linked to this recipe, injected automatically",
+    )
 
     @property
     def sha(self) -> hashlib._Hash:
+        """Hash for this recipe for etag / caching purposes"""
         return hashlib.sha256(
-            msgspec.json.encode(dataclasses.asdict(self), order="deterministic"),
+            msgspec.json.encode(self.model_dump(), order="deterministic"),
             usedforsecurity=False,
         )

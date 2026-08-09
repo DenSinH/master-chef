@@ -2,15 +2,6 @@ import random
 
 import tldextract as tld
 
-
-class CookbookError(Exception):
-    pass
-
-
-class InstagramError(CookbookError):
-    pass
-
-
 _NO_USER_AGENT = {"cdninstagram", "ig", "igsonar", "facebook", "instagram"}
 
 _USER_AGENTS = [

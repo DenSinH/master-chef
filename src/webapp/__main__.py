@@ -1,10 +1,17 @@
-# Necessary configuration BEFORE loading app
-
 import logging
 import os
 import sys
 
+import uvicorn
 from dotenv import load_dotenv
+
+from .app import app
+from .routes import (
+    add_error_handlers,
+    admin_router,
+    public_router,
+    user_router,
+)
 
 load_dotenv()
 
@@ -16,34 +23,20 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-# configure access logs
-# they require a different format, and should be disabled
-# in production mode
-access = logging.getLogger("sanic.access")
-access.propagate = False
-if not DEBUG:
-    access.disabled = True
-else:
-    handler = logging.StreamHandler(stream=sys.stdout)
-    formatter = logging.Formatter(
-        "[%(asctime)s - %(name)s:%(levelname)s][%(host)s]: "
-        + "%(request)s %(message)s %(status)s %(byte)s",
-    )
-    handler.setFormatter(formatter)
-    access.addHandler(handler)
+add_error_handlers(app)
 
-
-from .routes import app
+app.include_router(public_router)
+app.include_router(user_router)
+app.include_router(admin_router)
 
 
 def main():
-    app.run(
+    uvicorn.run(
+        app,
         host="0.0.0.0",
         port=int(os.environ.get("PORT", 80)),  # noqa: PLW1508
-        debug=DEBUG,
-        auto_reload=DEBUG,
+        # reload=DEBUG,
         access_log=DEBUG,
-        # protocol=HTTP.VERSION_3
     )
 
 

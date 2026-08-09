@@ -1,10 +1,3 @@
-"""
-Generates random titles for the cookbook.
-They are generated from some predetermined,
-Dutch and English combinations of prefixes,
-postfixes and names.
-"""
-
 import random
 
 _prefixes = {
@@ -54,6 +47,7 @@ def _generate_title(name, language):
 
 
 def generate_title():
+    """Generate random title for the cookbook landing page"""
     name = random.choice(["Dennis", "Merel", "Merel & Dennis", "Dennis & Merel"])
     language = random.choice(["en", "nl"])
     return _generate_title(name, language)

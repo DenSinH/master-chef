@@ -135,7 +135,7 @@
             <div class="form-field form-field-local">
                 <label>Meal type</label>
                 <select name="meal_type">
-                    {%- for meal_type in MEAL_TYPES -%}
+                    {%- for meal_type in MealType -%}
                     {%- if meal_type == meta.meal_type -%}
                         <option selected value="{{ meal_type }}">{{ meal_type|capitalize }}</option>
                     {%- else -%}
@@ -147,7 +147,7 @@
             <div class="form-field form-field-local">
                 <label>Cuisine</label>
                 <select name="cuisine">
-                    {%- for cuisine in CUISINE_TYPES -%}
+                    {%- for cuisine in CuisineType -%}
                     {%- if cuisine == meta.cuisine -%}
                         <option selected value="{{ cuisine }}">{{ cuisine|capitalize }}</option>
                     {%- else -%}
@@ -160,7 +160,7 @@
                 <label>Meat type</label>
                 <div class="double-select">
                     <select name="meat_type">
-                        {%- for meat in MEAT_TYPES -%}
+                        {%- for meat in MeatType -%}
                         {%- if meat == meta.meat_type[0] -%}
                             <option selected value="{{ meat }}">{{ meat|capitalize }}</option>
                         {%- else -%}
@@ -170,7 +170,7 @@
                     </select>
                     <select name="meat_type">
                         <option selected value=""></option>
-                        {%- for meat in MEAT_TYPES -%}
+                        {%- for meat in MeatType -%}
                             {%- if meat != 'other'-%}
                                 {%- if meat == meta.meat_type[1] -%}
                                     <option selected value="{{ meat }}">{{ meat|capitalize }}</option>
@@ -186,7 +186,7 @@
                 <label>Carb type</label>
                 <div class="double-select">
                     <select name="carb_type">
-                        {%- for carb in CARB_TYPES -%}
+                        {%- for carb in CarbType -%}
                         {%- if carb == meta.carb_type[0] -%}
                             <option selected value="{{ carb }}">{{ carb|capitalize }}</option>
                         {%- else -%}
@@ -196,7 +196,7 @@
                     </select>
                     <select name="carb_type">
                         <option selected value=""></option>
-                        {%- for carb in CARB_TYPES -%}
+                        {%- for carb in CarbType -%}
                             {%- if carb != 'other' and carb != 'none' -%}
                                 {%- if carb == meta.carb_type[1] -%}
                                     <option selected value="{{ carb }}">{{ carb|capitalize }}</option>
@@ -211,7 +211,7 @@
             <div class="form-field form-field-local">
                 <label>Temperature</label>
                 <select name="temperature">
-                    {%- for temp in TEMPERATURE_TYPES -%}
+                    {%- for temp in TemparatureType -%}
                         {%- if temp == meta.temperature -%}
                             <option selected value="{{ temp }}">{{ temp|capitalize }}</option>
                         {%- else -%}

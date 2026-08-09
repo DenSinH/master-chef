@@ -5,13 +5,13 @@ IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "gif"]
 THUMBNAIL_META_ATTR = [{"property": "og:image"}, {"name": "twitter:image:src"}]
 
 
-def get_thumbnail(soup: BeautifulSoup):
+def get_thumbnail(soup: BeautifulSoup) -> str | None:
     """Try to find a thumbnail image from an HTML page"""
     # try to find known meta attributes for thumbnails
     for attr in THUMBNAIL_META_ATTR:
         image = soup.find("meta", attr)
         if image:
-            return image["content"]
+            return image["content"]  # type: ignore
 
     # just try to find any meta tag with an image attached to it
     for meta in soup.find_all("meta"):

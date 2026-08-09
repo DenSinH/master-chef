@@ -1,19 +1,24 @@
 import asyncio
-import dataclasses
 import logging
 import os
 import re
+from typing import TypeVar
 
 import aiohttp
 import msgspec.json
 import openai
+import tldextract as tld
 from bs4 import BeautifulSoup
+from pydantic import BaseModel
 
+from webapp.cookbook.errors import CookbookError
+
+from .headers import get_headers
 from .instagram import get_instagram_recipe
-from .meta import *
-from .recipe import Fixable, Recipe, RecipeMeta
+from .recipe import Recipe
 from .thumbnail import get_thumbnail
-from .utils import *
+
+_B = TypeVar("_B", bound="BaseModel")
 
 logger = logging.getLogger(__name__)
 client = openai.AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
@@ -22,47 +27,17 @@ MAX_RETRIES = 1
 MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
 DEFAULT_TEMPERATURE = 1
 PROMPT = """
-The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text from the webpage.
+The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text 
+from the webpage.
 The recipe contains information on the ingredients, the preparation and possibly nutritional information.
-Convert the recipe to a JSON object with the following keys:
-"name": the name of this recipe.
-"ingredients": a list of dictionaries, with keys "ingredient", mapping to the name of the ingredient, and "amount" which is a string containing the amount of this ingredient needed including the unit, or 
-               a null value if no specific amount is given.
-               For example, the ingredient "one onion" should yield {{'amount': '1', 'ingredient': 'onion'}}, and the ingredient "zout" should yield {{'amount': null, 'ingredient': 'zout'}}
-               and the ingredient "1el Komijn" should yield {{'amount': '1el', 'ingredient': 'Komijn'}}, and "400gr tomaat" should yield {{'amount': '400gr', 'ingredient': 'tomaat'}}
-               and "packet of noodles" should yield {{'amount': '1 packet', 'ingredient': 'noodles'}}.
-               In case there are multiple 'sections' of ingredients, insert an ingredient object with 'ingredient' value '#name of section'. For
-               example, if there is a section of ingredients for the sauce, insert {{ 'amount': null, 'ingredient': '#For the sauce' }}.
-               So for example, Chicken marinade: - 10g cumin - one onion should yield [{{'amount': null, 'ingredient': '#Chicken marinade:'}}, {{'amount': '10g', 'ingredient': 'cumin'}}, {{'amount': 'one', 'ingredient': 'onion'}}]
-"preparation": a list of strings containing the steps of the recipe. Split the steps from the original recipe up into multiple steps
-               if they are more than 2 or 3 sentences. If there are sections, insert steps with the value '#name of section'.
-               For example, if there are steps for making rice, insert a step '#For the rice'. 
-"nutrition": null if there is no nutritional information in the recipe, or a list of dictionaries containing the keys "group", with the type
-of nutrional information, and "amount": with the amount of this group that is contained in the recipe, as a string including the unit, so
-"Fats 12gr" should yield {{'group': 'fats', 'amount': '12 gr'}}.
-"people": the amount of people that can be fed from this meal as an integer, in case this information is present, otherwise null
-"time": the time that this recipe takes to make in minutes as an integer, in case this information is present, otherwise null
-
-Keep the language the same, and do not change anything about the text in the recipe at all.
+Convert the recipe to a JSON object with the specified schema.
+You should NOT change anything about the recipe, EXCEPT if the language is not Dutch or English, in which
+case, please translate it to English.
+Do not change ANYTHING else about the text in the recipe at all.
 Only output the JSON object, and nothing else. You can do this!
 Here comes the text:
 
 {text}
-"""
-
-META_PROMPT = f"""
-For this recipe, generate a JSON object containing meta information that classifies the recipe.
-It should contain the following keys and values:
-"language": One of {LANGUAGES}, depending on the language of the recipe.
-"meal_type": One of {MEAL_TYPES} that best describes the meal.
-"meat_type": A list of at most two of {MEAT_TYPES} that best describe the meal. Note that it is impossible for a recipe
-             to be both vegetarian and contain meat, and that "other" should never go with another meat type.
-"carb_type": A list of at most two of {CARB_TYPES} that best describe the meal. Note that it is impossible for a recipe
-             to be have both "none" or "other" and any other carb type.
-"cuisine": One of {CUISINE_TYPES} that best describes the meal.
-"temperature": One of {TEMPERATURE_TYPES} that best describes the meal.
-
-Please output only the JSON object and nothing else. You can do this!
 """
 
 
@@ -124,11 +99,9 @@ async def translate_url(url: str, user_agent=None) -> Recipe:
                 headers = "\n".join(
                     f"{header}: {value}" for header, value in res.headers.items()
                 )
-                message = (
-                    f"Could not get the specified url, status code {res.status}\n"
-                    + headers
-                )
-                raise CookbookError(message)
+                msg = f"Could not get the specified url, status code {res.status}\n{headers}"
+                raise CookbookError(msg)
+
             soup = BeautifulSoup(await res.text(), features="html.parser")
             if domain == "tiktok":
                 text = _get_tiktok_text(soup)
@@ -136,26 +109,32 @@ async def translate_url(url: str, user_agent=None) -> Recipe:
                 text = _get_html_text(soup)
             thumbnail = get_thumbnail(soup)
 
-    recipe = await translate_page(text, url=url, thumbnail=thumbnail)
+    recipe = await translate_page(
+        text,
+        url=url,
+        thumbnail=thumbnail,
+    )
     return recipe
 
 
 async def _chatgpt_json_and_fix(
-    cls: type[Fixable], messages, temperature=DEFAULT_TEMPERATURE, **kwargs
-):
-    """Send message to chatgpt, and load object of type 'cls'
-    from the response. 'cls' should be a subclass of Fixable"""
-    assert issubclass(cls, Fixable)
+    model: type[_B],
+    messages,
+    temperature=DEFAULT_TEMPERATURE,
+    **kwargs,
+) -> _B:
+    """Send message to chatgpt, and load object of type 'model' from the response.
+    'model' should be a subclass of BaseModel"""
 
     # we may do a multi-shot recipe conversion if chatgpt
     # fails the first time around
     for i in range(1 + MAX_RETRIES):
         logger.info(f"ChatGPT message attempt {i + 1}")
         try:
-            chat_completion = await client.chat.completions.create(
+            response = await client.responses.parse(
                 model=MODEL,
-                messages=messages,
-                response_format={"type": "json_object"},
+                input=messages,
+                text_format=model,
                 temperature=temperature,
                 **kwargs,
             )
@@ -168,18 +147,7 @@ async def _chatgpt_json_and_fix(
             kwargs["timeout"] = kwargs.get("timeout", 60) * 2
             continue
 
-        reply = chat_completion.choices[0].message.content
-        try:
-            return reply, cls.from_data(**msgspec.json.decode(reply, strict=False))
-        except msgspec.DecodeError:
-            logger.warning("Conversion failed, retrying")
-            messages.append({"role": "assistant", "content": reply})
-            messages.append(
-                {
-                    "role": "user",
-                    "content": "this is not a parsable json object, output only the json object",
-                }
-            )
+        return response.output_parsed
     raise CookbookError(
         "ChatGPT did not return a parsable json object, please try again"
     )
@@ -197,28 +165,12 @@ async def translate_page(text: str, url=None, thumbnail=None) -> Recipe:
         {"role": "user", "content": PROMPT.format(text=text)},
     ]
 
-    reply, fixed = await _chatgpt_json_and_fix(
+    recipe = await _chatgpt_json_and_fix(
         Recipe, messages, temperature=DEFAULT_TEMPERATURE
     )
-    messages.append({"role": "assistant", "content": reply})
-    messages.append({"role": "user", "content": META_PROMPT})
-    try:
-        # higher temperature for interpreting the recipe for tags
-        _, meta = await _chatgpt_json_and_fix(
-            RecipeMeta, messages, temperature=DEFAULT_TEMPERATURE
-        )
-    except Exception:  # noqa: BLE001
-        meta = {}
-
-    # update meta and predetermined values
-    # add url / thumbnail after the fact, since we
-    # want to use as few tokens as possible
-    fixed = dataclasses.replace(fixed, meta=meta, url=url, thumbnail=thumbnail)
-    return fixed
-
-
-if __name__ == "__main__":
-    from pprint import pprint
-
-    recipe = asyncio.run(translate_url("https://www.tiktok.com/t/ZT8VYSJYd/"))
-    pprint(recipe)
+    return recipe.model_copy(
+        update={
+            "url": url,
+            "thumbnail": thumbnail,
+        }
+    )

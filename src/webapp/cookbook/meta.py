@@ -1,48 +1,67 @@
-"""This file contains the allowed values
-for the recipe metadata."""
+from enum import StrEnum
 
-LANGUAGES = ["nl", "en"]
-MEAL_TYPES = [
-    "breakfast",
-    "lunch",
-    "appetizer",
-    "main",
-    "side",
-    "dessert",
-    "snack",
-    "beverage",
-    "soup",
-    "salad",
-    "other",
-]
-MEAT_TYPES = ["chicken", "beef", "pork", "fish", "seafood", "vegetarian", "other"]
-CARB_TYPES = [
-    "rice",
-    "pasta",
-    "potatoes",
-    "sweet potatoes",
-    "bread",
-    "wraps",
-    "legumes",
-    "noodles",
-    "none",
-    "other",
-]
-CUISINE_TYPES = [
-    "italian",
-    "japanese",
-    "indian",
-    "korean",
-    "mexican",
-    "thai",
-    "chinese",
-    "mediterranean",
-    "french",
-    "greek",
-    "middle eastern",
-    "spanish",
-    "eastern",
-    "other",
-]
 
-TEMPERATURE_TYPES = ["warm", "cold", "room temperature", "any"]
+class Language(StrEnum):
+    NL = "nl"
+    EN = "en"
+
+
+class MealType(StrEnum):
+    BREAKFAST = "breakfast"
+    LUNCH = "lunch"
+    APPETIZER = "appetizer"
+    MAIN = "main"
+    SIDE = "side"
+    DESSERT = "dessert"
+    SNACK = "snack"
+    BEVERAGE = "beverage"
+    SOUP = "soup"
+    SALAD = "salad"
+    OTHER = "other"
+
+
+class MeatType(StrEnum):
+    CHICKEN = "chicken"
+    BEEF = "beef"
+    PORK = "pork"
+    FISH = "fish"
+    SEAFOOD = "seafood"
+    VEGETARIAN = "vegetarian"
+    OTHER = "other"
+
+
+class CarbType(StrEnum):
+    RICE = "rice"
+    PASTA = "pasta"
+    POTATOES = "potatoes"
+    SWEET_POTATOES = "sweet potatoes"
+    BREAD = "bread"
+    WRAPS = "wraps"
+    LEGUMES = "legumes"
+    NOODLES = "noodles"
+    NONE = "none"
+    OTHER = "other"
+
+
+class CuisineType(StrEnum):
+    ITALIAN = "italian"
+    JAPANESE = "japanese"
+    INDIAN = "indian"
+    KOREAN = "korean"
+    MEXICAN = "mexican"
+    THAI = "thai"
+    CHINESE = "chinese"
+    MEDITERRANEAN = "mediterranean"
+    FRENCH = "french"
+    GREEK = "greek"
+    MIDDLE_EASTERN = "middle eastern"
+    SPANISH = "spanish"
+    EASTERN = "eastern"
+    OTHER = "other"
+
+
+class TemperatureType(StrEnum):
+    WARM = "warm"
+    COLD = "cold"
+    ROOM_TEMPERATURE = "room temperature"
+    ANY = "any"

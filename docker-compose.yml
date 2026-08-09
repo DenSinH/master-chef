@@ -1,17 +1,8 @@
 services:
-  redis:
-    image: redis:latest
-    restart: unless-stopped
-    expose:
-      - 6379
-    networks:
-      - local-net
   web:
     build: .
     pull_policy: build
     restart: unless-stopped
-    depends_on:
-      - redis
     environment:
       RECIPE_REPO_USER: ${RECIPE_REPO_USER}
       RECIPE_REPO_NAME: ${RECIPE_REPO_NAME}
@@ -23,7 +14,6 @@ services:
       INSTAGRAM_USER: ${INSTAGRAM_USER}
       INSTAGRAM_PASS: ${INSTAGRAM_PASS}
       PERSIST_DIR: /cache
-      REDIS_URL: redis://redis:6379
       MINIO_URL: minio:9000
       MINIO_PUBLIC_URL: https://cdn.dennishilhorst.nl/
       MINIO_INSECURE: 1  # since it happens internally in the docker network
@@ -45,10 +35,7 @@ services:
       - "traefik.http.services.chef-web.loadbalancer.server.port=5000"
 volumes:
   cache-volume:
-  dbdata:
 networks:
-  pgadmin-net:
-    external: true
   minio-net:
     external: true
   local-net:

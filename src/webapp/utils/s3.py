@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import textwrap
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from io import BytesIO
 from urllib.parse import urljoin, urlparse
@@ -51,8 +52,10 @@ class ImageMeta:
     quality: int
 
 
-async def init_client(*args):
-    """Initialize client"""
+@asynccontextmanager
+async def client_lifetime(*args):
+    """S3 client lifetime"""
+    yield
 
 
 async def _preprocess_image(filedata: bytes) -> tuple[BytesIO, ImageMeta]:

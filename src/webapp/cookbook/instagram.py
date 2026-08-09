@@ -16,6 +16,12 @@ import aiohttp
 from instagrapi.types import Media
 from PIL import Image
 
+from .errors import CookbookError
+
+
+class InstagramError(CookbookError):
+    pass
+
 
 def patched_init(self, **data):
     obj = Media.model_construct(**data)  # create without validation
@@ -35,7 +41,7 @@ Media.__deepcopy__ = patched_deepcopy
 import instagrapi
 import instagrapi.exceptions
 
-from .utils import InstagramError, get_headers
+from .headers import get_headers
 
 logger = logging.getLogger(__name__)
 
