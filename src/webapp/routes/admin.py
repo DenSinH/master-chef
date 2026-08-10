@@ -12,6 +12,8 @@ from webapp import auth, cookbook
 from webapp.app import templates
 from webapp.utils import s3
 
+from .common import require_collection
+
 router = APIRouter()
 
 
@@ -132,6 +134,7 @@ async def update_recipe_form(
     request: Request,
     collection: str,
     id: str,
+    _: None = Depends(require_collection),
     user: dict = Depends(auth.require_admin),
 ):
     """Update recipe form page."""
@@ -163,6 +166,7 @@ async def update_recipe(
     request: Request,
     collection: str,
     id: str,
+    _: None = Depends(require_collection),
     user: dict = Depends(auth.require_admin),
 ):
     """Update recipe."""
@@ -182,6 +186,7 @@ async def delete_recipe(
     request: Request,
     collection: str,
     id: str,
+    _: None = Depends(require_collection),
     user: dict = Depends(auth.require_admin),
 ):
     """Delete recipe."""
@@ -202,6 +207,7 @@ async def delete_recipe(
 async def add_recipe_url_form(
     request: Request,
     collection: str,
+    _: None = Depends(require_collection),
     user: dict = Depends(auth.require_admin),
 ):
     """Add recipe with URL form page."""
@@ -219,6 +225,7 @@ async def add_recipe_url_form(
 async def add_recipe_url(
     request: Request,
     collection: str,
+    _: None = Depends(require_collection),
     user: dict = Depends(auth.require_admin),
 ):
     """Add recipe with URL."""
@@ -259,6 +266,7 @@ async def add_recipe_url(
 async def add_recipe_text_form(
     request: Request,
     collection: str,
+    _: None = Depends(require_collection),
     user: dict = Depends(auth.require_admin),
 ):
     """Add recipe from text form page."""
@@ -276,6 +284,7 @@ async def add_recipe_text_form(
 async def add_recipe_text(
     request: Request,
     collection: str,
+    _: None = Depends(require_collection),
     user: dict = Depends(auth.require_admin),
 ):
     """Add recipe from text."""
@@ -324,6 +333,7 @@ async def upload_image(
 async def add_recipe_form_form(
     request: Request,
     collection: str,
+    _: None = Depends(require_collection),
     user: dict = Depends(auth.require_admin),
 ):
     """Add recipe from form, form page."""
@@ -346,6 +356,7 @@ async def add_recipe_form_form(
 async def add_recipe_form(
     request: Request,
     collection: str,
+    _: None = Depends(require_collection),
     user: dict = Depends(auth.require_admin),
 ):
     """Add recipe from form."""
@@ -369,6 +380,7 @@ async def post_recipe(
     request: Request,
     collection: str,
     id: str,
+    _: None = Depends(require_collection),
     user: dict = Depends(auth.require_admin),
 ):
     """Post a recipe to Instagram."""

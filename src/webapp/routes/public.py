@@ -2,10 +2,12 @@ import hashlib
 import logging
 from collections import OrderedDict
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from webapp import auth, cookbook
 from webapp.app import templates
+
+from .common import require_collection
 
 logger = logging.getLogger()
 router = APIRouter()
@@ -31,6 +33,7 @@ def _update_etag_reqinfo(
 async def collection(
     request: Request,
     collection: str = cookbook.DEFAULT_COLLECTION,
+    _: None = Depends(require_collection),
 ):
     """Get a recipe collection"""
     is_admin = auth.is_admin(request)
@@ -96,11 +99,17 @@ async def about(request: Request):
     )
 
 
+@router.get("/health")
+async def health():
+    return Response(status_code=200)
+
+
 @router.get("/recipe/{collection}/{id}")
 async def recipe(
     request: Request,
     collection: str,
     id: str,
+    _: None = Depends(require_collection),
 ):
     """Recipe viewer page"""
     recipes = await cookbook.get_recipes(collection)
@@ -156,5 +165,6 @@ async def _recipe(
     collection: str,
     id: str,
     name: str,
+    _: None = Depends(require_collection),
 ):
     return await recipe(request, collection, id)

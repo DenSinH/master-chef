@@ -3,6 +3,7 @@ from .collection import (
     COLLECTIONS,
     DEFAULT_COLLECTION,
     add_recipe,
+    collection_exists,
     delete_recipe,
     get_collection_etag,
     get_recipes,

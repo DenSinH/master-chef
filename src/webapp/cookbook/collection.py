@@ -217,6 +217,11 @@ COLLECTIONS = {DEFAULT_COLLECTION, "unmade"}
 _COLLECTIONS = {name: Collection(name=name) for name in COLLECTIONS}
 
 
+def collection_exists(collection: str) -> bool:
+    """Check if collection exists"""
+    return collection in COLLECTIONS
+
+
 def _get_collection(collection: str) -> Collection:
     """Get (cached) recipe collection by name"""
     if collection not in COLLECTIONS:
