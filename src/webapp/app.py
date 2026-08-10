@@ -67,7 +67,6 @@ templates.env.globals["LANGUAGES"] = {
     "en": "English",
 }
 
-app.state.secret = os.environ.get("SECRET", os.environ["PASSWORD"])
 
 app.mount(
     "/static",
@@ -76,7 +75,7 @@ app.mount(
 )
 
 # initialize JWT settings
-app.state.secret = os.environ.get("SECRET", os.environ["PASSWORD"])
+app.state.secret = os.environ["SECRET"]
 
 
 @app.get("/robots.txt", name="robots")

@@ -16,7 +16,7 @@ JWT_EXPIRATION_DELTA = datetime.timedelta(seconds=60 * 60)
 # Load admin users from environment
 def load_admin_users():
     admin_users = {}
-    for __user in os.environ.get("ADMIN_USER", "admin").split(","):
+    for __user in os.environ.get("ADMIN_USER", "admin").split(";"):
         name, password = __user.split(":", maxsplit=1)
         name = name.strip()
         password = password.strip()
