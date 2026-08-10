@@ -140,6 +140,10 @@ async def _chatgpt_json_and_fix(
                 input=messages,
                 text_format=model,
                 temperature=temperature,
+                extra_body={
+                    # dum-dum, no need to think
+                    "think": False,
+                },
                 **kwargs,
             )
         except openai.BadRequestError as e:
