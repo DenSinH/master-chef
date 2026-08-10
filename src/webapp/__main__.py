@@ -37,6 +37,9 @@ def main():
         app,
         host="0.0.0.0",
         port=int(os.environ.get("PORT", 80)),  # noqa: PLW1508
+        # needed for full-url POST requests from JS
+        proxy_headers=True,
+        forwarded_allow_ips="*",
         # reload=DEBUG,
         access_log=DEBUG,
     )
