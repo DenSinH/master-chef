@@ -28,7 +28,7 @@ client = openai.AsyncOpenAI(
 
 MAX_RETRIES = 1
 MODEL = os.environ["OPENAI_MODEL"]
-DEFAULT_TEMPERATURE = 1
+DEFAULT_TEMPERATURE = 0.2
 PROMPT = """
 The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text 
 from the webpage.
