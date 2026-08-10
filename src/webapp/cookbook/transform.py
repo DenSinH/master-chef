@@ -29,18 +29,16 @@ client = openai.AsyncOpenAI(
 MAX_RETRIES = 1
 MODEL = os.environ["OPENAI_MODEL"]
 DEFAULT_TEMPERATURE = 0.2
-PROMPT = """
-The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text 
-from the webpage.
-The recipe contains information on the ingredients, the preparation and possibly nutritional information.
-Convert the recipe to a JSON object with the specified schema.
-You should NOT change anything about the recipe, EXCEPT if the language is not Dutch or English, in which
-case, please translate it to English.
-Do not change ANYTHING else about the text in the recipe at all.
-Only output the JSON object, and nothing else. You can do this!
-Here comes the text:
+SYSTEM_PROMPT = """
+Extract the recipe from the provided webpage text.
 
-{text}
+Preserve the recipe exactly as written. Do not invent, omit, summarize,
+or modify ingredients, quantities, instructions, or nutritional information.
+
+If the recipe is neither Dutch nor English, translate the recipe content
+to English.
+
+Ignore advertisements, navigation, comments, and unrelated webpage text.
 """
 
 
@@ -168,9 +166,9 @@ async def translate_page(text: str, url=None, thumbnail=None) -> Recipe:
     messages = [
         {
             "role": "system",
-            "content": "You are a helpful AI cook that converts recipes into JSON objects.",
+            "content": SYSTEM_PROMPT,
         },
-        {"role": "user", "content": PROMPT.format(text=text)},
+        {"role": "user", "content": text},
     ]
 
     recipe = await _chatgpt_json_and_fix(
