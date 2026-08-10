@@ -21,10 +21,13 @@ from .thumbnail import get_thumbnail
 _B = TypeVar("_B", bound="BaseModel")
 
 logger = logging.getLogger(__name__)
-client = openai.AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
+client = openai.AsyncOpenAI(
+    base_url=os.getenv("OPENAI_URL", "localhost:4000"),
+    api_key=os.environ["OPENAI_API_KEY"],
+)
 
 MAX_RETRIES = 1
-MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
+MODEL = os.environ["OPENAI_MODEL"]
 DEFAULT_TEMPERATURE = 1
 PROMPT = """
 The following text is from a website, and it contains a recipe, possibly in Dutch, as well as unnecessary other text 

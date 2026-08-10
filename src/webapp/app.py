@@ -18,6 +18,10 @@ HERE = Path(__file__).parent
 
 app = FastAPI(
     title="master-chef",
+    # Disable default urls
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 # With GZipMiddleware we don't really need a minifying template loader

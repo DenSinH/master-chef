@@ -21,6 +21,7 @@ services:
       RECIPE_REPO_NAME: ${RECIPE_REPO_NAME}
       RECIPE_PAT: ${RECIPE_PAT}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL}
       PASSWORD: ${PASSWORD}
       ADMIN_USER: ${ADMIN_USER}
       SECRET: ${SECRET}
@@ -35,6 +36,8 @@ services:
       MINIO_INSECURE: 1
       PORT: 5000
       PYTHONUNBUFFERED: 1
+    extra_hosts:
+      - "cookbook.home:host-gateway"
     networks:
       - local-net
       - minio-net
