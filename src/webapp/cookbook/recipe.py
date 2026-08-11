@@ -150,12 +150,12 @@ class RecipeMeta(BaseModel):
     )
     meat_type: FriendlyEnumList(MeatType) = Field(
         default_factory=lambda: [MeatType.OTHER],
-        description="Type of meat used in this recipe",
+        description="Type(s) of meat used in this recipe (at most 2, most prominent first)",
         max_length=2,
     )
     carb_type: FriendlyEnumList(CarbType) = Field(
         default_factory=lambda: [CarbType.OTHER],
-        description="Type of carbs used in this recipe",
+        description="Type(s) of carbs used in this recipe (at most 2, most prominent first)",
         max_length=2,
     )
     cuisine: FriendlyOptionalEnum(CuisineType) = Field(
@@ -170,19 +170,22 @@ class RecipeMeta(BaseModel):
 
 class Ingredient(BaseModel):
     ingredient: FriendlyString = Field(
-        description="Ingredient name OR title of this section of the ingredient list (starting with #)",
+        description=(
+            "Ingredient name, or the title of a section header (prefixed with '#'), "
+            "e.g. '# For the sauce'"
+        ),
     )
     amount: FriendlyOptionalString = Field(
-        description="Amount to use of this ingredient, or null if unknown / unspecified",
+        description="Amount of this ingredient, e.g. '1' or 'a pinch', or null if unspecified",
     )
 
 
 class Nutrition(BaseModel):
     group: FriendlyString = Field(
-        description="Nutrition value group",
+        description="Nutritional value name, e.g. 'calories', 'protein', 'fat'",
     )
     amount: FriendlyOptionalString = Field(
-        description="Amount of this nutrition group, or null if unknown",
+        description="Amount for this nutritional value, e.g. '250 kcal', or null if unknown",
     )
 
 
@@ -201,36 +204,34 @@ class Recipe(BaseModel):
     )
     url: FriendlyOptionalString = Field(
         default=None,
-        description="Original URL of this recipe's source, or null if unknown",
+        description="Leave null; the source URL is injected automatically",
     )
     ingredients: list[Ingredient] = Field(
         default_factory=list,
         description=(
-            "List of ingredients and amounts used in this recipe, for example 'one onion' corresponds to "
-            "{'amount': '1', 'ingredient': 'onion'} and 'a pinch of salt' corresponds to "
-            "{'amount': 'a pinch', 'ingredient': 'salt'}, or 'zout' corresponds to {'ingredient': 'zout'}."
-            "An ingriedent section might look like {'ingredient': '# For the sauce'}."
+            "List of ingredients with amounts, e.g. 'one onion' -> {'amount': '1', "
+            "'ingredient': 'onion'}, 'a pinch of salt' -> {'amount': 'a pinch', "
+            "'ingredient': 'salt'}, 'zout' -> {'ingredient': 'zout'}"
         ),
     )
     preparation: Annotated[list[str], BeforeValidator(_to_str_list)] = Field(
         default_factory=list,
         description=(
-            "Steps to create this recipe, for example 'mix everything together in a big bowl'. Start with"
-            " # to turn it into a 'section header' for part of the recipe, for example "
-            "'# Creating the sauce'"
+            "Preparation steps, e.g. 'Mix everything together in a big bowl'. Prefix a "
+            "step with '#' to turn it into a section header, e.g. '# Creating the sauce'"
         ),
     )
     nutrition: list[Nutrition] = Field(
         default_factory=list,
-        description=("List of nutritional values for one serving of this recipe"),
+        description="Nutritional values for one serving of this recipe",
     )
     remarks: FriendlyOptionalString = Field(
         default=None,
-        description="Additional remarks for this recipe to be added by an admin",
+        description="Leave null; reserved for remarks added manually by an admin",
     )
     thumbnail: FriendlyOptionalString = Field(
         default=None,
-        description="Thumbnail URL for this recipe, injected automatically",
+        description="Leave null; the thumbnail URL is injected automatically",
     )
 
     # preserved fields
