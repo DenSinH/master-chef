@@ -5,7 +5,8 @@ import logging
 import secrets
 import time
 from collections import defaultdict
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 import aiohttp
 from aiohttp.client_exceptions import ClientResponseError
@@ -38,15 +39,17 @@ PENDING_RECIPE_TTL = 3600
 
 @dataclasses.dataclass(frozen=True)
 class _PendingRecipe:
+    """Transformed recipe that has not been (manually) confirmed yet."""
+
     created: float
     collection: str
-    recipe: "cookbook.Recipe"
+    recipe: cookbook.Recipe
 
 
 _pending_recipes: dict[str, _PendingRecipe] = {}
 
 
-def _store_pending_recipe(collection: str, recipe: "cookbook.Recipe") -> str:
+def _store_pending_recipe(collection: str, recipe: cookbook.Recipe) -> str:
     """Store a freshly generated recipe, returning a token that can be used
     to retrieve (and remove) it via `add_recipe_pending_form`."""
 
@@ -77,7 +80,7 @@ _translation_jobs: dict[str, _TranslationJob] = {}
 
 
 async def _run_translation_job(
-    job: "_TranslationJob", events: AsyncIterator[str | cookbook.Recipe]
+    job: _TranslationJob, events: AsyncIterator[str | cookbook.Recipe]
 ) -> None:
     """Consume a `translate_page_stream`-style async generator, buffering its
     output on `job` so it can be replayed to (possibly multiple, reconnecting)
@@ -106,7 +109,10 @@ def _start_translation_job(
     its progress via `add_recipe_stream`."""
     now = time.monotonic()
     for key, old_job in list(_translation_jobs.items()):
-        if old_job.finished is not None and now - old_job.finished > TRANSLATION_JOB_TTL:
+        if (
+            old_job.finished is not None
+            and now - old_job.finished > TRANSLATION_JOB_TTL
+        ):
             del _translation_jobs[key]
 
     token = secrets.token_urlsafe(16)
@@ -376,7 +382,9 @@ async def add_recipe_url(
     )
 
 
-@router.get("/collection/{collection}/add/stream/{token}", response_class=EventSourceResponse)
+@router.get(
+    "/collection/{collection}/add/stream/{token}", response_class=EventSourceResponse
+)
 async def add_recipe_stream(
     request: Request,
     collection: str,
@@ -394,7 +402,11 @@ async def add_recipe_stream(
             data={
                 "message": "This translation could not be found, it may have expired",
                 "redirect": (
-                    str(request.app.url_path_for("add_recipe_url_form", collection=collection))
+                    str(
+                        request.app.url_path_for(
+                            "add_recipe_url_form", collection=collection
+                        )
+                    )
                     + "?error=chatgpt"
                 ),
             },
@@ -431,7 +443,8 @@ async def add_recipe_stream(
         yield ServerSentEvent(
             event="error",
             data={
-                "message": job.error or "Something went wrong while generating the recipe",
+                "message": job.error
+                or "Something went wrong while generating the recipe",
                 "redirect": job.error_redirect,
             },
         )
@@ -560,7 +573,7 @@ async def add_recipe_form_form(
         name="add/form.html",
         context={
             "collection": collection,
-            "recipe": cookbook.Recipe(),
+            "recipe": cookbook.Recipe(name=""),
             "action": request.app.url_path_for(
                 "add_recipe_form",
                 collection=collection,

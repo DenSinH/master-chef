@@ -2,23 +2,19 @@ import asyncio
 import logging
 import os
 import re
-from typing import TypeVar
 
 import aiohttp
 import msgspec.json
 import openai
 import tldextract as tld
 from bs4 import BeautifulSoup
-from pydantic import BaseModel
 
 from webapp.cookbook.errors import CookbookError
 
 from .headers import get_headers
 from .instagram import get_instagram_recipe
-from .recipe import Recipe
+from .recipe import Recipe, RecipeBase
 from .thumbnail import get_thumbnail
-
-_B = TypeVar("_B", bound="BaseModel")
 
 logger = logging.getLogger(__name__)
 client = openai.AsyncOpenAI(
@@ -28,17 +24,20 @@ client = openai.AsyncOpenAI(
 
 MAX_RETRIES = 1
 MODEL = os.environ["OPENAI_MODEL"]
-DEFAULT_TEMPERATURE = 0.2
+DEFAULT_TEMPERATURE = 0.1
 SYSTEM_PROMPT = """
 Extract the recipe from the provided webpage text.
-
 Preserve the recipe exactly as written. Do not invent, omit, summarize,
 or modify ingredients, quantities, instructions, or nutritional information.
-
+If a step, ingredient, or nutritional value is missing, unclear, or cut off
+in the source text, leave it out rather than guessing or completing it -
+an incomplete but accurate list is correct; a complete-looking list that
+includes anything you inferred is wrong.
+If no steps are provided, or no nutritional information is given, just leave it an empty list.
 If the recipe is neither Dutch nor English, translate the recipe content
 to English.
-
 Ignore advertisements, navigation, comments, and unrelated webpage text.
+Do NOT make up anything, simply copy the recipe and the steps present in the webpage (if present).
 """
 
 
@@ -117,74 +116,6 @@ async def get_recipe_text(url: str, user_agent=None) -> tuple[str, str | None]:
     return text, thumbnail
 
 
-async def translate_url(url: str, user_agent=None) -> Recipe:
-    """Transform a recipe from a url, determining the thumbnail automatically"""
-    text, thumbnail = await get_recipe_text(url, user_agent=user_agent)
-    recipe = await translate_page(
-        text,
-        url=url,
-        thumbnail=thumbnail,
-    )
-    return recipe
-
-
-async def _chatgpt_json_and_fix(
-    model: type[_B],
-    messages,
-    temperature=DEFAULT_TEMPERATURE,
-    **kwargs,
-) -> _B:
-    """Send message to chatgpt, and load object of type 'model' from the response.
-    'model' should be a subclass of BaseModel"""
-
-    # we may do a multi-shot recipe conversion if chatgpt
-    # fails the first time around
-    for i in range(1 + MAX_RETRIES):
-        logger.info(f"ChatGPT message attempt {i + 1}")
-        try:
-            response = await client.responses.parse(
-                model=MODEL,
-                input=messages,
-                text_format=model,
-                temperature=temperature,
-                extra_body={
-                    # dum-dum, no need to think
-                    "think": False,
-                },
-                **kwargs,
-            )
-        except asyncio.exceptions.CancelledError:
-            # retry because timeout, use longer timeout
-            kwargs["timeout"] = kwargs.get("timeout", 60) * 2
-            continue
-
-        return response.output_parsed
-    raise CookbookError(
-        "ChatGPT did not return a parsable json object, please try again"
-    )
-
-
-async def translate_page(text: str, url=None, thumbnail=None) -> Recipe:
-    """Tranform a recipe from text, filling in the url and thumbnail
-    fields from the given parameters"""
-    logger.info(f"Converting with ChatGPT ({MODEL})")
-    messages = [
-        {
-            "role": "system",
-            "content": SYSTEM_PROMPT,
-        },
-        {"role": "user", "content": text},
-    ]
-
-    recipe = await _chatgpt_json_and_fix(Recipe, messages, temperature=DEFAULT_TEMPERATURE)
-    return recipe.model_copy(
-        update={
-            "url": url,
-            "thumbnail": thumbnail,
-        }
-    )
-
-
 async def translate_page_stream(text: str, url=None, thumbnail=None):
     """Like `translate_page`, but yields the raw JSON text as ChatGPT streams
     it back, piece by piece, so the frontend can show live progress (this
@@ -208,7 +139,7 @@ async def translate_page_stream(text: str, url=None, thumbnail=None):
             async with client.responses.stream(
                 model=MODEL,
                 input=messages,
-                text_format=Recipe,
+                text_format=RecipeBase,
                 temperature=DEFAULT_TEMPERATURE,
                 extra_body={
                     # dum-dum, no need to think
@@ -220,7 +151,10 @@ async def translate_page_stream(text: str, url=None, thumbnail=None):
                     if event.type == "response.output_text.delta":
                         yield event.delta
                 final_response = await stream.get_final_response()
-            recipe = final_response.output_parsed
+            recipe_base: RecipeBase = final_response.output_parsed  # type: ignore
+            recipe = Recipe.model_validate(recipe_base.model_dump())
+            recipe.url = url
+            recipe.thumbnail = thumbnail
             break
         except asyncio.exceptions.CancelledError:
             # retry because timeout, use longer timeout
