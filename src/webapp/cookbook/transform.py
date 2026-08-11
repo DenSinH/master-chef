@@ -84,8 +84,11 @@ def _get_html_text(soup: BeautifulSoup):
     return text
 
 
-async def translate_url(url: str, user_agent=None) -> Recipe:
-    """Transform a recipe from a url, determining the thumbnail automatically"""
+async def get_recipe_text(url: str, user_agent=None) -> tuple[str, str | None]:
+    """Retrieve the raw recipe text and thumbnail for a url. This is the
+    "fast" part of translating a url, i.e. it does not involve calling
+    ChatGPT, and is expected to fail quickly (e.g. if the url cannot be
+    reached) rather than taking a long time."""
     logger.info(f"Retrieving url {url}")
     domain = tld.extract(url).domain.lower()
     if domain in {"instagram", "ig", "cdninstagram"}:
@@ -111,6 +114,12 @@ async def translate_url(url: str, user_agent=None) -> Recipe:
                 text = _get_html_text(soup)
             thumbnail = get_thumbnail(soup)
 
+    return text, thumbnail
+
+
+async def translate_url(url: str, user_agent=None) -> Recipe:
+    """Transform a recipe from a url, determining the thumbnail automatically"""
+    text, thumbnail = await get_recipe_text(url, user_agent=user_agent)
     recipe = await translate_page(
         text,
         url=url,
@@ -144,10 +153,6 @@ async def _chatgpt_json_and_fix(
                 },
                 **kwargs,
             )
-        except openai.BadRequestError as e:
-            if e.code == "context_length_exceeded":
-                raise
-            raise
         except asyncio.exceptions.CancelledError:
             # retry because timeout, use longer timeout
             kwargs["timeout"] = kwargs.get("timeout", 60) * 2
@@ -171,10 +176,61 @@ async def translate_page(text: str, url=None, thumbnail=None) -> Recipe:
         {"role": "user", "content": text},
     ]
 
-    recipe = await _chatgpt_json_and_fix(
-        Recipe, messages, temperature=DEFAULT_TEMPERATURE
-    )
+    recipe = await _chatgpt_json_and_fix(Recipe, messages, temperature=DEFAULT_TEMPERATURE)
     return recipe.model_copy(
+        update={
+            "url": url,
+            "thumbnail": thumbnail,
+        }
+    )
+
+
+async def translate_page_stream(text: str, url=None, thumbnail=None):
+    """Like `translate_page`, but yields the raw JSON text as ChatGPT streams
+    it back, piece by piece, so the frontend can show live progress (this
+    also serves as a heartbeat, keeping the underlying connection alive
+    during slow ChatGPT responses). The final yielded value is always the
+    resulting Recipe, unless translation failed, in which case the original
+    exception is raised."""
+    logger.info(f"Converting with ChatGPT ({MODEL})")
+    messages = [
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT,
+        },
+        {"role": "user", "content": text},
+    ]
+
+    kwargs: dict = {}
+    for i in range(1 + MAX_RETRIES):
+        logger.info(f"ChatGPT message attempt {i + 1}")
+        try:
+            async with client.responses.stream(
+                model=MODEL,
+                input=messages,
+                text_format=Recipe,
+                temperature=DEFAULT_TEMPERATURE,
+                extra_body={
+                    # dum-dum, no need to think
+                    "think": False,
+                },
+                **kwargs,
+            ) as stream:
+                async for event in stream:
+                    if event.type == "response.output_text.delta":
+                        yield event.delta
+                final_response = await stream.get_final_response()
+            recipe = final_response.output_parsed
+            break
+        except asyncio.exceptions.CancelledError:
+            # retry because timeout, use longer timeout
+            kwargs["timeout"] = kwargs.get("timeout", 60) * 2
+    else:
+        raise CookbookError(
+            "ChatGPT did not return a parsable json object, please try again"
+        )
+
+    yield recipe.model_copy(
         update={
             "url": url,
             "thumbnail": thumbnail,

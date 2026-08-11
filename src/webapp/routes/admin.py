@@ -1,11 +1,17 @@
+import asyncio
+import dataclasses
 import datetime
+import logging
+import secrets
+import time
 from collections import defaultdict
-from typing import Any
+from typing import Any, AsyncIterator
 
 import aiohttp
 from aiohttp.client_exceptions import ClientResponseError
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile
 from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.sse import EventSourceResponse, ServerSentEvent
 from starlette.datastructures import FormData
 
 from webapp import auth, cookbook
@@ -14,7 +20,100 @@ from webapp.utils import s3
 
 from .common import require_collection
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
+
+# Translation jobs (kicked off by /add/url or /add/text) run independently
+# of any particular HTTP connection, so the frontend can stream their
+# progress via a native EventSource, which reconnects automatically without
+# re-triggering the (slow, non-idempotent) ChatGPT call. Jobs are looked up
+# by token, and cleaned up TRANSLATION_JOB_TTL seconds after they finish.
+TRANSLATION_JOB_TTL = 600
+
+# Cache for freshly generated recipes to avoid losing them on client disconnect
+# cleaned after PENDING_RECIPE_TTL seconds when another recipe is added
+PENDING_RECIPE_TTL = 3600
+
+
+@dataclasses.dataclass(frozen=True)
+class _PendingRecipe:
+    created: float
+    collection: str
+    recipe: "cookbook.Recipe"
+
+
+_pending_recipes: dict[str, _PendingRecipe] = {}
+
+
+def _store_pending_recipe(collection: str, recipe: "cookbook.Recipe") -> str:
+    """Store a freshly generated recipe, returning a token that can be used
+    to retrieve (and remove) it via `add_recipe_pending_form`."""
+
+    # clear out unused recipes
+    now = time.monotonic()
+    for key, pending in list(_pending_recipes.items()):
+        if now - pending.created > PENDING_RECIPE_TTL:
+            del _pending_recipes[key]
+
+    token = secrets.token_urlsafe(16)
+    _pending_recipes[token] = _PendingRecipe(now, collection, recipe)
+    return token
+
+
+@dataclasses.dataclass
+class _TranslationJob:
+    collection: str
+    error_redirect: str
+    chunks: list[str] = dataclasses.field(default_factory=list)
+    recipe: cookbook.Recipe | None = None
+    error: str | None = None
+    new_data: asyncio.Event = dataclasses.field(default_factory=asyncio.Event)
+    done: asyncio.Event = dataclasses.field(default_factory=asyncio.Event)
+    finished: float | None = None
+
+
+_translation_jobs: dict[str, _TranslationJob] = {}
+
+
+async def _run_translation_job(
+    job: "_TranslationJob", events: AsyncIterator[str | cookbook.Recipe]
+) -> None:
+    """Consume a `translate_page_stream`-style async generator, buffering its
+    output on `job` so it can be replayed to (possibly multiple, reconnecting)
+    SSE consumers, independently of this task's own lifetime."""
+    try:
+        async for event in events:
+            if isinstance(event, cookbook.Recipe):
+                job.recipe = event
+            else:
+                job.chunks.append(event)
+                job.new_data.set()
+    except Exception:
+        logger.exception("Failed to generate recipe")
+        job.error = "Something went wrong while generating the recipe"
+    finally:
+        job.finished = time.monotonic()
+        job.done.set()
+        job.new_data.set()
+
+
+def _start_translation_job(
+    collection: str, error_redirect: str, events: AsyncIterator[str | cookbook.Recipe]
+) -> str:
+    """Start `events` (a `translate_page_stream`-style async generator)
+    running in the background, returning a token that can be used to stream
+    its progress via `add_recipe_stream`."""
+    now = time.monotonic()
+    for key, old_job in list(_translation_jobs.items()):
+        if old_job.finished is not None and now - old_job.finished > TRANSLATION_JOB_TTL:
+            del _translation_jobs[key]
+
+    token = secrets.token_urlsafe(16)
+    job = _TranslationJob(collection, error_redirect)
+    _translation_jobs[token] = job
+    asyncio.ensure_future(_run_translation_job(job, events))
+    return token
 
 
 def _form_to_dict(form: FormData) -> dict[str, Any]:
@@ -228,22 +327,132 @@ async def add_recipe_url(
     _: None = Depends(require_collection),
     user: dict = Depends(auth.require_admin),
 ):
-    """Add recipe with URL."""
+    """Start translating a recipe from a URL in the background, returning a
+    token that can be used to stream its progress via `add_recipe_stream`."""
     form = await request.form()
     url = form["url"]
 
     try:
-        recipe = await cookbook.translate_url(
+        text, thumbnail = await cookbook.get_recipe_text(
             url,
             user_agent=request.headers.get("user-agent"),
         )
     except aiohttp.client_exceptions.ClientConnectorError:
+        return JSONResponse(
+            {
+                "redirect": (
+                    str(
+                        request.app.url_path_for(
+                            "add_recipe_url_form",
+                            collection=collection,
+                        )
+                    )
+                    + "?error=notfound"
+                )
+            }
+        )
+
+    error_redirect = (
+        str(request.app.url_path_for("add_recipe_url_form", collection=collection))
+        + "?error=chatgpt"
+    )
+
+    token = _start_translation_job(
+        collection,
+        error_redirect,
+        cookbook.translate_page_stream(text, url=url, thumbnail=thumbnail),
+    )
+
+    return JSONResponse(
+        {
+            "stream": str(
+                request.app.url_path_for(
+                    "add_recipe_stream",
+                    collection=collection,
+                    token=token,
+                )
+            )
+        }
+    )
+
+
+@router.get("/collection/{collection}/add/stream/{token}", response_class=EventSourceResponse)
+async def add_recipe_stream(
+    request: Request,
+    collection: str,
+    token: str,
+    _: None = Depends(require_collection),
+    user: dict = Depends(auth.require_admin),
+):
+    """Stream the progress of a translation job started by `add_recipe_url` or
+    `add_recipe_text`, as raw JSON text chunks, followed by a final "done" or
+    "error" event."""
+    job = _translation_jobs.get(token)
+    if job is None or job.collection != collection:
+        yield ServerSentEvent(
+            event="error",
+            data={
+                "message": "This translation could not be found, it may have expired",
+                "redirect": (
+                    str(request.app.url_path_for("add_recipe_url_form", collection=collection))
+                    + "?error=chatgpt"
+                ),
+            },
+        )
+        return
+
+    position = 0
+    while True:
+        while position < len(job.chunks):
+            yield ServerSentEvent(event="progress", data={"text": job.chunks[position]})
+            position += 1
+
+        if job.done.is_set():
+            break
+
+        await job.new_data.wait()
+        job.new_data.clear()
+
+    if job.recipe is not None:
+        recipe_token = _store_pending_recipe(collection, job.recipe)
+        yield ServerSentEvent(
+            event="done",
+            data={
+                "redirect": str(
+                    request.app.url_path_for(
+                        "add_recipe_pending_form",
+                        collection=collection,
+                        token=recipe_token,
+                    )
+                )
+            },
+        )
+    else:
+        yield ServerSentEvent(
+            event="error",
+            data={
+                "message": job.error or "Something went wrong while generating the recipe",
+                "redirect": job.error_redirect,
+            },
+        )
+
+
+@router.get("/collection/{collection}/add/pending/{token}")
+async def add_recipe_pending_form(
+    request: Request,
+    collection: str,
+    token: str,
+    _: None = Depends(require_collection),
+    user: dict = Depends(auth.require_admin),
+):
+    """Render a freshly generated (not yet saved) recipe produced by
+    streaming translation of a URL or piece of text. The recipe is looked up
+    (and removed) from the in-memory pending store by `token`."""
+    pending = _pending_recipes.pop(token, None)
+    if pending is None or pending.collection != collection:
         return RedirectResponse(
-            request.app.url_path_for(
-                "add_recipe_url_form",
-                collection=collection,
-                error="notfound",
-            ),
+            str(request.app.url_path_for("add_recipe_url_form", collection=collection))
+            + "?error=chatgpt",
             status_code=303,
         )
 
@@ -252,7 +461,7 @@ async def add_recipe_url(
         name="add/form.html",
         context={
             "collection": collection,
-            "recipe": recipe,
+            "recipe": pending.recipe,
             "action": request.app.url_path_for(
                 "add_recipe_form",
                 collection=collection,
@@ -287,22 +496,31 @@ async def add_recipe_text(
     _: None = Depends(require_collection),
     user: dict = Depends(auth.require_admin),
 ):
-    """Add recipe from text."""
+    """Start translating a recipe from text in the background, returning a
+    token that can be used to stream its progress via `add_recipe_stream`."""
     form = await request.form()
-    recipe = await cookbook.translate_page(form["text"])
 
-    return templates.TemplateResponse(
-        request=request,
-        name="add/form.html",
-        context={
-            "collection": collection,
-            "recipe": recipe,
-            "action": request.app.url_path_for(
-                "add_recipe_form",
-                collection=collection,
-            ),
-            "refresh_warning": True,
-        },
+    error_redirect = (
+        str(request.app.url_path_for("add_recipe_text_form", collection=collection))
+        + "?error=chatgpt"
+    )
+
+    token = _start_translation_job(
+        collection,
+        error_redirect,
+        cookbook.translate_page_stream(form["text"]),
+    )
+
+    return JSONResponse(
+        {
+            "stream": str(
+                request.app.url_path_for(
+                    "add_recipe_stream",
+                    collection=collection,
+                    token=token,
+                )
+            )
+        }
     )
 
 
