@@ -18,13 +18,14 @@ from .thumbnail import get_thumbnail
 
 logger = logging.getLogger(__name__)
 client = openai.AsyncOpenAI(
-    base_url=os.getenv("OPENAI_URL", "localhost:4000"),
+    # leave out to use OpenAI
+    base_url=os.getenv("OPENAI_URL", None),
     api_key=os.environ["OPENAI_API_KEY"],
 )
 
 MAX_RETRIES = 1
 MODEL = os.environ["OPENAI_MODEL"]
-DEFAULT_TEMPERATURE = 0.1
+DEFAULT_TEMPERATURE = 0.2
 SYSTEM_PROMPT = """
 Extract the recipe from the provided webpage text.
 Preserve the recipe exactly as written. Do not invent, omit, summarize,
