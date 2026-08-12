@@ -25,7 +25,7 @@ client = openai.AsyncOpenAI(
 
 MAX_RETRIES = 1
 MODEL = os.environ["OPENAI_MODEL"]
-DEFAULT_TEMPERATURE = 0.2
+DEFAULT_TEMPERATURE = float(os.getenv("TEMPERATURE", "0.2"))
 SYSTEM_PROMPT = """
 Extract the recipe from the provided webpage text.
 Preserve the recipe exactly as written. Do not invent, omit, summarize,
