@@ -142,10 +142,6 @@ async def translate_page_stream(text: str, url=None, thumbnail=None):
                 input=messages,
                 text_format=RecipeBase,
                 temperature=DEFAULT_TEMPERATURE,
-                extra_body={
-                    # dum-dum, no need to think
-                    "think": False,
-                },
                 **kwargs,
             ) as stream:
                 async for event in stream:
