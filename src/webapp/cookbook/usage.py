@@ -3,6 +3,8 @@ import os
 
 import aiohttp
 
+from webapp.cookbook.timeutil import today
+
 API_KEY = os.environ["OPENAI_API_KEY"]
 USAGE_CACHE = {}
 
@@ -16,8 +18,8 @@ async def get_usage(date: datetime.date | str):
     else:
         params = {"date": date}
 
-    today = datetime.datetime.now().astimezone().date()
-    if params["date"] != today.strftime("%Y-%m-%d"):  # noqa: SIM102
+    _today = today()
+    if params["date"] != _today.strftime("%Y-%m-%d"):  # noqa: SIM102
         if params["date"] in USAGE_CACHE:
             return USAGE_CACHE[params["date"]]
 
@@ -27,6 +29,6 @@ async def get_usage(date: datetime.date | str):
         result = await session.get(url, headers=headers, params=params)
         result.raise_for_status()
         data = await result.json()
-        if params["date"] != today.strftime("%Y-%m-%d"):
+        if params["date"] != _today.strftime("%Y-%m-%d"):
             USAGE_CACHE[params["date"]] = data.get("data", [])
         return data.get("data", [])

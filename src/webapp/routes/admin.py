@@ -8,17 +8,18 @@ from collections import defaultdict
 from collections.abc import AsyncIterator
 from typing import Any
 
-import aiohttp
-from aiohttp.client_exceptions import ClientResponseError
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile
+from aiohttp.client_exceptions import ClientConnectorError, ClientResponseError
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.sse import EventSourceResponse, ServerSentEvent
-from starlette.datastructures import FormData
+from starlette.datastructures import FormData, UploadFile
 
 from webapp import auth, cookbook
 from webapp.app import templates
+from webapp.cookbook import instagram
 from webapp.utils import s3
 
+from ..cookbook.timeutil import today
 from .common import require_collection
 
 logger = logging.getLogger(__name__)
@@ -150,7 +151,7 @@ def _parse_recipe_form(form: FormData) -> cookbook.Recipe:
         ingredients.append({"amount": amount, "ingredient": ingredient})
 
     # fix nutrition (zip fields)
-    nutrition: list[str] = []
+    nutrition: list[dict[str, Any]] = []
     for amount, group in zip(
         form.getlist("nutrition-amount"),
         form.getlist("nutrition-group"),
@@ -178,7 +179,7 @@ def _parse_recipe_form(form: FormData) -> cookbook.Recipe:
         for field, value in data.items()
         if field in cookbook.RecipeMeta.model_fields
     }
-    recipe = cookbook.Recipe(**data)
+    recipe = cookbook.Recipe(**data)  # type: ignore
     return recipe
 
 
@@ -188,7 +189,7 @@ async def get_usage(
     user: dict = Depends(auth.require_admin),
 ):
     """Get OpenAI usage data."""
-    date = request.query_params.get("date")
+    date = request.query_params.get("date", today())
 
     try:
         usage = await cookbook.get_usage(date)
@@ -336,14 +337,14 @@ async def add_recipe_url(
     """Start translating a recipe from a URL in the background, returning a
     token that can be used to stream its progress via `add_recipe_stream`."""
     form = await request.form()
-    url = form["url"]
+    url: str = form["url"]  # type: ignore
 
     try:
         text, thumbnail = await cookbook.get_recipe_text(
             url,
             user_agent=request.headers.get("user-agent"),
         )
-    except aiohttp.client_exceptions.ClientConnectorError:
+    except ClientConnectorError:
         return JSONResponse(
             {
                 "redirect": (
@@ -518,10 +519,11 @@ async def add_recipe_text(
         + "?error=chatgpt"
     )
 
+    text: str = form["text"]  # type: ignore
     token = _start_translation_job(
         collection,
         error_redirect,
-        cookbook.translate_page_stream(form["text"]),
+        cookbook.translate_page_stream(text),
     )
 
     return JSONResponse(
@@ -556,6 +558,10 @@ async def upload_image(
             title=file.filename,
         )
         break
+
+    if link is None:
+        msg = "Failed to upload image, no image attached..."
+        raise RuntimeError(msg)
 
     return JSONResponse({"link": link})
 
@@ -626,16 +632,14 @@ async def post_recipe(
     recipe = recipes[id]
 
     if recipe.igcode:
-        raise cookbook.instagram.InstagramError(
+        raise instagram.InstagramError(
             f"Recipe was already posted to instagram " f"with code {recipe.igcode}"
         )
 
     if not recipe.name or not recipe.thumbnail:
-        raise cookbook.instagram.InstagramError(
-            "Cannot upload recipe without name or thumbnail"
-        )
+        raise instagram.InstagramError("Cannot upload recipe without name or thumbnail")
 
-    code = await cookbook.instagram.post_instagram_recipe(
+    code = await instagram.post_instagram_recipe(
         recipe_name=recipe.name,
         image_url=recipe.thumbnail,
         user_agent=request.headers.get("user-agent"),

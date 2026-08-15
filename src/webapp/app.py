@@ -16,12 +16,23 @@ from .utils import s3
 
 HERE = Path(__file__).parent
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        async with s3.client_lifetime():
+            yield
+    finally:
+        pass
+
+
 app = FastAPI(
     title="master-chef",
     # Disable default urls
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
+    lifespan=lifespan,
 )
 
 # With GZipMiddleware we don't really need a minifying template loader
@@ -61,16 +72,19 @@ templates.env.filters["strftime"] = _strftime
 templates.env.filters["ingredientrefs"] = _add_ingredient_references
 templates.env.filters["capwords"] = string.capwords
 
-templates.env.globals["CuisineType"] = cookbook.CuisineType
-templates.env.globals["MealType"] = cookbook.MealType
-templates.env.globals["MeatType"] = cookbook.MeatType
-templates.env.globals["CarbType"] = cookbook.CarbType
-templates.env.globals["TemparatureType"] = cookbook.TemperatureType
-templates.env.globals["LANGUAGES"] = {
+templates.env.globals["CuisineType"] = (  # ty: ignore[invalid-assignment]
+    cookbook.CuisineType
+)
+templates.env.globals["MealType"] = cookbook.MealType  # ty: ignore[invalid-assignment]
+templates.env.globals["MeatType"] = cookbook.MeatType  # ty: ignore[invalid-assignment]
+templates.env.globals["CarbType"] = cookbook.CarbType  # ty: ignore[invalid-assignment]
+templates.env.globals["TemparatureType"] = (  # ty: ignore[invalid-assignment]
+    cookbook.TemperatureType
+)
+templates.env.globals["LANGUAGES"] = {  # ty: ignore[invalid-assignment]
     "nl": "Nederlands",
     "en": "English",
 }
-
 
 app.mount(
     "/static",
@@ -90,12 +104,3 @@ async def robots():
 @app.get("/favicon.ico", name="favicon")
 async def favicon():
     return FileResponse(HERE / "static" / "favicon.ico")
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    try:
-        async with s3.client_lifetime():
-            yield
-    finally:
-        pass

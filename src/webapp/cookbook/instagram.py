@@ -162,7 +162,7 @@ async def get_instagram_recipe(url: str, user_agent: str | None = None) -> str:
         msg = f"Failed to get instagram recipe from HTML: {meta}"
         raise RuntimeError(msg)
 
-    return content
+    return str(content)
 
 
 async def _download_image(

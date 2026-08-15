@@ -28,17 +28,33 @@ MODEL = os.environ["OPENAI_MODEL"]
 DEFAULT_TEMPERATURE = float(os.getenv("TEMPERATURE", "0.2"))
 SYSTEM_PROMPT = """
 Extract the recipe from the provided webpage text.
-Preserve the recipe exactly as written. Do not invent, omit, summarize,
-or modify ingredients, quantities, instructions, or nutritional information.
-If a step, ingredient, or nutritional value is missing, unclear, or cut off
-in the source text, leave it out rather than guessing or completing it -
-an incomplete but accurate list is correct; a complete-looking list that
-includes anything you inferred is wrong.
-If no steps are provided, or no nutritional information is given, just leave it an empty list.
-If the recipe is neither Dutch nor English, translate the recipe content
-to English.
-Ignore advertisements, navigation, comments, and unrelated webpage text.
-Do NOT make up anything, simply copy the recipe and the steps present in the webpage (if present).
+
+LANGUAGE:
+- Preserve the original language of the recipe.
+- If the recipe is Dutch, keep it in Dutch. Do NOT translate it.
+- If the recipe is English, keep it in English. Do NOT translate it.
+- Only if the recipe is neither Dutch nor English, translate the recipe content to English.
+- Never translate Dutch to English.
+
+ACCURACY:
+- Preserve the recipe exactly as written.
+- Do not invent, omit, summarize, or modify ingredients, quantities,
+  instructions, or nutritional information.
+- If a step, ingredient, or nutritional value is missing, unclear, or
+  cut off in the source text, leave it out rather than guessing or
+  completing it.
+- An incomplete but accurate list is correct; a complete-looking list
+  that includes anything you inferred is wrong.
+
+MISSING INFORMATION:
+- If no steps are provided, return an empty list for steps.
+- If no nutritional information is given, return an empty list for
+  nutritional information.
+
+OTHER CONTENT:
+- Ignore advertisements, navigation, comments, and unrelated webpage text.
+- Do not make up anything.
+- Only extract recipe content actually present in the webpage.
 """
 
 
@@ -46,7 +62,12 @@ def _get_tiktok_text(soup: BeautifulSoup):
     """Get description of tiktok page. We cannot use simple scraping, since the
     caption is loaded lazily."""
     data = soup.find("script", {"id": "__UNIVERSAL_DATA_FOR_REHYDRATION__"})
-    json_data = msgspec.json.decode(data.contents[0], strict=False)
+    if data is None:
+        msg = "Failed to find tiktok description data"
+        raise RuntimeError(msg)
+
+    contents: str = data.contents[0]  # type: ignore
+    json_data = msgspec.json.decode(contents, strict=False)
     return json_data["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"][
         "itemStruct"
     ]["desc"]
@@ -74,7 +95,7 @@ def _get_html_text(soup: BeautifulSoup):
     COMMENTS = ["comment", "opmerking"]
     COMMENTS_RE = re.compile(rf".*({'|'.join(COMMENTS)}).*", flags=re.IGNORECASE)
     for attr in ["class", "id"]:
-        for element in soup.find_all(attrs={attr: COMMENTS_RE}):
+        for element in soup.find_all(attrs={attr: COMMENTS_RE}):  # type: ignore
             # only remove "small" text sections
             if len(_get_text(element)) < 0.1 * text_length:
                 element.decompose()
@@ -139,7 +160,7 @@ async def translate_page_stream(text: str, url=None, thumbnail=None):
         try:
             async with client.responses.stream(
                 model=MODEL,
-                input=messages,
+                input=messages,  # type: ignore
                 text_format=RecipeBase,
                 temperature=DEFAULT_TEMPERATURE,
                 **kwargs,
@@ -148,7 +169,7 @@ async def translate_page_stream(text: str, url=None, thumbnail=None):
                     if event.type == "response.output_text.delta":
                         yield event.delta
                 final_response = await stream.get_final_response()
-            recipe_base: RecipeBase = final_response.output_parsed  # type: ignore
+            recipe_base: RecipeBase = final_response.output_parsed
             recipe = Recipe.model_validate(recipe_base.model_dump())
             recipe.url = url
             recipe.thumbnail = thumbnail

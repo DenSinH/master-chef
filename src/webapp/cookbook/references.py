@@ -13,7 +13,7 @@ class _PartialMatch:
     matched: tuple[str]
     target_words: int
     score: int
-    ingredient_idx: int = None
+    ingredient_idx: int | None = None
 
     def target_score(self):
         """Score to determine the accuracy of the match (lower is better)"""

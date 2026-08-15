@@ -1,3 +1,5 @@
+# ty: ignore[invalid-type-form]
+
 import hashlib
 from enum import StrEnum
 from functools import partial
@@ -105,7 +107,7 @@ FriendlyOptionalInt = Annotated[
 
 
 def FriendlyOptionalEnum(enum_type: type[_E]) -> type[_E]:
-    return Annotated[
+    return Annotated[  # type: ignore
         enum_type | None,
         BeforeValidator(partial(_fuzzy_enum_match, enum_type, optional=True)),
         BeforeValidator(_friendly_optional),
@@ -114,7 +116,7 @@ def FriendlyOptionalEnum(enum_type: type[_E]) -> type[_E]:
 
 
 def FriendlyEnum(enum_type: type[_E]) -> type[_E]:
-    return Annotated[
+    return Annotated[  # type: ignore
         enum_type,
         BeforeValidator(partial(_fuzzy_enum_match, enum_type)),
         BeforeValidator(_friendly_from_list),
@@ -122,7 +124,7 @@ def FriendlyEnum(enum_type: type[_E]) -> type[_E]:
 
 
 def FriendlyEnumList(enum_type: type[_E]) -> type[list[_E]]:
-    return Annotated[
+    return Annotated[  # type: ignore
         list[
             Annotated[enum_type, BeforeValidator(partial(_fuzzy_enum_match, enum_type))]
         ],

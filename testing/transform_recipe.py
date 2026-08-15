@@ -69,7 +69,7 @@ def translate_page(url):
     ]
     for i in range(1 + MAX_RETRIES):
         # todo: acreate
-        chat_completion = openai.ChatCompletion.create(
+        chat_completion = openai.ChatCompletion.create(  # type: ignore
             model=MODEL, messages=messages, temperature=0.2
         )
         reply = chat_completion.choices[0].message.content

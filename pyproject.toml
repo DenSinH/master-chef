@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Recipe manager with AI conversion"
 requires-python = ">=3.14"
 dependencies = [
+    "aiobotocore>=3.9.0",
     "aiofiles>=25.1.0",
     "aiohttp>=3.14.3",
     "beautifulsoup4>=4.15.0",
@@ -11,7 +12,6 @@ dependencies = [
     "htmlmin2>=0.1.13",
     "instagrapi>=2.6.9",
     "jinja2>=3.1.6",
-    "miniopy-async>=1.23.5",
     "msgspec>=0.21.1",
     "openai>=2.53.0",
     "pydantic>=2.13.4",
@@ -50,3 +50,7 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends"]
 ignore = [
     "UP047",
 ]
+
+[tool.ty.src]
+exclude = ["testing/"]
+
