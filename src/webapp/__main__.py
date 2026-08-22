@@ -5,6 +5,8 @@ import sys
 import uvicorn
 from dotenv import load_dotenv
 
+load_dotenv()
+
 from .app import app
 from .routes import (
     add_error_handlers,
@@ -12,8 +14,6 @@ from .routes import (
     public_router,
     user_router,
 )
-
-load_dotenv()
 
 DEBUG = "--debug" in sys.argv
 

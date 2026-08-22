@@ -19,16 +19,22 @@
     <script>
         function delete_recipe() {
             if (confirm("Are you sure you want to delete this recipe?")) {
-                $.post("{{ url_for('delete_recipe', id=recipe_id, collection=collection) }}", function() {
-                  window.location.href = "{{ url_for('collection', collection=collection) }}";
-                })
-                .fail(function(resp) {
-                    if (resp.status === 401) {
-                        // unauthorized, redirect to login page
-                        window.location.href = "{{ url_for('login_form').include_query_params(redirect=url_for('recipe', collection=collection, id=recipe_id)) }}";
-                    }
-                    else {
-                        showPopup("Failed to delete recipe");
+                $.ajax({
+                    url: "{{ url_for('delete_recipe', id=recipe_id, collection=collection) }}",
+                    type: "POST",
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    success() {
+                        window.location.href = "{{ url_for('collection', collection=collection) }}";
+                    },
+                    error(resp) {
+                        if (resp.status === 401) {
+                            // unauthorized, redirect to login page
+                            window.location.href = "{{ url_for('login_form').include_query_params(redirect=url_for('recipe', collection=collection, id=recipe_id)) }}";
+                        } else {
+                            showPopup("Failed to delete recipe");
+                        }
                     }
                 });
             }
@@ -36,16 +42,17 @@
 
         function make_recipe() {
             if (confirm("Are you sure you want to move this recipe?")) {
-                $.post("{{ url_for('move_recipe', id=recipe_id, collectionfrom=collection, collectionto='recipes') }}", function(data) {
-                  window.location.href = data.redirect;
-                })
-                .fail(function(resp) {
-                    if (resp.status === 401) {
-                        // unauthorized, redirect to login page
-                        window.location.href = "{{ url_for('login_form').include_query_params(redirect=url_for('recipe', collection=collection, id=recipe_id)) }}";
-                    }
-                    else {
-                        showPopup("Failed to move recipe");
+                $.ajax({
+                    url: "{{ url_for('move_recipe', id=recipe_id, collectionfrom=collection, collectionto='recipes') }}",
+                    type: "POST",
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    success(data) {
+                        window.location.href = data.redirect;
+                    },
+                    error(resp) {
+                        console.log(resp.status, resp.responseText);
                     }
                 });
             }
@@ -53,16 +60,22 @@
 
         function post_recipe() {
             if (confirm("Are you sure you want to post this recipe?")) {
-                $.post("{{ url_for('post_recipe', id=recipe_id, collection=collection) }}", function(data) {
-                  window.location.href = data.redirect;
-                })
-                .fail(function(resp) {
-                    if (resp.status === 401) {
-                        // unauthorized, redirect to login page
-                        window.location.href = "{{ url_for('login_form').include_query_params(redirect=url_for('recipe', collection=collection, id=recipe_id)) }}";
-                    }
-                    else {
-                        showPopup("Failed to post recipe");
+                $.ajax({
+                    url: "{{ url_for('post_recipe', id=recipe_id, collection=collection) }}",
+                    type: "POST",
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    success(data) {
+                        window.location.href = data.redirect;
+                    },
+                    error(resp) {
+                        if (resp.status === 401) {
+                            // unauthorized, redirect to login page
+                            window.location.href = "{{ url_for('login_form').include_query_params(redirect=url_for('recipe', collection=collection, id=recipe_id)) }}";
+                        } else {
+                            showPopup("Failed to post recipe");
+                        }
                     }
                 });
             }
